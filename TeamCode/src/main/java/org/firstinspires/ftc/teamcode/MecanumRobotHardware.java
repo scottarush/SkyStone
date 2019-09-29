@@ -69,8 +69,10 @@ public class MecanumRobotHardware
 
     }
 
-    /* Initialize standard Hardware interfaces */
-    public void init(HardwareMap ahwMap) {
+    /* Initialize standard Hardware interfaces.
+    * NOTE:  This class throws Exception on any hardware init error so be sure to catch and
+    * report to Telemttry in your initialization. */
+    public void init(HardwareMap ahwMap) throws Exception {
         // Save reference to Hardware map
         hwMap = ahwMap;
 
@@ -101,6 +103,20 @@ public class MecanumRobotHardware
 
         // TODO Define and initialize ALL installed servos once the actuators are defined by the build team
 
+    }
+
+    /**
+     * Helper function to set power to the wheel drive motors
+     * @param lf left front motor power
+     * @param rf right front motor power
+     * @param lr left rear motor power
+     * @param rr right rear motor power
+     */
+    public void setDriveMotorPower(double lf, double rf, double lr, double rr){
+        leftFrontDrive.setPower(lf);
+        rightFrontDrive.setPower(rf);
+        leftRearDrive.setPower(lr);
+        rightRearDrive.setPower(rr);
     }
 
     /**

@@ -62,10 +62,16 @@ public class MecanumTeleopTank_Iterative extends OpMode{
         /* Initialize the hardware variables.
          * The init() method of the hardware class does all the work here
          */
-        robot.init(hardwareMap);
+        try {
+            robot.init(hardwareMap);
+        }
+        catch(Exception e){
+            telemetry.addData("Robot Init Error","%s",e.getMessage());
+            return;
+        }
 
         // Send telemetry message to signify robot waiting;
-        telemetry.addData("Say", "Hello Driver");    //
+        telemetry.addData("Say", "Init Complete");    //
     }
 
     /*
@@ -95,10 +101,9 @@ public class MecanumTeleopTank_Iterative extends OpMode{
 
         // the speeds with the new gamepad inputs
         computeMecanumMotorSpeeds(xleft,yleft,xright,yright);
-        robot.leftFrontDrive.setPower(leftFrontWheelSpeed);
-        robot.leftFrontDrive.setPower(leftFrontWheelSpeed);
-        robot.leftFrontDrive.setPower(leftFrontWheelSpeed);
-        robot.leftFrontDrive.setPower(leftFrontWheelSpeed);
+
+        // Set the motor power to the speeds
+        robot.setDriveMotorPower(leftFrontWheelSpeed,rightFrontWheelSpeed,leftRearWheelSpeed,rightRearWheelSpeed);
 
         // log the speeds to telemetry
         telemetry.addData("Wheel speeds:", "lf=%.2f rf=%.2f lr=%.2f rr=%.2f",
