@@ -30,6 +30,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -78,8 +79,10 @@ public class MecanumRobotHardware
 
         // Define and Initialize Motors
         leftFrontDrive  = hwMap.get(DcMotor.class, "left_front_drive");
+        leftFrontDrive.setDirection(DcMotorSimple.Direction.REVERSE);
         rightFrontDrive = hwMap.get(DcMotor.class, "right_front_drive");
         leftRearDrive    = hwMap.get(DcMotor.class, "left_rear_drive");
+        leftRearDrive.setDirection(DcMotorSimple.Direction.REVERSE);
         rightRearDrive    = hwMap.get(DcMotor.class, "right_rear_drive");
 
         /**

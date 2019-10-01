@@ -42,11 +42,11 @@ import com.qualcomm.robotcore.util.Range;
   */
 
 @TeleOp(name="MecanumRobot: Teleop Tank", group="Robot")
-@Disabled
+//@Disabled
 public class MecanumTeleopTank_Iterative extends OpMode{
 
     /* Declare OpMode members. */
-    private MecanumRobotHardware robot = new MecanumRobotHardware();
+    private MecanumRobotHardware robot = null;
 
     /** current motor speeds. **/
     private double leftFrontWheelSpeed = 0;
@@ -63,6 +63,7 @@ public class MecanumTeleopTank_Iterative extends OpMode{
          * The init() method of the hardware class does all the work here
          */
         try {
+            robot = new MecanumRobotHardware();
             robot.init(hardwareMap);
         }
         catch(Exception e){
@@ -152,15 +153,15 @@ public class MecanumTeleopTank_Iterative extends OpMode{
         double yfwd = (yleft + yright) / 2;
         double yturn = (yleft - yright) / 2;
         double xavg = (xleft + xright) / 2;
-
-        /** Calculate the four wheel speed commands
+         /** Calculate the four wheel speed commands
          **/
         double fwd = kfwd * yfwd;
-        double turn = kturn * yturn;
+
+         double turn = kturn * yturn;
         double strafe = kstrafe * xavg;
 
         leftFrontWheelSpeed = fwd + turn + strafe;
-        rightFrontWheelSpeed = fwd - turn + strafe;
+        rightFrontWheelSpeed = fwd - turn - strafe;
         leftRearWheelSpeed = fwd + turn - strafe;
         rightRearWheelSpeed = fwd - turn + strafe;
 
