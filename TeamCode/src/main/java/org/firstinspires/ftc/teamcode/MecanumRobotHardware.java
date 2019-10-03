@@ -35,6 +35,15 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcontroller.external.samples.ConceptVuforiaNavigationWebcam;
+import org.firstinspires.ftc.robotcore.external.ClassFactory;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
+import org.firstinspires.ftc.robotcore.external.navigation.VuMarkInstanceId;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackable;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackables;
+
 /**
  * This is NOT an opmode.
  *
@@ -64,6 +73,20 @@ public class MecanumRobotHardware
     /* local OpMode members. */
     HardwareMap hwMap           =  null;
     private ElapsedTime period  = new ElapsedTime();
+
+    OpenGLMatrix lastLocation = null;
+
+    /**
+     * {@link #vuforia} is the variable we will use to store our instance of the Vuforia
+     * localization engine.
+     */
+    VuforiaLocalizer vuforia;
+
+    /**
+     * This is the webcam we are to use. As with other hardware devices such as motors and
+     * servos, this device is identified using the robot configuration tool in the FTC application.
+     */
+    WebcamName webcamName;
 
     /* Constructor */
     public MecanumRobotHardware(){
@@ -132,5 +155,43 @@ public class MecanumRobotHardware
         rightRearDrive.setPower(0);
     }
 
+    private void initVuforia(){
+        /*
+         * Retrieve the camera we are to use.
+         */
+        webcamName = hwMap.get(WebcamName.class, "Webcam 1");
+
+        /*
+         * To start up Vuforia, tell it the view that we wish to use for camera monitor (on the RC phone);
+         * If no camera monitor is desired, use the parameterless constructor instead (commented out below).
+         */
+        int cameraMonitorViewId = hwMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hwMap.appContext.getPackageName());
+        VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters(cameraMonitorViewId);
+
+        // OR...  Do Not Activate the Camera Monitor View, to save power
+        // VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
+
+        /** Set the vuforia license key **/
+        parameters.vuforiaLicenseKey = "AcKS+1f/////AAABmSfE4zB+90Wek6WzDi8g9Kw5Y7UUvCIs/xewLbEyh1FnM9TKbT+OXm1jp/q0e0G+b3EfoikZfLj1W+tXrZ4vrSJKyIuX/dhgfNzqJiRjnhiM9EWGVpKKQRYaK5Vr6Tp/UUif1/0/g15dgu/Gy4CvEoTUG3BeGGyDZDy9DlyoJImjnf1C0IBTb1kRz5oTW+lyx4AEeuG2a6egQVGU61IbESGMTXKnQxfj9ccnbZdHLHV62WowIoMJJtXDO4jfLcnGmPEr3v60y9ZPzzYifER84G+ulCUxe0ssoxIzRLNyC9FcHuJ11qvk9yGj8rbKclJjhCE4zHjJO7/3wS0/EEWy+iLg32J0IVrPGipUX/Pxn2Z/";
+
+
+        /**
+         * We also indicate which camera on the RC we wish to use. For pedagogical purposes,
+         * we use the same logic as in {@link ConceptVuforiaNavigationWebcam}.
+         */
+        parameters.cameraName = webcamName;
+        this.vuforia = ClassFactory.getInstance().createVuforia(parameters);
+
+        /**
+         * Load the data set containing the VuMarks for Relic Recovery. There's only one trackable
+         * in this data set: all three of the VuMarks in the game were created from this one template,
+         * but differ in their instance id information.
+         * @see VuMarkInstanceId
+         */
+        VuforiaTrackables relicTrackables = this.vuforia.loadTrackablesFromAsset("RelicVuMark");
+        VuforiaTrackable relicTemplate = relicTrackables.get(0);
+        relicTemplate.setName("relicVuMarkTemplate"); // can help in debugging; otherwise not necessary
+
+    }
 }
 
