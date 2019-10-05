@@ -76,6 +76,8 @@ public class MecanumRobotHardware
 
     OpenGLMatrix lastLocation = null;
 
+    /** Number of encoder counts of each rotation of the shaft.**/
+    public static int ENCODER_COUNTS_PER_ROTATION=1120;
     /**
      * {@link #vuforia} is the variable we will use to store our instance of the Vuforia
      * localization engine.
@@ -191,7 +193,9 @@ public class MecanumRobotHardware
         VuforiaTrackables relicTrackables = this.vuforia.loadTrackablesFromAsset("RelicVuMark");
         VuforiaTrackable relicTemplate = relicTrackables.get(0);
         relicTemplate.setName("relicVuMarkTemplate"); // can help in debugging; otherwise not necessary
+    }
+
+    public void moveRobot(double xdist,double ydist){
 
     }
 }
-
