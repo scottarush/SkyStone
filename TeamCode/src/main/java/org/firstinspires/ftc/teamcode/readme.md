@@ -2,5 +2,5 @@
 
 Welcome!
 
-This is the Infinity Tech Challenge Canton team code.
+This is the Infinity Tech #13684 SKYSTONE Challenge Canton team code.
 
