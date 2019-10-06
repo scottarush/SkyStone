@@ -121,12 +121,7 @@ public class MecanumTankOpMode extends OpMode{
      */
     @Override
     public void stop() {
-        lfPower = 0;
-        rfPower = 0;
-        lrPower = 0;
-        rrPower = 0;
-
-        robot.stopAll();
+         robot.stopAll();
     }
 
     /**

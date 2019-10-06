@@ -1,4 +1,4 @@
-/* Copyright (c) 2017 FIRST. All rights reserved.
+package org.firstinspires.ftc.teamcode;/* Copyright (c) 2017 FIRST. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted (subject to the limitations in the disclaimer below) provided that
@@ -27,26 +27,27 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.firstinspires.ftc.teamcode;
-
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+import org.firstinspires.ftc.teamcode.MecanumRobotHardware;
+import org.firstinspires.ftc.teamcode.UtilityMethods;
+
 
 /**
-This class tests the findStone utility.
+This class tests the move robot to stone utility
   */
 
-@TeleOp(name="TestFindStone", group="Robot")
+@TeleOp(name="TestMoveRobotToStone", group="Robot")
 //@Disabled
-public class TestFindStone extends LinearOpMode {
+public class TestMoveRobotToStone extends LinearOpMode {
 
     /* Declare OpMode members. */
     private MecanumRobotHardware robot = null;
 
     private UtilityMethods utilities = null;
 
-    public TestFindStone() {
+    public TestMoveRobotToStone() {
 
     }
 
@@ -72,9 +73,13 @@ public class TestFindStone extends LinearOpMode {
                 break;
             case UtilityMethods.FOUND_STONE:
                 telemetry.addData("Status", "Found Stone");
+                // Now move the robot to the stone.
+                utilities.moveRobotToStone(this,5);
                 break;
             case UtilityMethods.FOUND_SKYSTONE:
                 telemetry.addData("Status", "Found Skystone");
+                // Now move the robot to the stone.
+                utilities.moveRobotToStone(this,5);
                 break;
         }
 

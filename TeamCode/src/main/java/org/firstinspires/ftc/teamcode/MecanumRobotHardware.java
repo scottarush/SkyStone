@@ -29,27 +29,9 @@
 
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.util.ElapsedTime;
-
-import org.firstinspires.ftc.robotcontroller.external.samples.ConceptVuforiaNavigationWebcam;
-import org.firstinspires.ftc.robotcore.external.ClassFactory;
-import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
-import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
-import org.firstinspires.ftc.robotcore.external.navigation.VuMarkInstanceId;
-import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
-import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackable;
-import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackables;
-import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
-import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
-
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
 
 /**
  * This is NOT an opmode.
@@ -77,10 +59,8 @@ public class MecanumRobotHardware {
     public DcMotor rrMotor = null;
 
     /* local OpMode members. */
-    HardwareMap hwMap = null;
-    private ElapsedTime period = new ElapsedTime();
+    public HardwareMap hwMap = null;
 
-    OpenGLMatrix lastLocation = null;
 
     /**
      * Number of encoder counts of each rotation of the shaft.
@@ -96,38 +76,7 @@ public class MecanumRobotHardware {
      * Number of counts per inch of direct wheel movement.
      **/
     public static final int COUNTS_PER_INCH = (int) Math.round(ENCODER_COUNTS_PER_ROTATION / MECANUM_WHEEL_CIRCUMFERENCE);
-     /**
-     * {@link #vuforia} is the variable we will use to store our instance of the Vuforia
-     * localization engine.
-     */
-    VuforiaLocalizer vuforia;
 
-    /**
-     * Flag set true when vuforia is initialized.
-     */
-    private boolean vuforiaInitialized = false;
-
-    //--------------------------------------------
-    // TensorFlow engine variables
-    private static final String TFOD_MODEL_ASSET = "Skystone.tflite";
-    private static final String LABEL_FIRST_ELEMENT = "Stone";
-    private static final String LABEL_SECOND_ELEMENT = "Skystone";
-
-    /**
-     * {@link #tfod} is the variable we will use to store our instance of the TensorFlow Object
-     * Detection engine.
-     */
-    private TFObjectDetector tfod;
-    /**
-     * Flag set true when tfod is initialized.
-     */
-    private boolean tfodInitialized = false;
-
-    /**
-     * This is the webcam we are to use. As with other hardware devices such as motors and
-     * servos, this device is identified using the robot configuration tool in the FTC application.
-     */
-    WebcamName webcamName;
 
     /* Constructor */
     public MecanumRobotHardware() {
@@ -136,18 +85,20 @@ public class MecanumRobotHardware {
 
     /* Initialize standard Hardware interfaces.
      * NOTE:  This class throws Exception on any hardware init error so be sure to catch and
-     * report to Telemttry in your initialization. */
+     * report to Telemetry in your initialization. */
     public void init(HardwareMap ahwMap) throws Exception {
         // Save reference to Hardware map
         hwMap = ahwMap;
 
         // Define and Initialize Motors
-        lfMotor = hwMap.get(DcMotor.class, "left_front_drive");
+        lfMotor = tryMapMotor("left_front_drive");
+        rfMotor = tryMapMotor("right_front_drive");
+        lrMotor = tryMapMotor("left_rear_drive");
+        rrMotor = tryMapMotor("right_rear_drive");
+
+        // Left side motors are reversed
         lfMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-        rfMotor = hwMap.get(DcMotor.class, "right_front_drive");
-        lrMotor = hwMap.get(DcMotor.class, "left_rear_drive");
         lrMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-        rrMotor = hwMap.get(DcMotor.class, "right_rear_drive");
 
         // Set all motors to zero power
         setDriveMotorPower(0, 0, 0, 0);
@@ -181,181 +132,6 @@ public class MecanumRobotHardware {
         setDriveMotorPower(0, 0, 0, 0);
     }
 
-    private void initVuforia() {
-        if (vuforiaInitialized)
-            return;
-        /*
-         * Retrieve the camera we are to use.
-         */
-        webcamName = hwMap.get(WebcamName.class, "Webcam 1");
-
-        /*
-         * To start up Vuforia, tell it the view that we wish to use for camera monitor (on the RC phone);
-         * If no camera monitor is desired, use the parameterless constructor instead (commented out below).
-         */
-        int cameraMonitorViewId = hwMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hwMap.appContext.getPackageName());
-        VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters(cameraMonitorViewId);
-
-        // OR...  Do Not Activate the Camera Monitor View, to save power
-        // VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
-
-        /** Set the vuforia license key **/
-        parameters.vuforiaLicenseKey = "AcKS+1f/////AAABmSfE4zB+90Wek6WzDi8g9Kw5Y7UUvCIs/xewLbEyh1FnM9TKbT+OXm1jp/q0e0G+b3EfoikZfLj1W+tXrZ4vrSJKyIuX/dhgfNzqJiRjnhiM9EWGVpKKQRYaK5Vr6Tp/UUif1/0/g15dgu/Gy4CvEoTUG3BeGGyDZDy9DlyoJImjnf1C0IBTb1kRz5oTW+lyx4AEeuG2a6egQVGU61IbESGMTXKnQxfj9ccnbZdHLHV62WowIoMJJtXDO4jfLcnGmPEr3v60y9ZPzzYifER84G+ulCUxe0ssoxIzRLNyC9FcHuJ11qvk9yGj8rbKclJjhCE4zHjJO7/3wS0/EEWy+iLg32J0IVrPGipUX/Pxn2Z/";
-
-
-        /**
-         * We also indicate which camera on the RC we wish to use. For pedagogical purposes,
-         * we use the same logic as in {@link ConceptVuforiaNavigationWebcam}.
-         */
-        parameters.cameraName = webcamName;
-        this.vuforia = ClassFactory.getInstance().createVuforia(parameters);
-
-        /**
-         * Load the data set containing the VuMarks for Relic Recovery. There's only one trackable
-         * in this data set: all three of the VuMarks in the game were created from this one template,
-         * but differ in their instance id information.
-         * @see VuMarkInstanceId
-         */
-        VuforiaTrackables relicTrackables = this.vuforia.loadTrackablesFromAsset("RelicVuMark");
-        VuforiaTrackable relicTemplate = relicTrackables.get(0);
-        relicTemplate.setName("relicVuMarkTemplate"); // can help in debugging; otherwise not necessary
-
-        vuforiaInitialized = true;
-    }
-    /**
-     * Initialize the TensorFlow Object Detection engine.  If already initialized, returns
-     * immediately
-     */
-    private void initTfod() {
-        if (tfodInitialized)
-            return;
-        int tfodMonitorViewId = hwMap.appContext.getResources().getIdentifier(
-                "tfodMonitorViewId", "id", hwMap.appContext.getPackageName());
-        TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId);
-        tfodParameters.minimumConfidence = 0.8;
-        tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
-        tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABEL_FIRST_ELEMENT, LABEL_SECOND_ELEMENT);
-        tfodInitialized = true;
-    }
-
-    /**
-     * This function moves the robot a delta x and y distance.
-     *
-     * @param opmode  OpMode of the caller.  Needed to be able to send Telemetry
-     * @param speed   speed to move
-     * @param xdist   distance in x inches to move
-     * @param ydist   distance in y inches to move
-     * @param timeout timeout in seconds to abort if move not completed.
-     */
-    public void driveByEncoder(LinearOpMode opmode, double speed, double xdist, double ydist, double timeout) {
-
-        // Compute the number of encoder counts for each wheel to move the requested distanc
-        int lfDeltaCounts = (int) Math.round((xdist + ydist) * COUNTS_PER_INCH);
-        int rfDeltaCounts = (int) Math.round((ydist - xdist) * COUNTS_PER_INCH);
-        int lrDeltaCounts = (int) Math.round((ydist - xdist) * COUNTS_PER_INCH);
-        int rrDeltaCounts = (int) Math.round((xdist + ydist) * COUNTS_PER_INCH);
-
-        // Set target counts for each motor to the above
-        lfMotor.setTargetPosition(lfDeltaCounts + lfMotor.getCurrentPosition());
-        rfMotor.setTargetPosition(rfDeltaCounts + rfMotor.getCurrentPosition());
-        lrMotor.setTargetPosition(lrDeltaCounts + lrMotor.getCurrentPosition());
-        rrMotor.setTargetPosition(rrDeltaCounts + rrMotor.getCurrentPosition());
-
-        // Set mode to run to position
-        setMotorModes(DcMotor.RunMode.RUN_TO_POSITION);
-
-        // Reset timer and set motor power
-        ElapsedTime drivetimeout = new ElapsedTime();
-        drivetimeout.reset();
-        double aspeed = Math.abs(speed);
-        if (aspeed > 1.0)
-            aspeed = 1.0;
-        setDriveMotorPower(aspeed, aspeed, aspeed, aspeed);
-
-        while (opmode.opModeIsActive() && (drivetimeout.seconds() < timeout) &&
-                (lfMotor.isBusy() || rfMotor.isBusy() || lrMotor.isBusy() || rrMotor.isBusy())) {
-
-            opmode.telemetry.addData("TargetPositions", "lf:%7d rf:%7d lr:%7d rr:%7d",
-                    lfMotor.getTargetPosition(),
-                    rfMotor.getTargetPosition(),
-                    lrMotor.getTargetPosition(),
-                    rrMotor.getTargetPosition());
-            opmode.telemetry.addData("Positions:", "lf:%7d rf:%7d lr:%7d rr:%7d",
-                    lfMotor.getCurrentPosition(),
-                    rfMotor.getCurrentPosition(),
-                    lrMotor.getCurrentPosition(),
-                    rrMotor.getCurrentPosition());
-            opmode.telemetry.update();
-        }
-        // Stop all
-        stopAll();
-    }
-
-    public static final int NO_STONES_FOUND = 0;
-    public static final int FOUND_SKYSTONE = 1;
-    public static final int FOUND_STONE = 2;
-    /**
-     * helper function to find a Stone using the Vurforia TensorFlow by strafing in the x direction
-     * @param timeout timeout to give up if no stone found
-     * @return NO_STONES_FOUND, FOUND_SKYSTONE, or FOUND_STONE
-     */
-    public int findStone(LinearOpMode opmode, boolean rightDirection, double timeout){
-        // Initialize Vuforia - if not already init'ed
-        initVuforia();
-        // Initialize the tensor flow engine - if not already init'ed
-        initTfod();
-        /**
-         * Activate TensorFlow Object Detection
-         **/
-        if (tfod != null) {
-            tfod.activate();
-        }
-
-        ElapsedTime findTimer = new ElapsedTime();
-         // Set return code assuming we don't find a stone
-        int retcode = NO_STONES_FOUND;
-         // Set 1/4 power
-        double power = 0.25;
-        if (rightDirection) {
-            // Strafe to right
-            setDriveMotorPower(power, -power, -power, power);
-        }
-        else{
-            // Strafe to left
-            setDriveMotorPower(-power, power, power, -power);
-        }
-
-       while (opmode.opModeIsActive() && (findTimer.seconds() < timeout) &&
-               (retcode == NO_STONES_FOUND)) {
-           // Now check for recognitions
-           List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
-           if (updatedRecognitions != null) {
-               opmode.telemetry.addData("# Object Detected", updatedRecognitions.size());
-               opmode.telemetry.update();
-               // step through the list of recognitions and display boundary info.
-               int i = 0;
-               for (Recognition recognition : updatedRecognitions) {
-                   opmode.telemetry.addData(String.format("label (%d)", i), recognition.getLabel());
-                   opmode.telemetry.update();
-                   if (recognition.getLabel().compareToIgnoreCase("Stone") == 0) {
-                       retcode = FOUND_STONE;
-                       break;  // Break out to return
-                   } else if (recognition.getLabel().compareToIgnoreCase("Skystone") == 0) {
-                       retcode = FOUND_SKYSTONE;
-                       break; // Break out to return
-                   }
-               }
-           }
-       }
-        // Stop the motors
-        stopAll();
-        // Shut down the engine before returning
-        if (tfod != null) {
-            tfod.shutdown();
-        }
-
-        return retcode;
-    }
 
     /**
      * Helper function sets all motor modes to the same mode
@@ -371,14 +147,16 @@ public class MecanumRobotHardware {
 
 
     /**
-     * TODO Utility function to handle motor initialization.
+     *  Utility function to handle motor initialization.
      */
-    private void tryMapMotor(String motorName){
+    private DcMotor tryMapMotor(String motorName){
+        DcMotor motor = null;
         try {
-            hwMap.get(DcMotor.class, motorName);
+            motor = hwMap.get(DcMotor.class, motorName);
         }
         catch(Exception e){
-
+            e.printStackTrace();
         }
+        return motor;
     }
 }
