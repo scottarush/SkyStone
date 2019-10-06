@@ -29,6 +29,7 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -37,21 +38,19 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 This OpMode tests the move by encoder utility in the robot class.
   */
 
-@TeleOp(name="TestMoveByEncoder", group="Robot")
+@TeleOp(name="TestDriveByEncoder", group="Robot")
 //@Disabled
-public class TestMoveByEncoder extends OpMode {
+public class TestDriveByEncoder extends LinearOpMode {
 
     /* Declare OpMode members. */
     private MecanumRobotHardware robot = null;
 
-     /*
-     * Code to run ONCE when the driver hits INIT
-     */
+    public TestDriveByEncoder(){
+
+    }
+
     @Override
-    public void init() {
-        /* Initialize the hardware variables.
-         * The init() method of the hardware class does all the work here
-         */
+    public void runOpMode() {
         try {
             robot = new MecanumRobotHardware();
             robot.init(hardwareMap);
@@ -60,41 +59,11 @@ public class TestMoveByEncoder extends OpMode {
             telemetry.addData("Robot Init Error","%s",e.getMessage());
             return;
         }
-
-        // Send telemetry message to signify robot waiting;
-        telemetry.addData("Say", "Init Complete");    //
-    }
-
-    /*
-     * Code to run REPEATEDLY after the driver hits INIT, but before they hit PLAY
-     */
-    @Override
-    public void init_loop() {
-    }
-
-    /*
-     * Code to run ONCE when the driver hits PLAY
-     */
-    @Override
-    public void start() {
-        robot.driveByEncoder(this,1.0,0.0,3.0,3);
-    }
-
-    /*
-     * Code to run REPEATEDLY after the driver hits PLAY but before they hit STOP
-     */
-    @Override
-    public void loop() {
-    }
-
-    /*
-     * Code to run ONCE after the driver hits STOP
-     */
-    @Override
-    public void stop() {
-
+        telemetry.addData("Say","Robot Initialized");
+        waitForStart();
+        
+        robot.driveByEncoder(this,1.0,5,0,5);
         robot.stopAll();
     }
 
-
- }
+}

@@ -302,11 +302,9 @@ public class MecanumRobotHardware {
 
     /**
      * helper function to find a Stone using the Vurforia TensorFlow by strafing in the x direction
-     * @param xmax the maximum distance in inches left or right to strafe before giving up
-     * @param xinterval the distance in inches to move (always positive) before checking the camera for the stone
      * @param timeout timeout to give up if no stone found
      */
-    public boolean findStone(OpMode opmode, double xmax,double xinterval, double timeout){
+    public boolean findStone(LinearOpMode opmode, boolean rightDirection, double timeout){
         // Initialize Vuforia - if not already init'ed
         initVuforia();
         // Initialize the tensor flow engine - if not already init'ed
@@ -318,14 +316,24 @@ public class MecanumRobotHardware {
             tfod.activate();
         }
 
-        // Set isRunning to true
+         // Set isRunning to true
         isRunning = true;
         ElapsedTime findTimer = new ElapsedTime();
         boolean foundStone = false;
+
+         // Set 1/4 power
+        double power = 0.25;
+        if (rightDirection) {
+            // Strafe to right
+            setDriveMotorPower(power, -power, -power, power);
+        }
+        else{
+            // Strafe to left
+            setDriveMotorPower(-power, power, power, -power);
+        }
+
         while (isRunning && (findTimer.seconds() < timeout)){
-            // Move the robot by xinterval and check for the stone
-            double movetimeout = timeout-findTimer.seconds();
-            driveByEncoder(opmode,0.25,xinterval,0,movetimeout);
+
             // Now check for recognitions
             List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
             if (updatedRecognitions != null) {
@@ -341,8 +349,9 @@ public class MecanumRobotHardware {
                   }
                 opmode.telemetry.update();
             }
-
         }
+        // Stop the motors
+        stopAll();
         // Shut down the engine before returning
         if (tfod != null) {
             tfod.shutdown();
@@ -362,6 +371,7 @@ public class MecanumRobotHardware {
         lrMotor.setMode(mode);
         rrMotor.setMode(mode);
     }
+
 
     /**
      * TODO Utility function to handle motor initialization.

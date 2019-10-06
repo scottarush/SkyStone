@@ -29,6 +29,7 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -39,62 +40,35 @@ This class tests the findStone utility.
 
 @TeleOp(name="TestFindStone", group="Robot")
 //@Disabled
-public class TestFindStone extends OpMode {
+public class TestFindStone extends LinearOpMode {
 
     /* Declare OpMode members. */
     private MecanumRobotHardware robot = null;
 
-     /*
-     * Code to run ONCE when the driver hits INIT
-     */
+    public TestFindStone() {
+
+    }
+
     @Override
-    public void init() {
-        /* Initialize the hardware variables.
-         * The init() method of the hardware class does all the work here
-         */
+    public void runOpMode() {
         try {
             robot = new MecanumRobotHardware();
             robot.init(hardwareMap);
-        }
-        catch(Exception e){
-            telemetry.addData("Robot Init Error","%s",e.getMessage());
+        } catch (Exception e) {
+            telemetry.addData("Robot Init Error", "%s", e.getMessage());
             return;
         }
+        telemetry.addData("Say","Robot Initialized");
+        waitForStart();
 
-        // Send telemetry message to signify robot waiting;
-        telemetry.addData("Say", "Init Complete");    //
-    }
-
-    /*
-     * Code to run REPEATEDLY after the driver hits INIT, but before they hit PLAY
-     */
-    @Override
-    public void init_loop() {
-    }
-
-    /*
-     * Code to run ONCE when the driver hits PLAY
-     */
-    @Override
-    public void start() {
-        robot.findStone(this,12,1,5 );
-    }
-
-    /*
-     * Code to run REPEATEDLY after the driver hits PLAY but before they hit STOP
-     */
-    @Override
-    public void loop() {
-    }
-
-    /*
-     * Code to run ONCE after the driver hits STOP
-     */
-    @Override
-    public void stop() {
-
+        boolean found = robot.findStone(this, true, 5);
+        if (found) {
+            telemetry.addData("Status","Found Stone");
+        }
+        else {
+            telemetry.addData("Status", "Could not find stone.");
+        }
         robot.stopAll();
     }
 
-
- }
+}
