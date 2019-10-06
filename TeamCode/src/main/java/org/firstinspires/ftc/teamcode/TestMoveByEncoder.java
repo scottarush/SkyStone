@@ -34,7 +34,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 
 /**
-This class implements the equations that Marcus derived on October 3.
+This OpMode tests the move by encoder utility in the robot class.
   */
 
 @TeleOp(name="TestMoveByEncoder", group="Robot")
