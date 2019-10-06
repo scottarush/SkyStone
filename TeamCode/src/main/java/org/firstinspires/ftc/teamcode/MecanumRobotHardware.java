@@ -197,7 +197,15 @@ public class MecanumRobotHardware
         relicTemplate.setName("relicVuMarkTemplate"); // can help in debugging; otherwise not necessary
     }
 
-    public void moveRobot(OpMode opmode, double speed, double xdist, double ydist, double timeout){
+    /**
+     * This function moves the robot a delta x and y distance.
+     * @param opmode OpMode of the caller.  Needed to be able to send Telemetry
+     * @param speed speed to move
+     * @param xdist distance in x inches to move
+     * @param ydist distance in y inches to move
+     * @param timeout timeout in seconds to abort if move not completed.
+     */
+    public void driveByEncoder(OpMode opmode, double speed, double xdist, double ydist, double timeout){
 
         // Compute the number of encoder counts for each wheel to move the requested distanc
         int lfDeltaCounts = (int)Math.round((xdist+ydist) * COUNTS_PER_INCH);
@@ -250,4 +258,8 @@ public class MecanumRobotHardware
         lrMotor.setMode(mode);
         rrMotor.setMode(mode);
     }
+
+    /**
+     * TODO Utility function to handle motor initialization.
+     */
 }

@@ -29,7 +29,6 @@
 
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -78,7 +77,7 @@ public class TestMoveByEncoder extends OpMode {
      */
     @Override
     public void start() {
-        robot.moveRobot(this,1.0,0.0,3.0,3);
+        robot.driveByEncoder(this,1.0,0.0,3.0,3);
     }
 
     /*
