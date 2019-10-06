@@ -225,6 +225,8 @@ public class MecanumRobotHardware
          // Reset timer and set motor power
         timeoutTimer.reset();
         double aspeed = Math.abs(speed);
+        if (aspeed > 1.0)
+            aspeed = 1.0;
         setDriveMotorPower(aspeed,aspeed,aspeed,aspeed);
 
         // Set isRunning to true
