@@ -38,6 +38,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcontroller.external.samples.ConceptVuforiaNavigationWebcam;
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
 import org.firstinspires.ftc.robotcore.external.navigation.VuMarkInstanceId;
@@ -65,8 +66,7 @@ import java.util.concurrent.CountDownLatch;
  * Motor channel:  Right rear drive motor:   "right_rear_drive"
  *
  */
-public class MecanumRobotHardware
-{
+public class MecanumRobotHardware {
     /* Public OpMode members. */
     public DcMotor lfMotor = null;
     public DcMotor rfMotor = null;
@@ -74,21 +74,29 @@ public class MecanumRobotHardware
     public DcMotor rrMotor = null;
 
     /* local OpMode members. */
-    HardwareMap hwMap           =  null;
-    private ElapsedTime period  = new ElapsedTime();
+    HardwareMap hwMap = null;
+    private ElapsedTime period = new ElapsedTime();
 
     OpenGLMatrix lastLocation = null;
 
-    /** Number of encoder counts of each rotation of the shaft.**/
+    /**
+     * Number of encoder counts of each rotation of the shaft.
+     **/
     public static final double ENCODER_COUNTS_PER_ROTATION = 1120;
 
-    /** Wheel circumference in inches **/
+    /**
+     * Wheel circumference in inches
+     **/
     public static final double MECANUM_WHEEL_CIRCUMFERENCE = 12.1211;
 
-    /** Number of counts per inch of direct wheel movement.  **/
-    public static final int COUNTS_PER_INCH = (int)Math.round(ENCODER_COUNTS_PER_ROTATION / MECANUM_WHEEL_CIRCUMFERENCE);
-    /** Timer for timouts**/
-     private ElapsedTime timeoutTimer = new ElapsedTime();
+    /**
+     * Number of counts per inch of direct wheel movement.
+     **/
+    public static final int COUNTS_PER_INCH = (int) Math.round(ENCODER_COUNTS_PER_ROTATION / MECANUM_WHEEL_CIRCUMFERENCE);
+    /**
+     * Timer for timouts
+     **/
+    private ElapsedTime timeoutTimer = new ElapsedTime();
     /**
      * {@link #vuforia} is the variable we will use to store our instance of the Vuforia
      * localization engine.
@@ -101,17 +109,19 @@ public class MecanumRobotHardware
      */
     WebcamName webcamName;
 
-    /** activity flag set true whenever a utility method is running **/
+    /**
+     * activity flag set true whenever a utility method is running
+     **/
     private boolean isRunning = false;
 
     /* Constructor */
-    public MecanumRobotHardware(){
+    public MecanumRobotHardware() {
 
     }
 
     /* Initialize standard Hardware interfaces.
-    * NOTE:  This class throws Exception on any hardware init error so be sure to catch and
-    * report to Telemttry in your initialization. */
+     * NOTE:  This class throws Exception on any hardware init error so be sure to catch and
+     * report to Telemttry in your initialization. */
     public void init(HardwareMap ahwMap) throws Exception {
         // Save reference to Hardware map
         hwMap = ahwMap;
@@ -125,10 +135,9 @@ public class MecanumRobotHardware
         rrMotor = hwMap.get(DcMotor.class, "right_rear_drive");
 
         // Set all motors to zero power
-        setDriveMotorPower(0,0,0,0);
+        setDriveMotorPower(0, 0, 0, 0);
 
-        // Reset and Set all motors to run with encoders.
-        setMotorModes(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        // Set all motors to run with encoders.
         setMotorModes(DcMotor.RunMode.RUN_USING_ENCODER);
 
         // TODO Define and initialize ALL installed servos once the actuators are defined by the build team
@@ -137,12 +146,13 @@ public class MecanumRobotHardware
 
     /**
      * Helper function to set power to the wheel drive motors
+     *
      * @param lf left front motor power
      * @param rf right front motor power
      * @param lr left rear motor power
      * @param rr right rear motor power
      */
-    public void setDriveMotorPower(double lf, double rf, double lr, double rr){
+    public void setDriveMotorPower(double lf, double rf, double lr, double rr) {
         lfMotor.setPower(lf);
         rfMotor.setPower(rf);
         lrMotor.setPower(lr);
@@ -152,14 +162,14 @@ public class MecanumRobotHardware
     /**
      * helper function to stop all motors on the robot.
      */
-    public void stopAll(){
+    public void stopAll() {
         // Clear isRunning flag
         isRunning = false;
 
-        setDriveMotorPower(0,0,0,0);
-     }
+        setDriveMotorPower(0, 0, 0, 0);
+    }
 
-    private void initVuforia(){
+    private void initVuforia() {
         /*
          * Retrieve the camera we are to use.
          */
@@ -199,52 +209,53 @@ public class MecanumRobotHardware
 
     /**
      * This function moves the robot a delta x and y distance.
-     * @param opmode OpMode of the caller.  Needed to be able to send Telemetry
-     * @param speed speed to move
-     * @param xdist distance in x inches to move
-     * @param ydist distance in y inches to move
+     *
+     * @param opmode  OpMode of the caller.  Needed to be able to send Telemetry
+     * @param speed   speed to move
+     * @param xdist   distance in x inches to move
+     * @param ydist   distance in y inches to move
      * @param timeout timeout in seconds to abort if move not completed.
      */
-    public void driveByEncoder(OpMode opmode, double speed, double xdist, double ydist, double timeout){
+    public void driveByEncoder(OpMode opmode, double speed, double xdist, double ydist, double timeout) {
 
         // Compute the number of encoder counts for each wheel to move the requested distanc
-        int lfDeltaCounts = (int)Math.round((xdist+ydist) * COUNTS_PER_INCH);
-        int rfDeltaCounts = (int) Math.round((ydist-xdist) * COUNTS_PER_INCH);
-        int lrDeltaCounts = (int)Math.round((ydist-xdist) * COUNTS_PER_INCH);
-        int rrDeltaCounts = (int)Math.round((xdist+ydist) * COUNTS_PER_INCH);
+        int lfDeltaCounts = (int) Math.round((xdist + ydist) * COUNTS_PER_INCH);
+        int rfDeltaCounts = (int) Math.round((ydist - xdist) * COUNTS_PER_INCH);
+        int lrDeltaCounts = (int) Math.round((ydist - xdist) * COUNTS_PER_INCH);
+        int rrDeltaCounts = (int) Math.round((xdist + ydist) * COUNTS_PER_INCH);
 
         // Set target counts for each motor to the above
-        lfMotor.setTargetPosition(lfDeltaCounts+lfMotor.getCurrentPosition());
-        rfMotor.setTargetPosition(rfDeltaCounts+rfMotor.getCurrentPosition());
-        lrMotor.setTargetPosition(lrDeltaCounts+lrMotor.getCurrentPosition());
-        rrMotor.setTargetPosition(rrDeltaCounts+rrMotor.getCurrentPosition());
+        lfMotor.setTargetPosition(lfDeltaCounts + lfMotor.getCurrentPosition());
+        rfMotor.setTargetPosition(rfDeltaCounts + rfMotor.getCurrentPosition());
+        lrMotor.setTargetPosition(lrDeltaCounts + lrMotor.getCurrentPosition());
+        rrMotor.setTargetPosition(rrDeltaCounts + rrMotor.getCurrentPosition());
 
         // Set mode to run to position
         setMotorModes(DcMotor.RunMode.RUN_TO_POSITION);
 
-         // Reset timer and set motor power
+        // Reset timer and set motor power
         timeoutTimer.reset();
         double aspeed = Math.abs(speed);
         if (aspeed > 1.0)
             aspeed = 1.0;
-        setDriveMotorPower(aspeed,aspeed,aspeed,aspeed);
+        setDriveMotorPower(aspeed, aspeed, aspeed, aspeed);
 
         // Set isRunning to true
         isRunning = true;
-         while(isRunning &&(timeoutTimer.seconds() < timeout) &&
-                (lfMotor.isBusy() || rfMotor.isBusy() || lrMotor.isBusy() || rrMotor.isBusy())){
+        while (isRunning && (timeoutTimer.seconds() < timeout) &&
+                (lfMotor.isBusy() || rfMotor.isBusy() || lrMotor.isBusy() || rrMotor.isBusy())) {
 
-             opmode.telemetry.addData("TargetPositions","lf:%7d rf:%7d lr:%7d rr:%7d",
-                     lfMotor.getTargetPosition(),
-                     rfMotor.getTargetPosition(),
-                     lrMotor.getTargetPosition(),
-                     rrMotor.getTargetPosition());
-             opmode.telemetry.addData("Positions:",  "lf:%7d rf:%7d lr:%7d rr:%7d",
-                     lfMotor.getCurrentPosition(),
-                     rfMotor.getCurrentPosition(),
-                     lrMotor.getCurrentPosition(),
-                     rrMotor.getCurrentPosition());
-             opmode.telemetry.update();
+            opmode.telemetry.addData("TargetPositions", "lf:%7d rf:%7d lr:%7d rr:%7d",
+                    lfMotor.getTargetPosition(),
+                    rfMotor.getTargetPosition(),
+                    lrMotor.getTargetPosition(),
+                    rrMotor.getTargetPosition());
+            opmode.telemetry.addData("Positions:", "lf:%7d rf:%7d lr:%7d rr:%7d",
+                    lfMotor.getCurrentPosition(),
+                    rfMotor.getCurrentPosition(),
+                    lrMotor.getCurrentPosition(),
+                    rrMotor.getCurrentPosition());
+            opmode.telemetry.update();
         }
         // Stop all
         stopAll();
@@ -252,9 +263,10 @@ public class MecanumRobotHardware
 
     /**
      * Helper function sets all motor modes to the same mode
+     *
      * @param mode
      */
-    public void setMotorModes(DcMotor.RunMode mode){
+    public void setMotorModes(DcMotor.RunMode mode) {
         lfMotor.setMode(mode);
         rfMotor.setMode(mode);
         lrMotor.setMode(mode);
@@ -264,4 +276,12 @@ public class MecanumRobotHardware
     /**
      * TODO Utility function to handle motor initialization.
      */
+    private void tryMapMotor(String motorName){
+        try {
+            hwMap.get(DcMotor.class, motorName);
+        }
+        catch(Exception e){
+
+        }
+    }
 }
