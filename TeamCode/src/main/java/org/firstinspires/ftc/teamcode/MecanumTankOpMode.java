@@ -64,6 +64,7 @@ public class MecanumTankOpMode extends OpMode{
         }
         catch(Exception e){
             telemetry.addData("Robot Init Error","%s",e.getMessage());
+            telemetry.update();
             return;
         }
 
