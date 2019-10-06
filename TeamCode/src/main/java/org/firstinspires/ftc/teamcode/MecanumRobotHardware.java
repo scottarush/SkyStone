@@ -45,7 +45,10 @@ import org.firstinspires.ftc.robotcore.external.navigation.VuMarkInstanceId;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackable;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackables;
+import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
+import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
 
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -93,15 +96,32 @@ public class MecanumRobotHardware {
      * Number of counts per inch of direct wheel movement.
      **/
     public static final int COUNTS_PER_INCH = (int) Math.round(ENCODER_COUNTS_PER_ROTATION / MECANUM_WHEEL_CIRCUMFERENCE);
-    /**
-     * Timer for timouts
-     **/
-    private ElapsedTime timeoutTimer = new ElapsedTime();
-    /**
+     /**
      * {@link #vuforia} is the variable we will use to store our instance of the Vuforia
      * localization engine.
      */
     VuforiaLocalizer vuforia;
+
+    /**
+     * Flag set true when vuforia is initialized.
+     */
+    private boolean vuforiaInitialized = false;
+
+    //--------------------------------------------
+    // TensorFlow engine variables
+    private static final String TFOD_MODEL_ASSET = "Skystone.tflite";
+    private static final String LABEL_FIRST_ELEMENT = "Stone";
+    private static final String LABEL_SECOND_ELEMENT = "Skystone";
+
+    /**
+     * {@link #tfod} is the variable we will use to store our instance of the TensorFlow Object
+     * Detection engine.
+     */
+    private TFObjectDetector tfod;
+    /**
+     * Flag set true when tfod is initialized.
+     */
+    private boolean tfodInitialized = false;
 
     /**
      * This is the webcam we are to use. As with other hardware devices such as motors and
@@ -170,6 +190,8 @@ public class MecanumRobotHardware {
     }
 
     private void initVuforia() {
+        if (vuforiaInitialized)
+            return;
         /*
          * Retrieve the camera we are to use.
          */
@@ -205,6 +227,23 @@ public class MecanumRobotHardware {
         VuforiaTrackables relicTrackables = this.vuforia.loadTrackablesFromAsset("RelicVuMark");
         VuforiaTrackable relicTemplate = relicTrackables.get(0);
         relicTemplate.setName("relicVuMarkTemplate"); // can help in debugging; otherwise not necessary
+
+        vuforiaInitialized = true;
+    }
+    /**
+     * Initialize the TensorFlow Object Detection engine.  If already initialized, returns
+     * immediately
+     */
+    private void initTfod() {
+        if (tfodInitialized)
+            return;
+        int tfodMonitorViewId = hwMap.appContext.getResources().getIdentifier(
+                "tfodMonitorViewId", "id", hwMap.appContext.getPackageName());
+        TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId);
+        tfodParameters.minimumConfidence = 0.8;
+        tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
+        tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABEL_FIRST_ELEMENT, LABEL_SECOND_ELEMENT);
+        tfodInitialized = true;
     }
 
     /**
@@ -234,7 +273,7 @@ public class MecanumRobotHardware {
         setMotorModes(DcMotor.RunMode.RUN_TO_POSITION);
 
         // Reset timer and set motor power
-        timeoutTimer.reset();
+        ElapsedTime drivetimeout = new ElapsedTime();
         double aspeed = Math.abs(speed);
         if (aspeed > 1.0)
             aspeed = 1.0;
@@ -242,7 +281,7 @@ public class MecanumRobotHardware {
 
         // Set isRunning to true
         isRunning = true;
-        while (isRunning && (timeoutTimer.seconds() < timeout) &&
+        while (isRunning && (drivetimeout.seconds() < timeout) &&
                 (lfMotor.isBusy() || rfMotor.isBusy() || lrMotor.isBusy() || rrMotor.isBusy())) {
 
             opmode.telemetry.addData("TargetPositions", "lf:%7d rf:%7d lr:%7d rr:%7d",
@@ -259,6 +298,57 @@ public class MecanumRobotHardware {
         }
         // Stop all
         stopAll();
+    }
+
+    /**
+     * helper function to find a Stone using the Vurforia TensorFlow by strafing in the x direction
+     * @param xmax the maximum distance in inches left or right to strafe before giving up
+     * @param xinterval the distance in inches to move (always positive) before checking the camera for the stone
+     * @param timeout timeout to give up if no stone found
+     */
+    public boolean findStone(OpMode opmode, double xmax,double xinterval, double timeout){
+        // Initialize Vuforia - if not already init'ed
+        initVuforia();
+        // Initialize the tensor flow engine - if not already init'ed
+        initTfod();
+        /**
+         * Activate TensorFlow Object Detection
+         **/
+        if (tfod != null) {
+            tfod.activate();
+        }
+
+        // Set isRunning to true
+        isRunning = true;
+        ElapsedTime findTimer = new ElapsedTime();
+        boolean foundStone = false;
+        while (isRunning && (findTimer.seconds() < timeout)){
+            // Move the robot by xinterval and check for the stone
+            double movetimeout = timeout-findTimer.seconds();
+            driveByEncoder(opmode,0.25,xinterval,0,movetimeout);
+            // Now check for recognitions
+            List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
+            if (updatedRecognitions != null) {
+                opmode.telemetry.addData("# Object Detected", updatedRecognitions.size());
+                // step through the list of recognitions and display boundary info.
+                int i = 0;
+                for (Recognition recognition : updatedRecognitions) {
+                    opmode.telemetry.addData(String.format("label (%d)", i), recognition.getLabel());
+                    if (recognition.getLabel().equals("Stone")){
+                        foundStone = true;
+                        break;  // Break out to return
+                    }
+                  }
+                opmode.telemetry.update();
+            }
+
+        }
+        // Shut down the engine before returning
+        if (tfod != null) {
+            tfod.shutdown();
+        }
+
+        return foundStone;
     }
 
     /**
