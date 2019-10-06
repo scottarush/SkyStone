@@ -61,13 +61,20 @@ public class TestFindStone extends LinearOpMode {
         telemetry.addData("Say","Robot Initialized");
         waitForStart();
 
-        boolean found = robot.findStone(this, true, 5);
-        if (found) {
-            telemetry.addData("Status","Found Stone");
+        int retcode = robot.findStone(this, false, 10);
+        switch(retcode) {
+            case MecanumRobotHardware.NO_STONES_FOUND:
+                telemetry.addData("Status", "No Stones Found");
+                break;
+            case MecanumRobotHardware.FOUND_STONE:
+                telemetry.addData("Status", "Found Stone");
+                break;
+            case MecanumRobotHardware.FOUND_SKYSTONE:
+                telemetry.addData("Status", "Found Skystone");
+                break;
         }
-        else {
-            telemetry.addData("Status", "Could not find stone.");
-        }
+
+         telemetry.update();
         robot.stopAll();
     }
 

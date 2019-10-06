@@ -129,11 +129,6 @@ public class MecanumRobotHardware {
      */
     WebcamName webcamName;
 
-    /**
-     * activity flag set true whenever a utility method is running
-     **/
-    private boolean isRunning = false;
-
     /* Constructor */
     public MecanumRobotHardware() {
 
@@ -183,9 +178,6 @@ public class MecanumRobotHardware {
      * helper function to stop all motors on the robot.
      */
     public void stopAll() {
-        // Clear isRunning flag
-        isRunning = false;
-
         setDriveMotorPower(0, 0, 0, 0);
     }
 
@@ -255,7 +247,7 @@ public class MecanumRobotHardware {
      * @param ydist   distance in y inches to move
      * @param timeout timeout in seconds to abort if move not completed.
      */
-    public void driveByEncoder(OpMode opmode, double speed, double xdist, double ydist, double timeout) {
+    public void driveByEncoder(LinearOpMode opmode, double speed, double xdist, double ydist, double timeout) {
 
         // Compute the number of encoder counts for each wheel to move the requested distanc
         int lfDeltaCounts = (int) Math.round((xdist + ydist) * COUNTS_PER_INCH);
@@ -274,14 +266,13 @@ public class MecanumRobotHardware {
 
         // Reset timer and set motor power
         ElapsedTime drivetimeout = new ElapsedTime();
+        drivetimeout.reset();
         double aspeed = Math.abs(speed);
         if (aspeed > 1.0)
             aspeed = 1.0;
         setDriveMotorPower(aspeed, aspeed, aspeed, aspeed);
 
-        // Set isRunning to true
-        isRunning = true;
-        while (isRunning && (drivetimeout.seconds() < timeout) &&
+        while (opmode.opModeIsActive() && (drivetimeout.seconds() < timeout) &&
                 (lfMotor.isBusy() || rfMotor.isBusy() || lrMotor.isBusy() || rrMotor.isBusy())) {
 
             opmode.telemetry.addData("TargetPositions", "lf:%7d rf:%7d lr:%7d rr:%7d",
@@ -300,11 +291,15 @@ public class MecanumRobotHardware {
         stopAll();
     }
 
+    public static final int NO_STONES_FOUND = 0;
+    public static final int FOUND_SKYSTONE = 1;
+    public static final int FOUND_STONE = 2;
     /**
      * helper function to find a Stone using the Vurforia TensorFlow by strafing in the x direction
      * @param timeout timeout to give up if no stone found
+     * @return NO_STONES_FOUND, FOUND_SKYSTONE, or FOUND_STONE
      */
-    public boolean findStone(LinearOpMode opmode, boolean rightDirection, double timeout){
+    public int findStone(LinearOpMode opmode, boolean rightDirection, double timeout){
         // Initialize Vuforia - if not already init'ed
         initVuforia();
         // Initialize the tensor flow engine - if not already init'ed
@@ -316,11 +311,9 @@ public class MecanumRobotHardware {
             tfod.activate();
         }
 
-         // Set isRunning to true
-        isRunning = true;
         ElapsedTime findTimer = new ElapsedTime();
-        boolean foundStone = false;
-
+         // Set return code assuming we don't find a stone
+        int retcode = NO_STONES_FOUND;
          // Set 1/4 power
         double power = 0.25;
         if (rightDirection) {
@@ -332,24 +325,28 @@ public class MecanumRobotHardware {
             setDriveMotorPower(-power, power, power, -power);
         }
 
-        while (isRunning && (findTimer.seconds() < timeout)){
-
-            // Now check for recognitions
-            List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
-            if (updatedRecognitions != null) {
-                opmode.telemetry.addData("# Object Detected", updatedRecognitions.size());
-                // step through the list of recognitions and display boundary info.
-                int i = 0;
-                for (Recognition recognition : updatedRecognitions) {
-                    opmode.telemetry.addData(String.format("label (%d)", i), recognition.getLabel());
-                    if (recognition.getLabel().equals("Stone")){
-                        foundStone = true;
-                        break;  // Break out to return
-                    }
-                  }
-                opmode.telemetry.update();
-            }
-        }
+       while (opmode.opModeIsActive() && (findTimer.seconds() < timeout) &&
+               (retcode == NO_STONES_FOUND)) {
+           // Now check for recognitions
+           List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
+           if (updatedRecognitions != null) {
+               opmode.telemetry.addData("# Object Detected", updatedRecognitions.size());
+               opmode.telemetry.update();
+               // step through the list of recognitions and display boundary info.
+               int i = 0;
+               for (Recognition recognition : updatedRecognitions) {
+                   opmode.telemetry.addData(String.format("label (%d)", i), recognition.getLabel());
+                   opmode.telemetry.update();
+                   if (recognition.getLabel().compareToIgnoreCase("Stone") == 0) {
+                       retcode = FOUND_STONE;
+                       break;  // Break out to return
+                   } else if (recognition.getLabel().compareToIgnoreCase("Skystone") == 0) {
+                       retcode = FOUND_SKYSTONE;
+                       break; // Break out to return
+                   }
+               }
+           }
+       }
         // Stop the motors
         stopAll();
         // Shut down the engine before returning
@@ -357,7 +354,7 @@ public class MecanumRobotHardware {
             tfod.shutdown();
         }
 
-        return foundStone;
+        return retcode;
     }
 
     /**
