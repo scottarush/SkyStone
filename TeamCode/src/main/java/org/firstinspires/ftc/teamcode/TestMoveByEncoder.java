@@ -29,6 +29,7 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -37,20 +38,14 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 This class implements the equations that Marcus derived on October 3.
   */
 
-@TeleOp(name="Tank Drive", group="Robot")
+@TeleOp(name="TestMoveByEncoder", group="Robot")
 //@Disabled
-public class MecanumTankOpMode extends OpMode{
+public class TestMoveByEncoder extends OpMode {
 
     /* Declare OpMode members. */
     private MecanumRobotHardware robot = null;
 
-    /** current motor speeds. **/
-    private double lfPower = 0;
-    private double rfPower = 0;
-    private double lrPower = 0;
-    private double rrPower = 0;
-
-    /*
+     /*
      * Code to run ONCE when the driver hits INIT
      */
     @Override
@@ -76,13 +71,14 @@ public class MecanumTankOpMode extends OpMode{
      */
     @Override
     public void init_loop() {
-     }
+    }
 
     /*
      * Code to run ONCE when the driver hits PLAY
      */
     @Override
     public void start() {
+        robot.moveRobot(this,1.0,0.0,3.0,3);
     }
 
     /*
@@ -90,29 +86,6 @@ public class MecanumTankOpMode extends OpMode{
      */
     @Override
     public void loop() {
-         // Run wheels in tank mode (note: The joystick goes negative when pushed forwards, so negate it)
-        double xleft = gamepad1.left_stick_x;
-        double yleft = -gamepad1.left_stick_y;
-        double xright = gamepad1.right_stick_x;
-        double yright = -gamepad1.right_stick_y;
-
-        // the speeds with the new gamepad inputs
-        computeMotorPower(xleft,yleft,xright,yright);
-
-        // Set the motor power to the speeds
-        robot.setDriveMotorPower(lfPower, rfPower, lrPower, rrPower);
-        telemetry.addData("Gamepad:","xl=%.2f yl=%.2f xr=%.2f yr=%.2f",
-            xleft,yleft,xright,yright);
-        // log the speeds to telemetry
-        telemetry.addData("Wheel speeds:", "lf=%.2f rf=%.2f lr=%.2f rr=%.2f",
-                lfPower, rfPower, lrPower, rrPower);
-        telemetry.addData("Encoder positions","lf=%d rf=%d lr=%d rr=%d",
-                robot.lfMotor.getCurrentPosition(),
-                robot.lrMotor.getCurrentPosition(),
-                robot.rfMotor.getCurrentPosition(),
-                robot.rrMotor.getCurrentPosition());
-
-         telemetry.update();
     }
 
     /*
@@ -120,46 +93,9 @@ public class MecanumTankOpMode extends OpMode{
      */
     @Override
     public void stop() {
-        lfPower = 0;
-        rfPower = 0;
-        lrPower = 0;
-        rrPower = 0;
 
         robot.stopAll();
     }
 
-    /**
-     * This is a helper function that takes input from a dual joy stick and computes the speed
-     * of each Mecanum wheel motor.
-     *
-     * positive x is to the right
-     * positive y is up
-     *
-     * @param xleft x coordinate of left stick
-     * @param yleft y coordinate of left stick
-     * @param xright x coordinate of right stick
-     * @param yright y coordinate of right stick
-     *
-     **/
-    private void computeMotorPower(double xleft, double yleft, double xright, double yright) {
-
-        lfPower = yleft+(xleft+xright)/2;
-        rfPower = yright - (xleft+xright)/2;
-        lrPower = yleft-(xleft + xright)/2;
-        rrPower = yright + (xleft+xright)/2;
-
-        /**
-         * Now normalize the wheel speed commands:
-         * Let speedmax be the maximum absolute value of the four wheel speed commands.
-         * If speedmax is greater than 1, then divide each of the four wheel speed commands by speedmax.
-         **/
-        double speedmax = Math.abs(lfPower + rfPower + lrPower + rrPower);
-        if (speedmax > 4.0){
-            lfPower = lfPower /speedmax;
-            rfPower = rfPower / speedmax;
-            lrPower = lrPower / speedmax;
-            rrPower = rrPower / speedmax;
-        }
-    }
 
  }
