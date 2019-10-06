@@ -44,7 +44,7 @@ public class TestDriveByEncoder extends LinearOpMode {
 
     /* Declare OpMode members. */
     private MecanumRobotHardware robot = null;
-
+    private UtilityMethods utilities = null;
     public TestDriveByEncoder(){
 
     }
@@ -54,6 +54,7 @@ public class TestDriveByEncoder extends LinearOpMode {
         try {
             robot = new MecanumRobotHardware();
             robot.init(hardwareMap);
+            utilities = new UtilityMethods(robot);
         }
         catch(Exception e){
             telemetry.addData("Robot Init Error","%s",e.getMessage());
@@ -62,7 +63,7 @@ public class TestDriveByEncoder extends LinearOpMode {
         telemetry.addData("Say","Robot Initialized");
         waitForStart();
 
-        robot.driveByEncoder(this,1.0,5,0,5);
+        utilities.driveByEncoder(this,1.0,5,0,5);
         robot.stopAll();
     }
 
