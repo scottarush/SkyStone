@@ -29,8 +29,11 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+
+import org.firstinspires.ftc.teamcode.drivetrain.MecanumDrive;
 
 
 /**
@@ -42,7 +45,7 @@ This class implements the equations that Marcus derived on October 3.
 public class MecanumTankOpMode extends OpMode{
 
     /* Declare OpMode members. */
-    private MecanumRobotHardware robot = null;
+    private MecanumDrive robot = null;
 
     /** current motor speeds. **/
     private double lfPower = 0;
@@ -59,7 +62,7 @@ public class MecanumTankOpMode extends OpMode{
          * The init() method of the hardware class does all the work here
          */
         try {
-            robot = new MecanumRobotHardware();
+            robot = new MecanumDrive();
             robot.init(hardwareMap);
         }
         catch(Exception e){
@@ -101,7 +104,7 @@ public class MecanumTankOpMode extends OpMode{
         computeMotorPower(xleft,yleft,xright,yright);
 
         // Set the motor power to the speeds
-        robot.setDriveMotorPower(lfPower, rfPower, lrPower, rrPower);
+        robot.setPower(lfPower, rfPower, lrPower, rrPower);
         telemetry.addData("Gamepad:","xl=%.2f yl=%.2f xr=%.2f yr=%.2f",
             xleft,yleft,xright,yright);
         // log the speeds to telemetry
@@ -121,7 +124,7 @@ public class MecanumTankOpMode extends OpMode{
      */
     @Override
     public void stop() {
-         robot.stopAll();
+         robot.stop();
     }
 
     /**

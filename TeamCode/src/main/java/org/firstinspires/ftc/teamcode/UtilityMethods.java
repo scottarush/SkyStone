@@ -39,6 +39,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackable;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackableDefaultListener;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
+import org.firstinspires.ftc.teamcode.drivetrain.MecanumDrive;
 
 import java.util.List;
 
@@ -80,13 +81,13 @@ public class UtilityMethods {
     final float CAMERA_LEFT_DISPLACEMENT     = 0;     // eg: Camera is ON the robot's center line
 
 
-    private MecanumRobotHardware robot;
+    private MecanumDrive robot;
 
     /** reference to vuforia base.  **/
     private VuforiaCommon vuforiaCommon;
 
     /* Constructor */
-    public UtilityMethods(MecanumRobotHardware theRobot) {
+    public UtilityMethods(MecanumDrive theRobot) {
         robot = theRobot;
         vuforiaCommon = new VuforiaCommon(robot.hwMap);
      }
@@ -103,10 +104,10 @@ public class UtilityMethods {
     public void driveByEncoder(LinearOpMode opmode, double speed, double xdist, double ydist, double timeout) {
 
         // Compute the number of encoder counts for each wheel to move the requested distanc
-        int lfDeltaCounts = (int) Math.round((xdist + ydist) * MecanumRobotHardware.COUNTS_PER_INCH);
-        int rfDeltaCounts = (int) Math.round((ydist - xdist) * MecanumRobotHardware.COUNTS_PER_INCH);
-        int lrDeltaCounts = (int) Math.round((ydist - xdist) * MecanumRobotHardware.COUNTS_PER_INCH);
-        int rrDeltaCounts = (int) Math.round((xdist + ydist) * MecanumRobotHardware.COUNTS_PER_INCH);
+        int lfDeltaCounts = (int) Math.round((xdist + ydist) * MecanumDrive.COUNTS_PER_INCH);
+        int rfDeltaCounts = (int) Math.round((ydist - xdist) * MecanumDrive.COUNTS_PER_INCH);
+        int lrDeltaCounts = (int) Math.round((ydist - xdist) * MecanumDrive.COUNTS_PER_INCH);
+        int rrDeltaCounts = (int) Math.round((xdist + ydist) * MecanumDrive.COUNTS_PER_INCH);
 
         // Set target counts for each motor to the above
         robot.lfMotor.setTargetPosition(lfDeltaCounts + robot.lfMotor.getCurrentPosition());
@@ -123,7 +124,7 @@ public class UtilityMethods {
         double aspeed = Math.abs(speed);
         if (aspeed > 1.0)
             aspeed = 1.0;
-        robot.setDriveMotorPower(aspeed, aspeed, aspeed, aspeed);
+        robot.setPower(aspeed, aspeed, aspeed, aspeed);
 
         while (opmode.opModeIsActive() && (drivetimeout.seconds() < timeout) &&
                 (robot.lfMotor.isBusy() || robot.rfMotor.isBusy() || robot.lrMotor.isBusy() || robot.rrMotor.isBusy())) {
@@ -141,7 +142,7 @@ public class UtilityMethods {
             opmode.telemetry.update();
         }
         // Stop all
-        robot.stopAll();
+        robot.stop();
     }
 
     public static final int NO_STONES_FOUND = 0;
@@ -172,11 +173,11 @@ public class UtilityMethods {
         double power = 0.25;
         if (searchRight) {
             // Strafe to right
-            robot.setDriveMotorPower(power, -power, -power, power);
+            robot.setPower(power, -power, -power, power);
         }
         else{
             // Strafe to left
-            robot.setDriveMotorPower(-power, power, power, -power);
+            robot.setPower(-power, power, power, -power);
         }
 
         boolean keepSearching = true;
@@ -208,7 +209,7 @@ public class UtilityMethods {
            }
        }
         // Stop the motors
-        robot.stopAll();
+        robot.stop();
         // Shut down the engine before returning
         if (vuforiaCommon.tensorFlowObjDetector != null) {
             vuforiaCommon.tensorFlowObjDetector.shutdown();
@@ -289,7 +290,7 @@ public class UtilityMethods {
         // Disable Tracking when we are done;
         vuforiaCommon.targetsSkyStone.deactivate();
         // Stop the motors
-        robot.stopAll();
+        robot.stop();
 
         return retcode;
     }

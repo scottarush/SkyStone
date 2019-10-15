@@ -32,9 +32,8 @@ package org.firstinspires.ftc.teamcode.archive;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.util.Range;
 
-import org.firstinspires.ftc.teamcode.MecanumRobotHardware;
+import org.firstinspires.ftc.teamcode.drivetrain.MecanumDrive;
 
 
 /**
@@ -48,7 +47,7 @@ import org.firstinspires.ftc.teamcode.MecanumRobotHardware;
 public class MecanumTeleopTank_Iterative extends OpMode{
 
     /* Declare OpMode members. */
-    private MecanumRobotHardware robot = null;
+    private MecanumDrive robot = null;
 
     /** current motor speeds. **/
     private double leftFrontWheelSpeed = 0;
@@ -65,7 +64,7 @@ public class MecanumTeleopTank_Iterative extends OpMode{
          * The init() method of the hardware class does all the work here
          */
         try {
-            robot = new MecanumRobotHardware();
+            robot = new MecanumDrive();
             robot.init(hardwareMap);
         }
         catch(Exception e){
@@ -106,7 +105,7 @@ public class MecanumTeleopTank_Iterative extends OpMode{
         computeMecanumMotorSpeeds(xleft,yleft,xright,yright);
 
         // Set the motor power to the speeds
-        robot.setDriveMotorPower(leftFrontWheelSpeed,rightFrontWheelSpeed,leftRearWheelSpeed,rightRearWheelSpeed);
+        robot.setPower(leftFrontWheelSpeed,rightFrontWheelSpeed,leftRearWheelSpeed,rightRearWheelSpeed);
 
         // log the speeds to telemetry
         telemetry.addData("Wheel speeds:", "lf=%.2f rf=%.2f lr=%.2f rr=%.2f",
@@ -123,7 +122,7 @@ public class MecanumTeleopTank_Iterative extends OpMode{
         leftRearWheelSpeed = 0;
         rightRearWheelSpeed = 0;
 
-        robot.stopAll();
+        robot.stop();
     }
 
     /**

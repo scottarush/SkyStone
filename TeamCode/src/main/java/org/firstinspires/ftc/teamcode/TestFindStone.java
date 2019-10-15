@@ -32,6 +32,8 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+import org.firstinspires.ftc.teamcode.drivetrain.MecanumDrive;
+
 
 /**
 This class tests the findStone utility.
@@ -42,7 +44,7 @@ This class tests the findStone utility.
 public class TestFindStone extends LinearOpMode {
 
     /* Declare OpMode members. */
-    private MecanumRobotHardware robot = null;
+    private MecanumDrive robot = null;
 
     private UtilityMethods utilities = null;
 
@@ -53,7 +55,7 @@ public class TestFindStone extends LinearOpMode {
     @Override
     public void runOpMode() {
         try {
-            robot = new MecanumRobotHardware();
+            robot = new MecanumDrive();
             robot.init(hardwareMap);
 
             utilities = new UtilityMethods(robot);
@@ -79,7 +81,7 @@ public class TestFindStone extends LinearOpMode {
         }
 
          telemetry.update();
-        robot.stopAll();
+        robot.stop();
     }
 
 }
