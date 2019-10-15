@@ -27,7 +27,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.drivetrain;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -51,21 +51,12 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
  * Motor channel:  Right rear drive motor:   "right_rear_drive"
  *
  */
-public class MecanumRobotHardware {
+public class MecanumDrive extends Drivetrain{
     /* Public OpMode members. */
     public DcMotor lfMotor = null;
     public DcMotor rfMotor = null;
     public DcMotor lrMotor = null;
     public DcMotor rrMotor = null;
-
-    /* local OpMode members. */
-    public HardwareMap hwMap = null;
-
-
-    /**
-     * Number of encoder counts of each rotation of the shaft.
-     **/
-    public static final double ENCODER_COUNTS_PER_ROTATION = 1120;
 
     /**
      * Wheel circumference in inches
@@ -77,15 +68,15 @@ public class MecanumRobotHardware {
      **/
     public static final int COUNTS_PER_INCH = (int) Math.round(ENCODER_COUNTS_PER_ROTATION / MECANUM_WHEEL_CIRCUMFERENCE);
 
-
     /* Constructor */
-    public MecanumRobotHardware() {
+    public MecanumDrive() {
 
     }
 
     /* Initialize standard Hardware interfaces.
      * NOTE:  This class throws Exception on any hardware init error so be sure to catch and
      * report to Telemetry in your initialization. */
+    @Override
     public void init(HardwareMap ahwMap) throws Exception {
         // Save reference to Hardware map
         hwMap = ahwMap;
@@ -101,7 +92,7 @@ public class MecanumRobotHardware {
         lrMotor.setDirection(DcMotorSimple.Direction.REVERSE);
 
         // Set all motors to zero power
-        setDriveMotorPower(0, 0, 0, 0);
+        setPower(0, 0, 0, 0);
 
         // Set all motors to run with encoders.
         setMotorModes(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -118,7 +109,8 @@ public class MecanumRobotHardware {
      * @param lr left rear motor power
      * @param rr right rear motor power
      */
-    public void setDriveMotorPower(double lf, double rf, double lr, double rr) {
+    @Override
+    public void setPower(double lf, double rf, double lr, double rr) {
         lfMotor.setPower(lf);
         rfMotor.setPower(rf);
         lrMotor.setPower(lr);
@@ -126,18 +118,11 @@ public class MecanumRobotHardware {
     }
 
     /**
-     * helper function to stop all motors on the robot.
-     */
-    public void stopAll() {
-        setDriveMotorPower(0, 0, 0, 0);
-    }
-
-
-    /**
      * Helper function sets all motor modes to the same mode
      *
      * @param mode
      */
+    @Override
     public void setMotorModes(DcMotor.RunMode mode) {
         lfMotor.setMode(mode);
         rfMotor.setMode(mode);
@@ -145,11 +130,19 @@ public class MecanumRobotHardware {
         rrMotor.setMode(mode);
     }
 
+    /**
+     * helper function to stop all motors on the robot.
+     */
+    @Override
+    public void stop() {
+        setPower(0.0, 0.0, 0.0, 0.0);
+    }
 
     /**
      *  Utility function to handle motor initialization.
      */
-    private DcMotor tryMapMotor(String motorName){
+    @Override
+    DcMotor tryMapMotor(String motorName){
         DcMotor motor = null;
         try {
             motor = hwMap.get(DcMotor.class, motorName);

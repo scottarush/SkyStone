@@ -30,8 +30,7 @@ package org.firstinspires.ftc.teamcode;/* Copyright (c) 2017 FIRST. All rights r
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.firstinspires.ftc.teamcode.MecanumRobotHardware;
-import org.firstinspires.ftc.teamcode.UtilityMethods;
+import org.firstinspires.ftc.teamcode.drivetrain.MecanumDrive;
 
 
 /**
@@ -43,7 +42,7 @@ This class tests the move robot to stone utility
 public class TestMoveRobotToStone extends LinearOpMode {
 
     /* Declare OpMode members. */
-    private MecanumRobotHardware robot = null;
+    private MecanumDrive robot = null;
 
     private UtilityMethods utilities = null;
 
@@ -54,7 +53,7 @@ public class TestMoveRobotToStone extends LinearOpMode {
     @Override
     public void runOpMode() {
         try {
-            robot = new MecanumRobotHardware();
+            robot = new MecanumDrive();
             robot.init(hardwareMap);
 
             utilities = new UtilityMethods(robot);
@@ -84,7 +83,7 @@ public class TestMoveRobotToStone extends LinearOpMode {
         }
 
          telemetry.update();
-        robot.stopAll();
+        robot.stop();
     }
 
 }

@@ -30,8 +30,9 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+
+import org.firstinspires.ftc.teamcode.drivetrain.MecanumDrive;
 
 
 /**
@@ -43,7 +44,7 @@ This OpMode tests the move by encoder utility in the robot class.
 public class TestDriveByEncoder extends LinearOpMode {
 
     /* Declare OpMode members. */
-    private MecanumRobotHardware robot = null;
+    private MecanumDrive robot = null;
     private UtilityMethods utilities = null;
     public TestDriveByEncoder(){
 
@@ -52,7 +53,7 @@ public class TestDriveByEncoder extends LinearOpMode {
     @Override
     public void runOpMode() {
         try {
-            robot = new MecanumRobotHardware();
+            robot = new MecanumDrive();
             robot.init(hardwareMap);
             utilities = new UtilityMethods(robot);
         }
@@ -64,7 +65,7 @@ public class TestDriveByEncoder extends LinearOpMode {
         waitForStart();
 
         utilities.driveByEncoder(this,1.0,5,0,5);
-        robot.stopAll();
+        robot.stop();
     }
 
 }
