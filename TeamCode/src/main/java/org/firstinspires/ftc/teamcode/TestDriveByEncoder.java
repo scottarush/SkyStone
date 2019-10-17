@@ -53,18 +53,18 @@ public class TestDriveByEncoder extends LinearOpMode {
     @Override
     public void runOpMode() {
         try {
-            robot = new MecanumDrive();
+            robot = new MecanumDrive(this);
             robot.init(hardwareMap);
             utilities = new UtilityMethods(robot);
         }
         catch(Exception e){
             telemetry.addData("Robot Init Error","%s",e.getMessage());
-            return;
+            telemetry.update();
         }
         telemetry.addData("Say","Robot Initialized");
         waitForStart();
 
-        utilities.driveByEncoder(this,1.0,5,0,5);
+        utilities.driveByEncoder(this,0.5,5,0,5);
         robot.stop();
     }
 

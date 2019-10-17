@@ -33,13 +33,13 @@ public class Robot {
 
         switch(activeDTS) {
             case MECANUM:
-                drivetrain = new MecanumDrive();
+                drivetrain = new MecanumDrive(om);
                 break;
             case TWO_WHEEL_TANK:
                 drivetrain = new TwoWheelTankDrive();
                 break;
             default:
-                drivetrain = new MecanumDrive();
+                drivetrain = new MecanumDrive(om);
                 break;
         }
         // This is for the other hardware for new stuff

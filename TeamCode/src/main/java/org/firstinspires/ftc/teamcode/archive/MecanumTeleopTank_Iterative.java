@@ -64,7 +64,7 @@ public class MecanumTeleopTank_Iterative extends OpMode{
          * The init() method of the hardware class does all the work here
          */
         try {
-            robot = new MecanumDrive();
+            robot = new MecanumDrive(this);
             robot.init(hardwareMap);
         }
         catch(Exception e){
