@@ -53,7 +53,7 @@ public class TestMoveRobotToStone extends LinearOpMode {
     @Override
     public void runOpMode() {
         try {
-            robot = new MecanumDrive();
+            robot = new MecanumDrive(this);
             robot.init(hardwareMap);
 
             utilities = new UtilityMethods(robot);

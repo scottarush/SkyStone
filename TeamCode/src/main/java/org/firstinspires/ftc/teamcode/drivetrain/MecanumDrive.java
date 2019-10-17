@@ -29,6 +29,7 @@
 
 package org.firstinspires.ftc.teamcode.drivetrain;
 
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -58,6 +59,8 @@ public class MecanumDrive extends Drivetrain{
     public DcMotor lrMotor = null;
     public DcMotor rrMotor = null;
 
+    OpMode om;
+
     /**
      * Wheel circumference in inches
      **/
@@ -69,8 +72,8 @@ public class MecanumDrive extends Drivetrain{
     public static final int COUNTS_PER_INCH = (int) Math.round(ENCODER_COUNTS_PER_ROTATION / MECANUM_WHEEL_CIRCUMFERENCE);
 
     /* Constructor */
-    public MecanumDrive() {
-
+    public MecanumDrive(OpMode om) {
+        this.om = om;
     }
 
     /* Initialize standard Hardware interfaces.
@@ -88,8 +91,12 @@ public class MecanumDrive extends Drivetrain{
         rrMotor = tryMapMotor("right_rear_drive");
 
         // Left side motors are reversed
-        lfMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-        lrMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        if (lfMotor != null) {
+            lfMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        }
+        if (lrMotor != null) {
+            lrMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        }
 
         // Set all motors to zero power
         setPower(0, 0, 0, 0);
@@ -111,10 +118,14 @@ public class MecanumDrive extends Drivetrain{
      */
     @Override
     public void setPower(double lf, double rf, double lr, double rr) {
-        lfMotor.setPower(lf);
-        rfMotor.setPower(rf);
-        lrMotor.setPower(lr);
-        rrMotor.setPower(rr);
+        if (lfMotor != null)
+            lfMotor.setPower(lf);
+        if (rfMotor != null)
+            rfMotor.setPower(rf);
+        if (lrMotor != null)
+            lrMotor.setPower(lr);
+        if (rrMotor != null)
+            rrMotor.setPower(rr);
     }
 
     /**
@@ -148,7 +159,9 @@ public class MecanumDrive extends Drivetrain{
             motor = hwMap.get(DcMotor.class, motorName);
         }
         catch(Exception e){
-            e.printStackTrace();
+            //e.printStackTrace();
+            om.telemetry.addData("Motor Init Failed on: ", motorName);
+            om.telemetry.update();
         }
         return motor;
     }
