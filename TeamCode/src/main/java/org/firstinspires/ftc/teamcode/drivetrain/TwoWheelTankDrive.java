@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.drivetrain;
 
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
@@ -7,8 +8,8 @@ public class TwoWheelTankDrive extends Drivetrain {
 
     //TODO - Hardware Here
 
-    public  TwoWheelTankDrive() {
-
+    public  TwoWheelTankDrive(OpMode opMode) {
+        super(opMode);
     }
 
     @Override
@@ -30,9 +31,5 @@ public class TwoWheelTankDrive extends Drivetrain {
     public void setMotorModes(DcMotor.RunMode mode) {
 
     }
-
-    @Override
-    DcMotor tryMapMotor(String motorName) {
-        return null;
-    }
+    
 }

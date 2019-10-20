@@ -52,7 +52,7 @@ import static org.firstinspires.ftc.robotcore.external.navigation.AxesReference.
 
 /**
  * This class contains all the common code to use vuforia on our robot.
- * it is initialized from the UtilityMethods constructor that passes the hardware map
+ * it is initialized from the VuforiaMotionMethods constructor that passes the hardware map
  * so this class can find the webcam.
  *
  */
@@ -127,7 +127,7 @@ public class VuforiaCommon {
 
     private HardwareMap hwMap = null;
 
-    /** targets that the navigator can recognize for use in UtilityMethods. **/
+    /** targets that the navigator can recognize for use in VuforiaMotionMethods. **/
     public VuforiaTrackable stoneTarget = null;
     // TODO pull out the local targets from initVuforia and put them here.
 

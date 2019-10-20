@@ -30,7 +30,6 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
@@ -39,6 +38,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackable;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackableDefaultListener;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
+import org.firstinspires.ftc.teamcode.drivetrain.Drivetrain;
 import org.firstinspires.ftc.teamcode.drivetrain.MecanumDrive;
 
 import java.util.List;
@@ -48,13 +48,13 @@ import static org.firstinspires.ftc.robotcore.external.navigation.AxesOrder.XYZ;
 import static org.firstinspires.ftc.robotcore.external.navigation.AxesReference.EXTRINSIC;
 
 /**
- * This class contains common methods usable by multiple opmodes.
+ * This class contains reusable methods for motion using Vuforia
  *
  * Opmodes use this class by creating an instance and passing a reference to the
- * robot in the constructor
+ * drivetrain in the constructor
  *
  */
-public class UtilityMethods {
+public class VuforiaMotionMethods {
 
     private OpenGLMatrix lastLocation = null;
 
@@ -76,94 +76,51 @@ public class UtilityMethods {
     private static final float halfField = 72 * mmPerInch;
     private static final float quadField  = 36 * mmPerInch;
 
-    final float CAMERA_FORWARD_DISPLACEMENT  = 4.0f * mmPerInch;   // Distance of camera in front of robot-center
+    final float CAMERA_FORWARD_DISPLACEMENT  = 4.0f * mmPerInch;   // Distance of camera in front of drivetrain-center
     final float CAMERA_VERTICAL_DISPLACEMENT = 8.0f * mmPerInch;   // Height of camera above ground
-    final float CAMERA_LEFT_DISPLACEMENT     = 0;     // eg: Camera is ON the robot's center line
+    final float CAMERA_LEFT_DISPLACEMENT     = 0;     // eg: Camera is ON the drivetrain's center line
 
 
-    private MecanumDrive robot;
+    private Drivetrain drivetrain;
 
     /** reference to vuforia base.  **/
     private VuforiaCommon vuforiaCommon;
 
     /* Constructor */
-    public UtilityMethods(MecanumDrive theRobot) {
-        robot = theRobot;
-        vuforiaCommon = new VuforiaCommon(robot.hwMap);
+    public VuforiaMotionMethods(Drivetrain drivetrain) {
+        this.drivetrain = drivetrain;
+        vuforiaCommon = new VuforiaCommon(drivetrain.hwMap);
      }
 
-     /**
-     * This function moves the robot a delta x and y distance.
-     *
-     * @param opmode  OpMode of the caller.  Needed to be able to send Telemetry
-     * @param speed   speed to move
-     * @param xdist   distance in x inches to move
-     * @param ydist   distance in y inches to move
-     * @param timeout timeout in seconds to abort if move not completed.
-     */
-    public void driveByEncoder(LinearOpMode opmode, double speed, double xdist, double ydist, double timeout) {
-
-        // Compute the number of encoder counts for each wheel to move the requested distanc
-        int lfDeltaCounts = (int) Math.round((xdist + ydist) * MecanumDrive.COUNTS_PER_INCH);
-        int rfDeltaCounts = (int) Math.round((ydist - xdist) * MecanumDrive.COUNTS_PER_INCH);
-        int lrDeltaCounts = (int) Math.round((ydist - xdist) * MecanumDrive.COUNTS_PER_INCH);
-        int rrDeltaCounts = (int) Math.round((xdist + ydist) * MecanumDrive.COUNTS_PER_INCH);
-
-        // Set target counts for each motor to the above
-        robot.lfMotor.setTargetPosition(lfDeltaCounts + robot.lfMotor.getCurrentPosition());
-        robot.rfMotor.setTargetPosition(rfDeltaCounts + robot.rfMotor.getCurrentPosition());
-        robot.lrMotor.setTargetPosition(lrDeltaCounts + robot.lrMotor.getCurrentPosition());
-        robot.rrMotor.setTargetPosition(rrDeltaCounts + robot.rrMotor.getCurrentPosition());
-
-        // Set mode to run to position
-        robot.setMotorModes(DcMotor.RunMode.RUN_TO_POSITION);
-
-        // Reset timer and set motor power
-        ElapsedTime drivetimeout = new ElapsedTime();
-        drivetimeout.reset();
-        double aspeed = Math.abs(speed);
-        if (aspeed > 1.0)
-            aspeed = 1.0;
-        robot.setPower(aspeed, aspeed, aspeed, aspeed);
-
-        while (opmode.opModeIsActive() && (drivetimeout.seconds() < timeout) &&
-                (robot.lfMotor.isBusy() || robot.rfMotor.isBusy() || robot.lrMotor.isBusy() || robot.rrMotor.isBusy())) {
-
-            opmode.telemetry.addData("TargetPositions", "lf:%7d rf:%7d lr:%7d rr:%7d",
-                    robot.lfMotor.getTargetPosition(),
-                    robot.rfMotor.getTargetPosition(),
-                    robot.lrMotor.getTargetPosition(),
-                    robot.rrMotor.getTargetPosition());
-            opmode.telemetry.addData("Positions:", "lf:%7d rf:%7d lr:%7d rr:%7d",
-                    robot.lfMotor.getCurrentPosition(),
-                    robot.rfMotor.getCurrentPosition(),
-                    robot.lrMotor.getCurrentPosition(),
-                    robot.rrMotor.getCurrentPosition());
-            opmode.telemetry.update();
-        }
-        // Stop all
-        robot.stop();
-    }
-
+    public static final int INITIALIZATION_ERROR = -1;
     public static final int NO_STONES_FOUND = 0;
     public static final int FOUND_SKYSTONE = 1;
     public static final int FOUND_STONE = 2;
+
+
+    /**
+     * initialization function for findStone.
+     */
+    public void initFindStone(){
+        vuforiaCommon.initTensorFlowObjectDetection();
+    }
     /**
      * helper function to find a Stone using the Vurforia TensorFlow by strafing in the x direction
-     * @param opmode the calling opmode needed for Telemetry
+      * @param opmode the calling opmode needed for Telemetry
      * @param searchRight set true to search right, false to search left
      * @param onlySkystone keep searching until a SkyStone is found.
      * @param timeout timeout to give up if no stone found
-     * @return NO_STONES_FOUND, FOUND_SKYSTONE, or FOUND_STONE
+     * @return INITIALIZATION_ERROR, NO_STONES_FOUND, FOUND_SKYSTONE, or FOUND_STONE
      */
     public int findStone(LinearOpMode opmode, boolean searchRight, boolean onlySkystone,double timeout){
-         // Initialize the tensor flow engine - if not already init'ed
-        vuforiaCommon.initTensorFlowObjectDetection();
         /**
          * Activate TensorFlow Object Detection
          **/
         if (vuforiaCommon.tensorFlowObjDetector != null) {
             vuforiaCommon.tensorFlowObjDetector.activate();
+        }
+        else{
+            return INITIALIZATION_ERROR;
         }
 
         ElapsedTime findTimer = new ElapsedTime();
@@ -173,11 +130,11 @@ public class UtilityMethods {
         double power = 0.25;
         if (searchRight) {
             // Strafe to right
-            robot.setPower(power, -power, -power, power);
+            drivetrain.setPower(power, -power, -power, power);
         }
         else{
             // Strafe to left
-            robot.setPower(-power, power, power, -power);
+            drivetrain.setPower(-power, power, power, -power);
         }
 
         boolean keepSearching = true;
@@ -209,25 +166,27 @@ public class UtilityMethods {
            }
        }
         // Stop the motors
-        robot.stop();
+        drivetrain.stop();
         // Shut down the engine before returning
-        if (vuforiaCommon.tensorFlowObjDetector != null) {
-            vuforiaCommon.tensorFlowObjDetector.shutdown();
-        }
+        vuforiaCommon.tensorFlowObjDetector.shutdown();
 
         return retcode;
     }
     /**
-     * helper function to move robot in front of a stone using Vuforia Navigation.
-     * The robot must be sitting in front of a stone assumed to be found using
+     * initialization function for moveRobotToStone.
+     */
+    public void initMoveRobotToStone(){
+        vuforiaCommon.initTensorFlowObjectDetection();
+    }
+    /**
+     * helper function to move drivetrain in front of a stone using Vuforia Navigation.
+     * The drivetrain must be sitting in front of a stone assumed to be found using
      * findStone method.
      * @param opmode the calling opmode needed for Telemetry
      * @param timeout timeout to give up if no stone found
      * @return true if move was successfully completed. false if Skystone went out of view
      */
     public boolean moveRobotToStone(LinearOpMode opmode, double timeout){
-        // Initialize VuforiaNavigation
-         vuforiaCommon.initVuforiaNavigation();
 
         ElapsedTime findTimer = new ElapsedTime();
         // Set return code assuming we have an error locating to the skysteon
@@ -241,7 +200,7 @@ public class UtilityMethods {
 
         OpenGLMatrix lastLocation = null;
 
-        // Assume that the skyStone is somewhere in front of the robot so reset the stoneTarget
+        // Assume that the skyStone is somewhere in front of the drivetrain so reset the stoneTarget
         vuforiaCommon.stoneTarget.setLocation(OpenGLMatrix
                 .translation(0, 0, stoneZ)
                 .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 0, 0, 0)));
@@ -270,14 +229,14 @@ public class UtilityMethods {
                 }
             }
 
-            // Provide feedback as to where the robot is located (if we know).
+            // Provide feedback as to where the drivetrain is located (if we know).
             if (stoneVisible) {
-                // express position (translation) of robot in inches.
+                // express position (translation) of drivetrain in inches.
                 VectorF translation = lastLocation.getTranslation();
                 opmode.telemetry.addData("Stone Pos:", "{X, Y, Z} = %.1f, %.1f, %.1f",
                         translation.get(0) / mmPerInch, translation.get(1) / mmPerInch, translation.get(2) / mmPerInch);
 
-                // express the rotation of the robot in degrees.
+                // express the rotation of the drivetrain in degrees.
                 Orientation rotation = Orientation.getOrientation(lastLocation, EXTRINSIC, XYZ, DEGREES);
                 opmode.telemetry.addData("Stone Rot", "{Roll, Pitch, Heading} = %.0f, %.0f, %.0f", rotation.firstAngle, rotation.secondAngle, rotation.thirdAngle);
             }
@@ -290,7 +249,7 @@ public class UtilityMethods {
         // Disable Tracking when we are done;
         vuforiaCommon.targetsSkyStone.deactivate();
         // Stop the motors
-        robot.stop();
+        drivetrain.stop();
 
         return retcode;
     }
