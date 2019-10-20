@@ -36,7 +36,7 @@ import org.firstinspires.ftc.teamcode.drivetrain.MecanumDrive;
 
 
 /**
-This OpMode tests the move by encoder utility in the robot class.
+This OpMode tests the move by encoder utility in the drivetrain class.
   */
 
 @TeleOp(name="TestDriveByEncoder", group="Robot")
@@ -44,8 +44,8 @@ This OpMode tests the move by encoder utility in the robot class.
 public class TestDriveByEncoder extends LinearOpMode {
 
     /* Declare OpMode members. */
-    private MecanumDrive robot = null;
-    private UtilityMethods utilities = null;
+    private MecanumDrive drivetrain = null;
+    private VuforiaMotionMethods utilities = null;
     public TestDriveByEncoder(){
 
     }
@@ -53,9 +53,9 @@ public class TestDriveByEncoder extends LinearOpMode {
     @Override
     public void runOpMode() {
         try {
-            robot = new MecanumDrive(this);
-            robot.init(hardwareMap);
-            utilities = new UtilityMethods(robot);
+            drivetrain = new MecanumDrive(this);
+            drivetrain.init(hardwareMap);
+            utilities = new VuforiaMotionMethods(drivetrain);
         }
         catch(Exception e){
             telemetry.addData("Robot Init Error","%s",e.getMessage());
@@ -64,8 +64,8 @@ public class TestDriveByEncoder extends LinearOpMode {
         telemetry.addData("Say","Robot Initialized");
         waitForStart();
 
-        utilities.driveByEncoder(this,0.5,5,0,5);
-        robot.stop();
+        drivetrain.driveByEncoder(0.5,5,0,5);
+        drivetrain.stop();
     }
 
 }

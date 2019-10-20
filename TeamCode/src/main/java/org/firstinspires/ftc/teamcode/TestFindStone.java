@@ -44,9 +44,9 @@ This class tests the findStone utility.
 public class TestFindStone extends LinearOpMode {
 
     /* Declare OpMode members. */
-    private MecanumDrive robot = null;
+    private MecanumDrive drivetrain = null;
 
-    private UtilityMethods utilities = null;
+    private VuforiaMotionMethods utilities = null;
 
     public TestFindStone() {
 
@@ -55,10 +55,12 @@ public class TestFindStone extends LinearOpMode {
     @Override
     public void runOpMode() {
         try {
-            robot = new MecanumDrive(this);
-            robot.init(hardwareMap);
+            drivetrain = new MecanumDrive(this);
+            drivetrain.init(hardwareMap);
 
-            utilities = new UtilityMethods(robot);
+            utilities = new VuforiaMotionMethods(drivetrain);
+            // Initialie the utility method
+            utilities.initFindStone();
 
         } catch (Exception e) {
             telemetry.addData("Robot Init Error", "%s", e.getMessage());
@@ -69,19 +71,19 @@ public class TestFindStone extends LinearOpMode {
 
         int retcode = utilities.findStone(this, false, true,10);
         switch(retcode) {
-            case UtilityMethods.NO_STONES_FOUND:
+            case VuforiaMotionMethods.NO_STONES_FOUND:
                 telemetry.addData("Status", "No Stones Found");
                 break;
-            case UtilityMethods.FOUND_STONE:
+            case VuforiaMotionMethods.FOUND_STONE:
                 telemetry.addData("Status", "Found Stone");
                 break;
-            case UtilityMethods.FOUND_SKYSTONE:
+            case VuforiaMotionMethods.FOUND_SKYSTONE:
                 telemetry.addData("Status", "Found Skystone");
                 break;
         }
 
          telemetry.update();
-        robot.stop();
+        drivetrain.stop();
     }
 
 }

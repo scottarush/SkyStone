@@ -29,7 +29,6 @@
 
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -45,7 +44,7 @@ This class implements the equations that Marcus derived on October 3.
 public class MecanumTankOpMode extends OpMode{
 
     /* Declare OpMode members. */
-    private MecanumDrive robot = null;
+    private MecanumDrive drivetrain = null;
 
     /** current motor speeds. **/
     private double lfPower = 0;
@@ -62,8 +61,8 @@ public class MecanumTankOpMode extends OpMode{
          * The init() method of the hardware class does all the work here
          */
         try {
-            robot = new MecanumDrive(this);
-            robot.init(hardwareMap);
+            drivetrain = new MecanumDrive(this);
+            drivetrain.init(hardwareMap);
         }
         catch(Exception e){
             telemetry.addData("Robot Init Error","%s",e.getMessage());
@@ -71,7 +70,7 @@ public class MecanumTankOpMode extends OpMode{
             return;
         }
 
-        // Send telemetry message to signify robot waiting;
+        // Send telemetry message to signify drivetrain waiting;
         telemetry.addData("Say", "Init Complete");    //
     }
 
@@ -104,19 +103,13 @@ public class MecanumTankOpMode extends OpMode{
         computeMotorPower(xleft,yleft,xright,yright);
 
         // Set the motor power to the speeds
-        robot.setPower(lfPower, rfPower, lrPower, rrPower);
+        drivetrain.setPower(lfPower, rfPower, lrPower, rrPower);
         telemetry.addData("Gamepad:","xl=%.2f yl=%.2f xr=%.2f yr=%.2f",
             xleft,yleft,xright,yright);
         // log the speeds to telemetry
         telemetry.addData("Wheel speeds:", "lf=%.2f rf=%.2f lr=%.2f rr=%.2f",
                 lfPower, rfPower, lrPower, rrPower);
-        telemetry.addData("Encoder positions","lf=%d rf=%d lr=%d rr=%d",
-                robot.lfMotor.getCurrentPosition(),
-                robot.lrMotor.getCurrentPosition(),
-                robot.rfMotor.getCurrentPosition(),
-                robot.rrMotor.getCurrentPosition());
-
-         telemetry.update();
+        telemetry.update();
     }
 
     /*
@@ -124,7 +117,7 @@ public class MecanumTankOpMode extends OpMode{
      */
     @Override
     public void stop() {
-         robot.stop();
+         drivetrain.stop();
     }
 
     /**

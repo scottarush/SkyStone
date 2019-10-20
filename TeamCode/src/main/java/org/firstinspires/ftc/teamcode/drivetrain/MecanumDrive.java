@@ -29,10 +29,14 @@
 
 package org.firstinspires.ftc.teamcode.drivetrain;
 
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.util.ElapsedTime;
+
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 /**
  * This is NOT an opmode.
@@ -54,12 +58,10 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
  */
 public class MecanumDrive extends Drivetrain{
     /* Public OpMode members. */
-    public DcMotor lfMotor = null;
-    public DcMotor rfMotor = null;
-    public DcMotor lrMotor = null;
-    public DcMotor rrMotor = null;
-
-    OpMode om;
+    private DcMotor lfMotor = null;
+    private DcMotor rfMotor = null;
+    private DcMotor lrMotor = null;
+    private DcMotor rrMotor = null;
 
     /**
      * Wheel circumference in inches
@@ -72,8 +74,8 @@ public class MecanumDrive extends Drivetrain{
     public static final int COUNTS_PER_INCH = (int) Math.round(ENCODER_COUNTS_PER_ROTATION / MECANUM_WHEEL_CIRCUMFERENCE);
 
     /* Constructor */
-    public MecanumDrive(OpMode om) {
-        this.om = om;
+    public MecanumDrive(OpMode opMode) {
+        super(opMode);
     }
 
     /* Initialize standard Hardware interfaces.
@@ -91,12 +93,8 @@ public class MecanumDrive extends Drivetrain{
         rrMotor = tryMapMotor("right_rear_drive");
 
         // Left side motors are reversed
-        if (lfMotor != null) {
-            lfMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-        }
-        if (lrMotor != null) {
-            lrMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-        }
+        lfMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        lrMotor.setDirection(DcMotorSimple.Direction.REVERSE);
 
         // Set all motors to zero power
         setPower(0, 0, 0, 0);
@@ -118,14 +116,10 @@ public class MecanumDrive extends Drivetrain{
      */
     @Override
     public void setPower(double lf, double rf, double lr, double rr) {
-        if (lfMotor != null)
-            lfMotor.setPower(lf);
-        if (rfMotor != null)
-            rfMotor.setPower(rf);
-        if (lrMotor != null)
-            lrMotor.setPower(lr);
-        if (rrMotor != null)
-            rrMotor.setPower(rr);
+        lfMotor.setPower(lf);
+        rfMotor.setPower(rf);
+        lrMotor.setPower(lr);
+        rrMotor.setPower(rr);
     }
 
     /**
@@ -141,6 +135,7 @@ public class MecanumDrive extends Drivetrain{
         rrMotor.setMode(mode);
     }
 
+
     /**
      * helper function to stop all motors on the robot.
      */
@@ -150,19 +145,62 @@ public class MecanumDrive extends Drivetrain{
     }
 
     /**
-     *  Utility function to handle motor initialization.
+     * Utility function moves the robot a delta x and y distance using MecanumDrive
+     *
+     * @param speed   speed to move
+     * @param xdist   distance in x inches to move
+     * @param ydist   distance in y inches to move
+     * @param timeout timeout in seconds to abort if move not completed.
      */
     @Override
-    DcMotor tryMapMotor(String motorName){
-        DcMotor motor = null;
-        try {
-            motor = hwMap.get(DcMotor.class, motorName);
+    public void driveByEncoder(double speed, double xdist, double ydist, double timeout) {
+        if (!(opMode instanceof  LinearOpMode)){
+            opMode.telemetry.addData("Error:  Can only use driveByEncoder with a LinearOpMode",0);
+            opMode.telemetry.update();
+            return;
         }
-        catch(Exception e){
-            //e.printStackTrace();
-            om.telemetry.addData("Motor Init Failed on: ", motorName);
-            om.telemetry.update();
+        LinearOpMode myOpMode = (LinearOpMode)opMode;
+
+        // Compute the number of encoder counts for each wheel to move the requested distanc
+        int lfDeltaCounts = (int) Math.round((xdist + ydist) * MecanumDrive.COUNTS_PER_INCH);
+        int rfDeltaCounts = (int) Math.round((ydist - xdist) * MecanumDrive.COUNTS_PER_INCH);
+        int lrDeltaCounts = (int) Math.round((ydist - xdist) * MecanumDrive.COUNTS_PER_INCH);
+        int rrDeltaCounts = (int) Math.round((xdist + ydist) * MecanumDrive.COUNTS_PER_INCH);
+
+        // Set target counts for each motor to the above
+        lfMotor.setTargetPosition(lfDeltaCounts+lfMotor.getCurrentPosition());
+        rfMotor.setTargetPosition(lfDeltaCounts+rfMotor.getCurrentPosition());
+        lrMotor.setTargetPosition(lfDeltaCounts+lrMotor.getCurrentPosition());
+        rrMotor.setTargetPosition(lfDeltaCounts+rrMotor.getCurrentPosition());
+
+        // Set mode to run to position
+        setMotorModes(DcMotor.RunMode.RUN_TO_POSITION);
+
+        // Reset timer and set motor power
+        ElapsedTime drivetimeout = new ElapsedTime();
+        drivetimeout.reset();
+        double aspeed = Math.abs(speed);
+        if (aspeed > 1.0)
+            aspeed = 1.0;
+        setPower(aspeed, aspeed, aspeed, aspeed);
+
+        while (myOpMode.opModeIsActive() && (drivetimeout.seconds() < timeout) &&
+                (lfMotor.isBusy() || rfMotor.isBusy() || lrMotor.isBusy() || rrMotor.isBusy())) {
+
+            myOpMode.telemetry.addData("TargetPositions", "lf:%7d rf:%7d lr:%7d rr:%7d",
+                    lfMotor.getTargetPosition(),
+                    rfMotor.getTargetPosition(),
+                    lrMotor.getTargetPosition(),
+                    rrMotor.getTargetPosition());
+            opMode.telemetry.addData("Positions:", "lf:%7d rf:%7d lr:%7d rr:%7d",
+                    lfMotor.getCurrentPosition(),
+                    rfMotor.getCurrentPosition(),
+                    lrMotor.getCurrentPosition(),
+                    rrMotor.getCurrentPosition());
+            opMode.telemetry.update();
         }
-        return motor;
+        // Stop all
+        stop();
     }
+
 }

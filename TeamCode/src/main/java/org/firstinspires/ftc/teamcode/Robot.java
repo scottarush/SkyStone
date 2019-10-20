@@ -6,6 +6,9 @@ import org.firstinspires.ftc.teamcode.drivetrain.Drivetrain;
 import org.firstinspires.ftc.teamcode.drivetrain.MecanumDrive;
 import org.firstinspires.ftc.teamcode.drivetrain.TwoWheelTankDrive;
 
+/**
+ * Base class for a robot.
+ */
 public class Robot {
 
     public enum DriveTrainStyle{
@@ -36,7 +39,7 @@ public class Robot {
                 drivetrain = new MecanumDrive(om);
                 break;
             case TWO_WHEEL_TANK:
-                drivetrain = new TwoWheelTankDrive();
+                drivetrain = new TwoWheelTankDrive(om);
                 break;
             default:
                 drivetrain = new MecanumDrive(om);
