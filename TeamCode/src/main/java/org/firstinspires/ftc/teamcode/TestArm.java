@@ -2,7 +2,6 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.configuration.ExpansionHubMotorControllerParamsState;
 
 import org.firstinspires.ftc.teamcode.arm.FourBarArm;
 
@@ -31,10 +30,12 @@ public class TestArm extends OpMode {
 
         double position = xleft * 90;
 
-        arm.setPosition(position);
+        arm.setSpeed(1.0);
+        arm.setAngle(position);
 
-        telemetry.addData("Commanded Position",position);
-        telemetry.addData("current position",arm.getCurrentPosition());
+        telemetry.addData("Commanded degree position",position);
+        telemetry.addData("current degree position",arm.getCurrentAngle());
+        telemetry.addData("counts per degree",FourBarArm.COUNTS_PER_DEGREE);
         telemetry.update();
     }
 
