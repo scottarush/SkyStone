@@ -30,11 +30,11 @@ public abstract class Arm {
      /**
      * Sets the arm to an absolute position in degrees. 0 degree reference is arm specific.
      */
-    public abstract void setPosition(double degrees);
+    public abstract void setAngle(double degrees);
 
     /**
      * Sets the speed of motion of the arm.
-     * @speed speed to move the arm at the next setPosition from 0.0 to 1.0
+     * @speed speed to move the arm at the next setAngle from 0.0 to 1.0
      */
     public abstract void setSpeed(double speed);
 
@@ -42,7 +42,7 @@ public abstract class Arm {
      * Retrieves the current arm position.
      * @return current position of arm in degrees with 0 being the position of the arm at startup.
      */
-    public abstract double getCurrentPosition();
+    public abstract double getCurrentAngle();
 
     /**
      * Stops the arm at the current position
