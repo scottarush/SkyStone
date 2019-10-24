@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode;/* Copyright (c) 2017 FIRST. All rights reserved.
+/* Copyright (c) 2017 FIRST. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted (subject to the limitations in the disclaimer below) provided that
@@ -27,26 +27,29 @@ package org.firstinspires.ftc.teamcode;/* Copyright (c) 2017 FIRST. All rights r
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+package org.firstinspires.ftc.teamcode.TestOpModes;
+
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+import org.firstinspires.ftc.teamcode.VuforiaMotionMethods;
 import org.firstinspires.ftc.teamcode.drivetrain.MecanumDrive;
 
 
 /**
-This class tests the move drivetrain to stone utility
+This class tests the findStone utility.
   */
 
-@TeleOp(name="TestMoveRobotToStone", group="Robot")
+@TeleOp(name="TestFindStone", group="Robot")
 //@Disabled
-public class TestMoveRobotToStone extends LinearOpMode {
+public class TestFindStone extends LinearOpMode {
 
     /* Declare OpMode members. */
     private MecanumDrive drivetrain = null;
 
     private VuforiaMotionMethods utilities = null;
 
-    public TestMoveRobotToStone() {
+    public TestFindStone() {
 
     }
 
@@ -57,9 +60,8 @@ public class TestMoveRobotToStone extends LinearOpMode {
             drivetrain.init(hardwareMap);
 
             utilities = new VuforiaMotionMethods(drivetrain);
-            // Initialize both motion utilites
+            // Initialie the utility method
             utilities.initFindStone();
-            utilities.initMoveRobotToStone();
 
         } catch (Exception e) {
             telemetry.addData("Robot Init Error", "%s", e.getMessage());
@@ -75,13 +77,9 @@ public class TestMoveRobotToStone extends LinearOpMode {
                 break;
             case VuforiaMotionMethods.FOUND_STONE:
                 telemetry.addData("Status", "Found Stone");
-                // Now move the drivetrain to the stone.
-                utilities.moveRobotToStone(this,5);
                 break;
             case VuforiaMotionMethods.FOUND_SKYSTONE:
                 telemetry.addData("Status", "Found Skystone");
-                // Now move the drivetrain to the stone.
-                utilities.moveRobotToStone(this,5);
                 break;
         }
 
