@@ -36,43 +36,37 @@ import org.firstinspires.ftc.teamcode.drivetrain.MecanumDrive;
 
 
 /**
-This class implements the equations that Marcus derived on October 3.
-  */
-
-@TeleOp(name="Tank Drive", group="Robot")
+ * This is the class to be used for the single driver competition mode.
+ * Layout is:
+ * Tank drive on both joysticks.
+ * Grabber on both sets of bumpers and triggers.
+ * Arm up down on pad.
+ */
+@TeleOp(name="SingleDriverOpMode", group="Robot")
 //@Disabled
-public class MecanumTankOpMode extends OpMode{
+public class SingleDriverOpMode extends OpMode{
 
-    /* Declare OpMode members. */
-    private MecanumDrive drivetrain = null;
+    private MecanumGrabberBot robot  = null;
 
-    /** current motor speeds. **/
-    private double lfPower = 0;
-    private double rfPower = 0;
-    private double lrPower = 0;
-    private double rrPower = 0;
-
-    /*
+      /*
      * Code to run ONCE when the driver hits INIT
      */
     @Override
     public void init() {
-        /* Initialize the hardware variables.
-         * The init() method of the hardware class does all the work here
+        robot = new MecanumGrabberBot(this);
+        /*
+        * Initialize the robot.  Be sure to catch exception and dump out as
+        * the exception string will have details of what didn't initialize and
+        * we can figure out what went wrong.
          */
-        try {
-            drivetrain = new MecanumDrive(this);
-            drivetrain.init(hardwareMap);
+        try{
+            robot.init();
         }
         catch(Exception e){
-            telemetry.addData("Robot Init Error","%s",e.getMessage());
+            telemetry.addData("Robot init error:",e.getMessage());
             telemetry.update();
-            return;
         }
-
-        // Send telemetry message to signify drivetrain waiting;
-        telemetry.addData("Say", "Init Complete");    //
-    }
+     }
 
     /*
      * Code to run REPEATEDLY after the driver hits INIT, but before they hit PLAY
@@ -100,16 +94,11 @@ public class MecanumTankOpMode extends OpMode{
         double yright = -gamepad1.right_stick_y;
 
         // the speeds with the new gamepad inputs
-        computeMotorPower(xleft,yleft,xright,yright);
+        robot.getDrivetrain().setTankDriveJoystickInput(xleft,yleft,xright,yright);
 
-        // Set the motor power to the speeds
-        drivetrain.setPower(lfPower, rfPower, lrPower, rrPower);
-        telemetry.addData("Gamepad:","xl=%.2f yl=%.2f xr=%.2f yr=%.2f",
-            xleft,yleft,xright,yright);
-        // log the speeds to telemetry
-        telemetry.addData("Wheel speeds:", "lf=%.2f rf=%.2f lr=%.2f rr=%.2f",
-                lfPower, rfPower, lrPower, rrPower);
-        telemetry.update();
+        // Read the bumpers and triggers for the grabber.
+        robot.getGrabber().moveGrabber(gamepad1.left_bumper,gamepad1.right_bumper, gamepad1.left_trigger,gamepad1.right_trigger);
+
     }
 
     /*
@@ -117,41 +106,8 @@ public class MecanumTankOpMode extends OpMode{
      */
     @Override
     public void stop() {
-         drivetrain.stop();
+         robot.getDrivetrain().stop();
     }
 
-    /**
-     * This is a helper function that takes input from a dual joy stick and computes the speed
-     * of each Mecanum wheel motor.
-     *
-     * positive x is to the right
-     * positive y is up
-     *
-     * @param xleft x coordinate of left stick
-     * @param yleft y coordinate of left stick
-     * @param xright x coordinate of right stick
-     * @param yright y coordinate of right stick
-     *
-     **/
-    private void computeMotorPower(double xleft, double yleft, double xright, double yright) {
-
-        lfPower = yleft+(xleft+xright)/2;
-        rfPower = yright - (xleft+xright)/2;
-        lrPower = yleft-(xleft + xright)/2;
-        rrPower = yright + (xleft+xright)/2;
-
-        /**
-         * Now normalize the wheel speed commands:
-         * Let speedmax be the maximum absolute value of the four wheel speed commands.
-         * If speedmax is greater than 1, then divide each of the four wheel speed commands by speedmax.
-         **/
-        double speedmax = Math.abs(lfPower + rfPower + lrPower + rrPower);
-        if (speedmax > 4.0){
-            lfPower = lfPower /speedmax;
-            rfPower = rfPower / speedmax;
-            lrPower = lrPower / speedmax;
-            rrPower = rrPower / speedmax;
-        }
-    }
 
  }

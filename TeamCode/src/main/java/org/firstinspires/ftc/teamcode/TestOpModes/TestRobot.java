@@ -1,11 +1,13 @@
 package org.firstinspires.ftc.teamcode.TestOpModes;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.Robot;
 
 @TeleOp(name="TestRobot", group="Robot")
+@Disabled
 public class TestRobot extends OpMode {
 
     private Robot robot = null;
@@ -18,7 +20,13 @@ public class TestRobot extends OpMode {
     @Override
     public void init() {
         robot = new Robot(Robot.DriveTrainStyle.MECANUM, this);
-        robot.init();
+        try {
+            robot.init();
+        }
+        catch(Exception e){
+            telemetry.addData("Init err",e.getMessage());
+            telemetry.update();
+        }
     }
 
     @Override
@@ -33,14 +41,14 @@ public class TestRobot extends OpMode {
         computeMotorPower(xleft,yleft,xright,yright);
 
         // Set the motor power to the speeds
-        robot.drivetrain.setPower(lfPower, rfPower, lrPower, rrPower);
+        robot.getDrivetrain().setPower(lfPower, rfPower, lrPower, rrPower);
 
         telemetry.update();
     }
 
     @Override
     public void stop() {
-        robot.drivetrain.stop();
+        robot.getDrivetrain().stop();
     }
 
     private void computeMotorPower(double xleft, double yleft, double xright, double yright) {

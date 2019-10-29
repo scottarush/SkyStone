@@ -1,16 +1,17 @@
 package org.firstinspires.ftc.teamcode.TestOpModes;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.Grabber;
-import org.firstinspires.ftc.teamcode.arm.FourBarArm;
 
 /**
  * OpMode to test the Grabber using the gamepad.  The left and right triggers control the
  * left and right grabber motors respectively.
  */
 @TeleOp(name="TestGrabber", group="Robot")
+@Disabled
 public class TestGrabber extends OpMode {
 
     private Grabber grabber;

@@ -26,13 +26,18 @@ public class Robot {
 
     private DriveTrainStyle activeDTS;
 
-    private OpMode om;
+    protected OpMode opMode;
 
-    public Drivetrain drivetrain;
+    private Drivetrain drivetrain;
 
+    /**
+     * Base constructor
+     * @param activeDTS
+     * @param om
+     */
     public Robot(DriveTrainStyle activeDTS, OpMode om) {
         this.activeDTS = activeDTS;
-        this.om = om;
+        this.opMode = om;
 
         switch(activeDTS) {
             case MECANUM:
@@ -49,12 +54,21 @@ public class Robot {
 
     }
 
-    public void init() {
+    /**
+     * returns drivetrain
+     */
+    public Drivetrain getDrivetrain(){
+        return drivetrain;
+    }
+    /**
+     * Base initialization of drivetrain.
+     * @throws Exception on any drivetrain init.
+     */
+    public void init() throws Exception {
         try {
-            drivetrain.init(om.hardwareMap);
+            drivetrain.init(opMode.hardwareMap);
         } catch (Exception e) {
-            om.telemetry.addData("Oh no! ","DriveTrain init failed");
-            om.telemetry.update();
+            throw new Exception("Drivetrain init err: "+e.getMessage());
         }
     }
 

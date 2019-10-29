@@ -36,8 +36,6 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.robotcore.external.Telemetry;
-
 /**
  * This is NOT an opmode.
  *
@@ -87,14 +85,36 @@ public class MecanumDrive extends Drivetrain{
         hwMap = ahwMap;
 
         // Define and Initialize Motors
-        lfMotor = tryMapMotor("left_front_drive");
-        rfMotor = tryMapMotor("right_front_drive");
-        lrMotor = tryMapMotor("left_rear_drive");
-        rrMotor = tryMapMotor("right_rear_drive");
+        String motorInitError = "";
+        try {
+            lfMotor = tryMapMotor("lf");
+            // Left side motors are reversed
+            lfMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+         }
+        catch (Exception e){
+            motorInitError += "lf,";
+        }
+        try {
+            rfMotor = tryMapMotor("rf");
+        }
+        catch(Exception e){
+            motorInitError += "rf,";
+        }
+        try {
+            lrMotor = tryMapMotor("lr");
+            // Left side motors are reversed
+            lrMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        }
+        catch(Exception e){
+            motorInitError += "lr,";
+        }
+        try {
+            rrMotor = tryMapMotor("rr");
+        }
+        catch(Exception e){
+            motorInitError += "rr,";
+        }
 
-        // Left side motors are reversed
-        lfMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-        lrMotor.setDirection(DcMotorSimple.Direction.REVERSE);
 
         // Set all motors to zero power
         setPower(0, 0, 0, 0);
@@ -102,7 +122,9 @@ public class MecanumDrive extends Drivetrain{
         // Set all motors to run with encoders.
         setMotorModes(DcMotor.RunMode.RUN_USING_ENCODER);
 
-        // TODO Define and initialize ALL installed servos once the actuators are defined by the build team
+        if (motorInitError.length() > 0){
+            throw new Exception("Motor init errs: '"+motorInitError+"'");
+        }
 
     }
 
@@ -116,10 +138,14 @@ public class MecanumDrive extends Drivetrain{
      */
     @Override
     public void setPower(double lf, double rf, double lr, double rr) {
-        lfMotor.setPower(lf);
-        rfMotor.setPower(rf);
-        lrMotor.setPower(lr);
-        rrMotor.setPower(rr);
+        if (lfMotor != null)
+            lfMotor.setPower(lf);
+        if (rfMotor != null)
+            rfMotor.setPower(rf);
+        if (lrMotor != null)
+            lrMotor.setPower(lr);
+        if (rrMotor != null)
+            rrMotor.setPower(rr);
     }
 
     /**
@@ -129,12 +155,45 @@ public class MecanumDrive extends Drivetrain{
      */
     @Override
     public void setMotorModes(DcMotor.RunMode mode) {
-        lfMotor.setMode(mode);
-        rfMotor.setMode(mode);
-        lrMotor.setMode(mode);
-        rrMotor.setMode(mode);
+        if (lfMotor != null)
+            lfMotor.setMode(mode);
+        if (rfMotor != null)
+            rfMotor.setMode(mode);
+        if (lrMotor != null)
+            lrMotor.setMode(mode);
+        if (rrMotor != null)
+            rrMotor.setMode(mode);
     }
 
+    /**
+     * private helper function for set target position.  Does nothing if motor pointer is
+     * null to allow fail-op operation.
+     */
+    private void setTargetPosition(DcMotor motor,int position){
+        if (motor != null){
+            motor.setTargetPosition(position);
+        }
+    }
+    /**
+     * private helper function for get target position.  Returns 0 if
+     * null to allow fail-op operation.
+     */
+    private int getTargetPosition(DcMotor motor){
+        if (motor != null){
+            return motor.getTargetPosition();
+        }
+        return 0;
+    }
+    /**
+     * private helper function for get current position.  Returns 0 if
+     * null to allow fail-op operation.
+     */
+    private int getCurrentPosition(DcMotor motor){
+        if (motor != null){
+            return motor.getCurrentPosition();
+        }
+        return 0;
+    }
 
     /**
      * helper function to stop all motors on the robot.
@@ -144,6 +203,26 @@ public class MecanumDrive extends Drivetrain{
         setPower(0.0, 0.0, 0.0, 0.0);
     }
 
+    /** helper function returns true if any motor is busy. **/
+    private boolean isAnyMotorBusy(){
+        if (lfMotor != null){
+            if (lfMotor.isBusy())
+                return true;
+        }
+        if (rfMotor != null){
+            if (rfMotor.isBusy())
+                return true;
+        }
+        if (lrMotor != null){
+            if (lrMotor.isBusy())
+                return true;
+        }
+        if (rrMotor != null){
+            if (rrMotor.isBusy())
+                return true;
+        }
+        return false;
+    }
     /**
      * Utility function moves the robot a delta x and y distance using MecanumDrive
      *
@@ -168,10 +247,10 @@ public class MecanumDrive extends Drivetrain{
         int rrDeltaCounts = (int) Math.round((xdist + ydist) * MecanumDrive.COUNTS_PER_INCH);
 
         // Set target counts for each motor to the above
-        lfMotor.setTargetPosition(lfDeltaCounts+lfMotor.getCurrentPosition());
-        rfMotor.setTargetPosition(lfDeltaCounts+rfMotor.getCurrentPosition());
-        lrMotor.setTargetPosition(lfDeltaCounts+lrMotor.getCurrentPosition());
-        rrMotor.setTargetPosition(lfDeltaCounts+rrMotor.getCurrentPosition());
+        setTargetPosition(lfMotor,lfDeltaCounts+getCurrentPosition(lfMotor));
+        setTargetPosition(rfMotor,lfDeltaCounts+getCurrentPosition(rfMotor));
+        setTargetPosition(lrMotor,lfDeltaCounts+getCurrentPosition(lrMotor));
+        setTargetPosition(rrMotor,lfDeltaCounts+getCurrentPosition(rrMotor));
 
         // Set mode to run to position
         setMotorModes(DcMotor.RunMode.RUN_TO_POSITION);
@@ -185,22 +264,57 @@ public class MecanumDrive extends Drivetrain{
         setPower(aspeed, aspeed, aspeed, aspeed);
 
         while (myOpMode.opModeIsActive() && (drivetimeout.seconds() < timeout) &&
-                (lfMotor.isBusy() || rfMotor.isBusy() || lrMotor.isBusy() || rrMotor.isBusy())) {
+                isAnyMotorBusy()) {
 
             myOpMode.telemetry.addData("TargetPositions", "lf:%7d rf:%7d lr:%7d rr:%7d",
-                    lfMotor.getTargetPosition(),
-                    rfMotor.getTargetPosition(),
-                    lrMotor.getTargetPosition(),
-                    rrMotor.getTargetPosition());
+                    getTargetPosition(lfMotor),
+                    getTargetPosition(rfMotor),
+                   getTargetPosition(lrMotor),
+                    getTargetPosition(rrMotor));
             opMode.telemetry.addData("Positions:", "lf:%7d rf:%7d lr:%7d rr:%7d",
-                    lfMotor.getCurrentPosition(),
-                    rfMotor.getCurrentPosition(),
-                    lrMotor.getCurrentPosition(),
-                    rrMotor.getCurrentPosition());
+                    getCurrentPosition(lfMotor),
+                    getCurrentPosition(rfMotor),
+                    getCurrentPosition(lrMotor),
+                    getCurrentPosition(rrMotor));
             opMode.telemetry.update();
         }
         // Stop all
         stop();
+    }
+    /**
+     * This is a helper function that takes input from a dual joy stick and computes the speed
+     * of each Mecanum wheel motor.
+     *
+     * positive x is to the right
+     * positive y is up
+     *
+     * @param xleft x coordinate of left stick
+     * @param yleft y coordinate of left stick
+     * @param xright x coordinate of right stick
+     * @param yright y coordinate of right stick
+     *
+     **/
+    public void setTankDriveJoystickInput(double xleft, double yleft, double xright, double yright) {
+
+        double lfPower = yleft+(xleft+xright)/2;
+        double rfPower = yright - (xleft+xright)/2;
+        double lrPower = yleft-(xleft + xright)/2;
+        double rrPower = yright + (xleft+xright)/2;
+
+        /**
+         * Now normalize the wheel speed commands:
+         * Let speedmax be the maximum absolute value of the four wheel speed commands.
+         * If speedmax is greater than 1, then divide each of the four wheel speed commands by speedmax.
+         **/
+        double speedmax = Math.abs(lfPower + rfPower + lrPower + rrPower);
+        if (speedmax > 4.0){
+            lfPower = lfPower /speedmax;
+            rfPower = rfPower / speedmax;
+            lrPower = lrPower / speedmax;
+            rrPower = rrPower / speedmax;
+        }
+
+        setPower(lfPower,rfPower,lrPower,rrPower);
     }
 
 }

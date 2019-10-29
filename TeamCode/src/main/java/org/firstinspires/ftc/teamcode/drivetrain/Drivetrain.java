@@ -48,18 +48,14 @@ public abstract class Drivetrain {
          *  with a non-null hwMap or exception will be thrown.
          *
          */
-    protected DcMotor tryMapMotor(String motorName){
+    protected DcMotor tryMapMotor(String motorName) throws Exception {
         DcMotor motor = null;
         try {
-            if (hwMap == null){
-                throw new Exception("tryMapMotor called with null hwMap. Must call init first.");
-            }
             motor = hwMap.get(DcMotor.class, motorName);
         }
         catch(Exception e){
-            //e.printStackTrace();
-            opMode.telemetry.addData("Motor Init Failed: "+e.getMessage(), motorName);
-            opMode.telemetry.update();
+            // Throw an exception for the caller to catch so we can debug.
+            throw new Exception ("Cannot map motor: "+motorName);
         }
         return motor;
     }
