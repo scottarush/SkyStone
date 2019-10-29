@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.TestOpModes;/* Copyright (c) 2017 FIRST. All rights reserved.
+/* Copyright (c) 2017 FIRST. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted (subject to the limitations in the disclaimer below) provided that
@@ -27,68 +27,85 @@ package org.firstinspires.ftc.teamcode.TestOpModes;/* Copyright (c) 2017 FIRST. 
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+package org.firstinspires.ftc.teamcode.TestOpModes;
+
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.firstinspires.ftc.teamcode.VuforiaMotionMethods;
 import org.firstinspires.ftc.teamcode.drivetrain.MecanumDrive;
 
 
 /**
-This class tests the move drivetrain to stone utility
+This class implements the equations that Marcus derived on October 3.
   */
 
-@TeleOp(name="TestMoveRobotToStone", group="Robot")
+@TeleOp(name="TestTankDrive", group="Robot")
 @Disabled
-public class TestMoveRobotToStone extends LinearOpMode {
+public class TestTankOpMode extends OpMode{
 
     /* Declare OpMode members. */
     private MecanumDrive drivetrain = null;
 
-    private VuforiaMotionMethods utilities = null;
-
-    public TestMoveRobotToStone() {
-
-    }
-
+    /*
+     * Code to run ONCE when the driver hits INIT
+     */
     @Override
-    public void runOpMode() {
+    public void init() {
+        /* Initialize the hardware variables.
+         * The init() method of the hardware class does all the work here
+         */
         try {
             drivetrain = new MecanumDrive(this);
             drivetrain.init(hardwareMap);
-
-            utilities = new VuforiaMotionMethods(drivetrain);
-            // Initialize both motion utilites
-            utilities.initFindStone();
-            utilities.initMoveRobotToStone();
-
-        } catch (Exception e) {
-            telemetry.addData("Robot Init Error", "%s", e.getMessage());
+        }
+        catch(Exception e){
+            telemetry.addData("Robot Init Error","%s",e.getMessage());
+            telemetry.update();
             return;
         }
-        telemetry.addData("Say","Robot Initialized");
-        waitForStart();
 
-        int retcode = utilities.findStone(this, false, true,10);
-        switch(retcode) {
-            case VuforiaMotionMethods.NO_STONES_FOUND:
-                telemetry.addData("Status", "No Stones Found");
-                break;
-            case VuforiaMotionMethods.FOUND_STONE:
-                telemetry.addData("Status", "Found Stone");
-                // Now move the drivetrain to the stone.
-                utilities.moveRobotToStone(this,5);
-                break;
-            case VuforiaMotionMethods.FOUND_SKYSTONE:
-                telemetry.addData("Status", "Found Skystone");
-                // Now move the drivetrain to the stone.
-                utilities.moveRobotToStone(this,5);
-                break;
-        }
-
-         telemetry.update();
-        drivetrain.stop();
+        // Send telemetry message to signify drivetrain waiting;
+        telemetry.addData("Say", "Init Complete");    //
     }
 
-}
+    /*
+     * Code to run REPEATEDLY after the driver hits INIT, but before they hit PLAY
+     */
+    @Override
+    public void init_loop() {
+     }
+
+    /*
+     * Code to run ONCE when the driver hits PLAY
+     */
+    @Override
+    public void start() {
+    }
+
+    /*
+     * Code to run REPEATEDLY after the driver hits PLAY but before they hit STOP
+     */
+    @Override
+    public void loop() {
+         // Run wheels in tank mode (note: The joystick goes negative when pushed forwards, so negate it)
+        double xleft = gamepad1.left_stick_x;
+        double yleft = -gamepad1.left_stick_y;
+        double xright = gamepad1.right_stick_x;
+        double yright = -gamepad1.right_stick_y;
+
+        // the speeds with the new gamepad inputs
+        drivetrain.setTankDriveJoystickInput(xleft,yleft,xright,yright);
+
+    }
+
+    /*
+     * Code to run ONCE after the driver hits STOP
+     */
+    @Override
+    public void stop() {
+         drivetrain.stop();
+    }
+
+
+ }

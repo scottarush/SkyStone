@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.TestOpModes;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -9,6 +10,7 @@ import org.firstinspires.ftc.teamcode.arm.FourBarArm;
  * OpMode to test the arm using the gamepad.  The left stick up and down raises and lowers the arm.
  */
 @TeleOp(name="TestArm", group="Robot")
+@Disabled
 public class TestArm extends OpMode {
 
     private FourBarArm arm;

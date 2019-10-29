@@ -29,6 +29,7 @@
 
 package org.firstinspires.ftc.teamcode.TestOpModes;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -41,7 +42,7 @@ This OpMode tests the move by encoder utility in the drivetrain class.
   */
 
 @TeleOp(name="TestDriveByEncoder", group="Robot")
-//@Disabled
+@Disabled
 public class TestDriveByEncoder extends LinearOpMode {
 
     /* Declare OpMode members. */

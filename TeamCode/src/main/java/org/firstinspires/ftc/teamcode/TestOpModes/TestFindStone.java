@@ -29,6 +29,7 @@
 
 package org.firstinspires.ftc.teamcode.TestOpModes;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -41,7 +42,7 @@ This class tests the findStone utility.
   */
 
 @TeleOp(name="TestFindStone", group="Robot")
-//@Disabled
+@Disabled
 public class TestFindStone extends LinearOpMode {
 
     /* Declare OpMode members. */

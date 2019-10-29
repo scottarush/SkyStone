@@ -13,46 +13,52 @@ public class Grabber {
     private DcMotor mLeftMotor = null;
     private DcMotor mRightMotor = null;
 
-    public static final String LEFT_GRABBER_MOTOR_NAME = "lgrabmotor";
-    public static final String RIGHT_GRABBER_MOTOR_NAME = "rgrabmotor";
+    public static final String LEFT_GRABBER_MOTOR_NAME = "lgrabber";
+    public static final String RIGHT_GRABBER_MOTOR_NAME = "rgrabber";
 
     protected OpMode opMode;
 
     protected HardwareMap hwMap = null;
 
-    public Grabber(OpMode opMode){
+    public Grabber(OpMode opMode) {
     }
 
     public void init(HardwareMap ahwMap) throws Exception {
         hwMap = ahwMap;
+        String initErrString = "";
         try {
-            if (hwMap == null){
-                throw new Exception("try called with null hwMap. Must call init first.");
-            }
-            mLeftMotor = hwMap.get(DcMotor.class, LEFT_GRABBER_MOTOR_NAME);
-            mRightMotor = hwMap.get(DcMotor.class, RIGHT_GRABBER_MOTOR_NAME);
+            mLeftMotor = tryMapMotor(LEFT_GRABBER_MOTOR_NAME);
+            mLeftMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        } catch (Exception e) {
+            initErrString += "left,";
+         }
+        try {
+            mRightMotor = tryMapMotor(RIGHT_GRABBER_MOTOR_NAME);
+            mRightMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            // Right side is reversed to suck in on postive power
+            mRightMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        } catch (Exception e) {
+            initErrString += "right";
         }
-        catch(Exception e){
-            //e.printStackTrace();
-            opMode.telemetry.addData("Grabber Motor Init Failed: ",e.getMessage());
-            opMode.telemetry.update();
-            return;
-        }
-        // now set the motor mode
-        mLeftMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        mRightMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        // Right side is reversed to suck in on postive power
-        mRightMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        // If we have an error then throw an exception at the end so that
+        // owner can catch and post a message
+        if (initErrString.length() > 0)
+            throw new Exception("Grabber init errs: '"+initErrString+"'");
+
     }
 
-    public void stop() {
-         mLeftMotor.setPower(0);
-         mRightMotor.setPower(0);
+    public void stop () {
+        if (mLeftMotor != null)
+            mLeftMotor.setPower(0);
+        if (mRightMotor != null)
+            mRightMotor.setPower(0);
     }
 
-    private void setPower(double leftPower, double rightPower){
-        mLeftMotor.setPower(leftPower);
-        mRightMotor.setPower(rightPower);
+    private void setPower ( double leftPower, double rightPower){
+        if (mLeftMotor != null)
+            mLeftMotor.setPower(leftPower);
+        if (mRightMotor != null)
+            mRightMotor.setPower(rightPower);
     }
 
     /**
@@ -62,7 +68,8 @@ public class Grabber {
      * @param leftPower
      * @param rightPower
      */
-    public void moveGrabber(boolean leftBumper,boolean rightBumper,double leftPower,double rightPower){
+    public void moveGrabber ( boolean leftBumper, boolean rightBumper, double leftPower,
+                              double rightPower){
         if (leftBumper || rightBumper) {
             if (leftBumper) {
                 leftPower = -BUMPER_REVERSE_SPEED;
@@ -80,7 +87,24 @@ public class Grabber {
                     leftPower = 0;
             }
         }
-        setPower(leftPower,rightPower);
+        setPower(leftPower, rightPower);
 
     }
+
+    /**
+     *  Utility function to handle motor initialization.  init must have been called
+     *  with a non-null hwMap or exception will be thrown.
+     *
+     */
+    private DcMotor tryMapMotor (String motorName) throws Exception {
+        DcMotor motor = null;
+        try {
+            motor = hwMap.get(DcMotor.class, motorName);
+        } catch (Exception e) {
+            // Throw an exception for the caller to catch so we can debug.
+            throw new Exception("Cannot map grabber motor: " + motorName);
+        }
+        return motor;
+    }
+
 }
