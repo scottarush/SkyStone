@@ -16,7 +16,7 @@ public class TestArm extends OpMode {
     private FourBarArm arm;
     @Override
     public void init() {
-        arm = new FourBarArm(this);
+        arm = new FourBarArm(this, true);
         try{
             arm.init(hardwareMap);
         }
@@ -28,17 +28,28 @@ public class TestArm extends OpMode {
 
     @Override
     public void loop() {
-        double xleft = gamepad1.left_stick_x;
+        double power = gamepad1.left_stick_y;
+/*
+        double position = power * 90;
 
-        double position = xleft * 90;
-
-        arm.setSpeed(1.0);
-        arm.setAngle(position);
-
-        telemetry.addData("Commanded degree position",position);
+        arm.setPower(1.0);
+        arm.gotoAngle(position);
+       telemetry.addData("Commanded degree position",position);
         telemetry.addData("current degree position",arm.getCurrentAngle());
         telemetry.addData("counts per degree",FourBarArm.COUNTS_PER_DEGREE);
-        telemetry.update();
+*/
+        if (Math.abs(power) > 0.1) {
+            boolean up = true;
+            if (Math.signum(power) < 0) {
+                up = false;
+            }
+            arm.moveArm(up);
+            telemetry.addData("Commanded power", power);
+            telemetry.update();
+        }
+        else{
+            arm.stop();
+        }
     }
 
     @Override
