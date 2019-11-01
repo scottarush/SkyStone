@@ -4,6 +4,7 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.firstinspires.ftc.teamcode.Grabber;
 import org.firstinspires.ftc.teamcode.Robot;
+import org.firstinspires.ftc.teamcode.arm.FourBarArm;
 import org.firstinspires.ftc.teamcode.drivetrain.Drivetrain;
 import org.firstinspires.ftc.teamcode.drivetrain.MecanumDrive;
 
@@ -14,8 +15,13 @@ public class MecanumGrabberBot extends Robot {
 
     private Grabber grabber;
 
-    public MecanumGrabberBot(OpMode opMode){
+    private FourBarArm arm = null;
+
+    private boolean mManualArmMode = false;
+
+    public MecanumGrabberBot(OpMode opMode, boolean manualArmMode){
         super(DriveTrainStyle.MECANUM,opMode);
+        mManualArmMode = manualArmMode;
     }
 
     public MecanumDrive getDrivetrain(){
@@ -48,7 +54,17 @@ public class MecanumGrabberBot extends Robot {
         catch (Exception e) {
             initErrString += e.getMessage();
         }
+        // Initialize the arm to manual mode
+        try{
+            arm = new FourBarArm(opMode, mManualArmMode);
+        }
+        catch(Exception e){
+            initErrString += e.getMessage();
+        }
         throw new Exception ("Robot init errs: "+initErrString);
     }
 
+    public FourBarArm getArm(){
+        return arm;
+    }
 }

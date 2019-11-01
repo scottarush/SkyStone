@@ -30,13 +30,35 @@ public abstract class Arm {
      /**
      * Sets the arm to an absolute position in degrees. 0 degree reference is arm specific.
      */
-    public abstract void setAngle(double degrees);
+    public abstract void gotoAngle(double deltaDegrees);
+    /**
+     * moves the arm by a delta angle from current position. ignored in manual mode
+     */
+    public abstract void moveDeltaAngle(double degrees);
+
 
     /**
-     * Sets the speed of motion of the arm.
-     * @speed speed to move the arm at the next setAngle from 0.0 to 1.0
+     * Starts moving the arm continously until stop is called at the last provided
+     * power value.
+     * @return false if the arm motor wasn't init correctly or the arm was initialized in angle mode
      */
-    public abstract void setSpeed(double speed);
+    public abstract boolean moveArm(boolean up);
+
+    /**
+     * @return true if arm was init'ed with angle mode
+     */
+    public abstract boolean isAngleMode();
+    /**
+     * @return true if arm is moving, false if stopped.
+     *
+     */
+    public abstract boolean isArmMoving();
+
+        /**
+         * Sets the power of the arm
+         * @speed power between 0 and 1 to move the arm at the next gotoAngle or moveArm call
+         */
+    public abstract void setPower(double power);
 
     /**
      * Retrieves the current arm position.

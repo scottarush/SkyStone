@@ -32,6 +32,7 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+import org.firstinspires.ftc.teamcode.arm.FourBarArm;
 import org.firstinspires.ftc.teamcode.drivetrain.MecanumDrive;
 
 
@@ -48,12 +49,16 @@ public class SingleDriverOpMode extends OpMode{
 
     private MecanumGrabberBot robot  = null;
 
+    public static final double ARM_POWER = 0.75d;
+
+    public static final double DELTA_ARM_ANGLE_STEP = 5.0d;
+
       /*
      * Code to run ONCE when the driver hits INIT
      */
     @Override
     public void init() {
-        robot = new MecanumGrabberBot(this);
+        robot = new MecanumGrabberBot(this, true);
         /*
         * Initialize the robot.  Be sure to catch exception and dump out as
         * the exception string will have details of what didn't initialize and
@@ -99,6 +104,37 @@ public class SingleDriverOpMode extends OpMode{
         // Read the bumpers and triggers for the grabber.
         robot.getGrabber().moveGrabber(gamepad1.left_bumper,gamepad1.right_bumper, gamepad1.left_trigger,gamepad1.right_trigger);
 
+        // If a reset is in progress then call teh service routine in the arm
+        if (robot.getArm().isResetToRetractInProgress()){
+            int retcode = robot.getArm().resetToRetractPosition();
+        }
+
+        // dpad handling.
+        if (robot.getArm().isAngleMode()){
+            // Read gamepad and move delta degrees per press
+            if (gamepad1.dpad_up) {
+                if (!robot.getArm().isArmMoving()) {
+                    // Arm has stopped.  Move it another 5 degrees.
+                    robot.getArm().moveDeltaAngle(DELTA_ARM_ANGLE_STEP);
+                }
+             } else if (gamepad1.dpad_down) {
+                if (!robot.getArm().isArmMoving()) {
+                    // Arm has stopped.  Move it another 5 degrees.
+                    robot.getArm().moveDeltaAngle(-DELTA_ARM_ANGLE_STEP);
+                }
+            }
+        }
+        else {
+            // Manual arm mode read the d-pad up and down for the arm moti
+            if (gamepad1.dpad_up) {
+                // While dpad-up pressed move the arm in up direction
+                robot.getArm().moveArm(true);
+            } else if (gamepad1.dpad_down) {
+                robot.getArm().moveArm(false);
+            } else {
+                robot.getArm().stop();
+            }
+        }
     }
 
     /*
