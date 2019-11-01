@@ -15,6 +15,7 @@ public class FieldGraph {
     private FieldBlock[][] mFieldBlocks;
     private int mRows = 0;
     private int mCols = 0;
+
     public FieldGraph(int rows,int columns){
         mRows = rows;
         mCols = columns;
@@ -78,7 +79,12 @@ public class FieldGraph {
          return true;
     }
 
-    private FieldBlock getBlock(int blockNum) {
+    /**
+     *
+     * @param blockNum
+     * @return the FieldBlock or null if the block is invalid
+     */
+    public FieldBlock getBlock(int blockNum) {
         for (int row = 0; row < mRows; row++) {
             for (int col = 0; col < mCols; col++) {
                 FieldBlock block = mFieldBlocks[row][col];
