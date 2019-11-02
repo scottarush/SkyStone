@@ -9,7 +9,21 @@ import org.firstinspires.ftc.teamcode.drivetrain.Drivetrain;
 import org.firstinspires.ftc.teamcode.drivetrain.MecanumDrive;
 
 /**
- * This is the Mechanm bot with a grabber arm.
+ * This is the Mecanum bot with a grabber arm.
+ * HUB2 layout:
+ * -------------------------------------------------
+ * Port0:  left grabber motor  "lgrabber"
+ * Port1:  right grabber motor "rgrabber"
+ *
+ *
+ * HUB1 Layout:
+ * -------------------------------------------------
+ * Port0:  left front wheel hex motor "lf"
+ * Port1:  right front wheel hex motor "rf"
+ * Port2:  left rear wheel hex motor "lr"
+ * Port3:  right rear wheel hex motor "rr"
+ *
+ * Dig0/1:  arm limit switch "armlimitsw"
  */
 public class MecanumGrabberBot extends Robot {
 
@@ -61,7 +75,9 @@ public class MecanumGrabberBot extends Robot {
         catch(Exception e){
             initErrString += e.getMessage();
         }
-        throw new Exception ("Robot init errs: "+initErrString);
+        if (initErrString.length() > 0) {
+            throw new Exception("Robot init errs: " + initErrString);
+        }
     }
 
     public FourBarArm getArm(){

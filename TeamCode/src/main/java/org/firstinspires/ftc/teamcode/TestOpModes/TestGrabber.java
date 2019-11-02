@@ -16,7 +16,7 @@ public class TestGrabber extends OpMode {
 
     private Grabber grabber;
     @Override
-    public void init() {
+    public void init()  {
         grabber = new Grabber(this);
         try{
             grabber.init(hardwareMap);

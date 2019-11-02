@@ -15,7 +15,7 @@ public class SkystoneAutonomousOpMode extends OpMode {
     public SkystoneAutonomousOpMode(){
 
         // Create the field graph
-        mFieldGraph = new FieldGraph(6, 6);
+    //    mFieldGraph = new FieldGraph(6, 6);
 
     }
 
@@ -29,10 +29,10 @@ public class SkystoneAutonomousOpMode extends OpMode {
 
     }
 
-    /**
+ /*   *//**
      *
-     * @param blockNum
-     */
+     * @param
+     *//*
     public void setRobotLocation(int xloc,yloc){
         FieldTile block = mFieldGraph.getTile(blockNum);
         if (block != null){
@@ -40,7 +40,7 @@ public class SkystoneAutonomousOpMode extends OpMode {
         }
     }
 
-
+*/
 
     private void initRoutes() {
         // Adds the viable routes to the field graph.
