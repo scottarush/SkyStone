@@ -63,4 +63,8 @@ public class SkystoneFieldGraph extends FieldGraph {
         r.addRouteTransition(19);
         r.setEndTile(19);
     }
+
+    /**
+     * gets the next maneuver
+     */
 }

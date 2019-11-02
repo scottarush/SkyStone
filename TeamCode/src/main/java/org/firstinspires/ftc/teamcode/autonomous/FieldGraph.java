@@ -43,6 +43,8 @@ public class FieldGraph {
     public FieldGraph(int rows,int columns,double tileWidth,double tileHeight){
         mRows = rows;
         mCols = columns;
+        mTileWidth = tileWidth;
+        mTileHeight = tileHeight;
         // Create the graph with default connections
         mFieldTiles = new FieldTile[mRows][mCols];
         int blockNumCount = 1;
@@ -51,7 +53,7 @@ public class FieldGraph {
             double x = 0;
             for(int col=0;col < mCols;col++){
                 // Create the tile and put in the array
-                FieldTile tile = new FieldTile(blockNumCount++,x,y);
+                FieldTile tile = new FieldTile(blockNumCount++,mTileWidth,mTileHeight,x,y);
                 mFieldTiles[row][col] = tile;
                 x += mTileWidth;
             }

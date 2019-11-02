@@ -2,12 +2,15 @@ package org.firstinspires.ftc.teamcode.autonomous;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  * This is a data structure class used by the FieldGraph to represent the
  * each block.
  */
 public class FieldTile {
+
+    private static final int INVALID_EDGE = -1;
 
     public static final int EDGE_TOP = 0;
     public static final int EDGE_RIGHT = 1;
@@ -37,10 +40,18 @@ public class FieldTile {
      */
     private ArrayList<Route> mOutgoingRoutesArray[] = null;
 
+    private HashMap<Route,Action> mRouteEntryActionMap = new HashMap<>();
+
     private TileLocation mTileCoord = null;
 
-    public FieldTile(int tileNum,double xbase, double ybase){
+    private double mWidth = 0d;
+    private double mHeight = 0d;
+
+
+    public FieldTile(int tileNum,double width, double height, double xbase, double ybase){
         mTileCoord = new TileLocation(tileNum,xbase,ybase);
+        mWidth = width;
+        mHeight = height;
         for(int i=0;i < 3;i++){
             mIncomingRoutesArray[i] = new ArrayList<>();
             mOutgoingRoutesArray[i] = new ArrayList<>();
@@ -120,9 +131,10 @@ public class FieldTile {
      * Called to add this route as an outgoing connection on this tile.
      * @param r
      * @param destTile
+     * @param action Action to be taken on entry to destTile or null if no action
      * @return false if the destTile is not a neighbor of this tile.
      */
-    public boolean addRouteTransition(Route r, FieldTile destTile){
+    public boolean addRouteTransition(Route r, FieldTile destTile,Action action){
         // Find the edge where the route goes.
         int edge = 0;
         for(int i=0;i <= 3;i++){
@@ -146,6 +158,9 @@ public class FieldTile {
                         break;
                 }
                 destTile.mIncomingRoutesArray[destEdge].add(r);
+                if (action != null){
+                    destTile.mRouteEntryActionMap.put(r,action);
+                }
                 return true;
             }
         }
@@ -153,4 +168,50 @@ public class FieldTile {
         return false;
     }
 
+    /**
+     * Returns an entry action for the provided route or null if no action has been set on this
+     * route for this tile.
+     */
+    public Action getEntryAction(Route r){
+        Action action = mRouteEntryActionMap.get(r);
+        return action;
+    }
+
+    /**
+     * @return the next maneuver on the current outgoing route or null if route is not valid for this tile.
+     */
+    public Maneuver getNextManeuver(Route r){
+        int edge = INVALID_EDGE;
+        for(int i=0;i <= 3;i++) {
+            if (mOutgoingRoutesArray[i].contains(r)){
+                edge = i;
+                break;
+            }
+        }
+        if (edge == INVALID_EDGE)
+            return null;
+        // Otherwise we move from current location to next tile
+        double xdelta = 0;
+        double ydelta = 0;
+        switch(edge){
+            case EDGE_LEFT:
+                xdelta = -mWidth;
+                ydelta = 0;
+                break;
+            case EDGE_RIGHT:
+                xdelta = mWidth;
+                ydelta = 0;
+                break;
+            case EDGE_BOTTOM:
+                xdelta = 0;
+                ydelta = -mHeight;
+                break;
+            case EDGE_TOP:
+                xdelta = mHeight;
+                ydelta = 0;
+                break;
+        }
+        // TODO - create the Maneuver
+        return null;
+    }
 }
