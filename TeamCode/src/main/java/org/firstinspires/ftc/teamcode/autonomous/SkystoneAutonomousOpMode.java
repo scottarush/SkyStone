@@ -10,7 +10,7 @@ public class SkystoneAutonomousOpMode extends OpMode {
 
     private FieldGraph mFieldGraph;
 
-    private FieldBlock mCurrentBlockLocation = null;
+    private FieldTile mCurrentBlockLocation = null;
 
     public SkystoneAutonomousOpMode(){
 
@@ -34,7 +34,7 @@ public class SkystoneAutonomousOpMode extends OpMode {
      * @param blockNum
      */
     public void setRobotLocation(int xloc,yloc){
-        FieldBlock block = mFieldGraph.getBlock(blockNum);
+        FieldTile block = mFieldGraph.getTile(blockNum);
         if (block != null){
             mCurrentBlockLocation = block;
         }

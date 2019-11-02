@@ -269,11 +269,11 @@ public class ConceptVuforiaSkyStoneNavigationWebcam extends LinearOpMode {
         // Lock it into Portrait for these numbers to work.
         //
         // Info:  The coordinate frame for the robot looks the same as the field.
-        // The robot's "forward" direction is facing out along X axis, with the LEFT side facing out along the Y axis.
+        // The robot's "forward" direction is facing out along X axis, with the EDGE_LEFT side facing out along the Y axis.
         // Z is UP on the robot.  This equates to a bearing angle of Zero degrees.
         //
         // The phone starts out lying flat, with the screen facing Up and with the physical top of the phone
-        // pointing to the LEFT side of the Robot.
+        // pointing to the EDGE_LEFT side of the Robot.
         // The two examples below assume that the camera is facing forward out the front of the robot.
 
         // We need to rotate the camera around it's long axis to bring the correct camera forward.

@@ -1,61 +1,90 @@
 package org.firstinspires.ftc.teamcode.autonomous;
 
-import android.util.ArrayMap;
-
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 
 /**
- * This class is the graph used to define the Skystone playing field
- * squares.  Creators add routes into the fieldgraph to be used in
- * autonomous mode.
+ * This is a graph of tiles that represent the field.
+ * Block numbers are ordered from the bottom left, starting at 0
+ * and scanning left to right and then up back to left
  */
 public class FieldGraph {
 
-    private FieldBlock[][] mFieldBlocks;
+    private FieldTile[][] mFieldTiles;
     private int mRows = 0;
     private int mCols = 0;
 
-    public FieldGraph(int rows,int columns){
+    private double mTileWidth = 0d;
+    private double mTileHeight = 0d;
+
+    /**
+     * Encapsulates a position the graph.
+     */
+    public class GraphPosition {
+        public GraphPosition(FieldTile tile, double xoffset,double yoffset){
+            mTile = tile;
+            mXOffset = Math.round(xoffset * 10)/100d;
+            mYOffset = Math.round(yoffset * 10)/10d;
+        }
+        /**
+         * Tile
+         */
+        public FieldTile mTile= null;
+        /**
+         * offset in X  from center of block rounded to nearest 10th of units
+         */
+        public double mXOffset = 0;
+        /**
+         * offset in Y direction from center of block rounded to nearest 10th of units
+         */
+        public double mYOffset= 0;
+
+    }
+
+    public FieldGraph(int rows,int columns,double tileWidth,double tileHeight){
         mRows = rows;
         mCols = columns;
         // Create the graph with default connections
-        mFieldBlocks = new FieldBlock[mRows][mCols];
-        int blockNumCount = 0;
+        mFieldTiles = new FieldTile[mRows][mCols];
+        int blockNumCount = 1;
+        double y = 0;
         for(int row=0;row < mRows;row++){
+            double x = 0;
             for(int col=0;col < mCols;col++){
-                // Create the block
-                FieldBlock block = new FieldBlock(blockNumCount++);
+                // Create the tile and put in the array
+                FieldTile tile = new FieldTile(blockNumCount++,x,y);
+                mFieldTiles[row][col] = tile;
+                x += mTileWidth;
             }
+            y += mTileHeight;
         }
         // Now loop through newly created blocks o set the neighbors
         for(int row=0;row < mRows;row++){
             for(int col=0;col < mCols;col++){
                 // Create the block
-                FieldBlock block = mFieldBlocks[row][col];
+                FieldTile block = mFieldTiles[row][col];
                 for(int i=0;i < 4;i++){
                     switch(i) {
-                        case FieldBlock.TOP:
+                        case FieldTile.EDGE_TOP:
                             if (row > 0) {
-                                FieldBlock top = mFieldBlocks[row - 1][col];
-                                block.setNeighbor(FieldBlock.TOP, top);
+                                FieldTile top = mFieldTiles[row - 1][col];
+                                block.setNeighbor(FieldTile.EDGE_TOP, top);
                             }
                             break;
-                        case FieldBlock.LEFT:
+                        case FieldTile.EDGE_LEFT:
                             if (col > 0) {
-                                FieldBlock leftBlock = mFieldBlocks[row][col - 1];
-                                block.setNeighbor(FieldBlock.LEFT, leftBlock);
+                                FieldTile leftBlock = mFieldTiles[row][col - 1];
+                                block.setNeighbor(FieldTile.EDGE_LEFT, leftBlock);
                             }
                             break;
-                        case FieldBlock.RIGHT:
+                        case FieldTile.EDGE_RIGHT:
                             if (col < mCols - 1) {
-                                FieldBlock rightBlock = mFieldBlocks[row][col + 1];
-                                block.setNeighbor(FieldBlock.RIGHT, rightBlock);
+                                FieldTile rightBlock = mFieldTiles[row][col + 1];
+                                block.setNeighbor(FieldTile.EDGE_RIGHT, rightBlock);
                             }
-                        case FieldBlock.BOTTOM:
+                        case FieldTile.EDGE_BOTTOM:
                             if (row < mRows - 1) {
-                                FieldBlock bottomBlock = mFieldBlocks[row+1][col];
-                                block.setNeighbor(FieldBlock.RIGHT, bottomBlock);
+                                FieldTile bottomBlock = mFieldTiles[row+1][col];
+                                block.setNeighbor(FieldTile.EDGE_RIGHT, bottomBlock);
                             }
                     }
                 }
@@ -65,15 +94,15 @@ public class FieldGraph {
 
     /**
      * Adds a route segment
-     * @param blockNumber
-     * @param edge FieldBlock perimeter constant of the OUT_CONNECTION to add
+     * @param tileNumber
+     * @param edge FieldTile perimeter constant of the OUT_CONNECTION to add
      * @return true if add, false if invalid block or edge was a perimeter (and can't add connection)
      */
-    public boolean addRouteSegment(int blockNumber,int edge){
-        FieldBlock block = getBlock(blockNumber);
+    public boolean addRouteSegment(int tileNumber,int edge){
+        FieldTile block = getTile(tileNumber);
         if (block == null)
             return false;
-        if (!FieldBlock.isEdgeValid(edge)){
+        if (!FieldTile.isEdgeValid(edge)){
             return false;
         }
          return true;
@@ -81,15 +110,15 @@ public class FieldGraph {
 
     /**
      *
-     * @param blockNum
-     * @return the FieldBlock or null if the block is invalid
+     * @param tileNum
+     * @return the FieldTile or null if the block is invalid
      */
-    public FieldBlock getBlock(int blockNum) {
+    public FieldTile getTile(int tileNum) {
         for (int row = 0; row < mRows; row++) {
             for (int col = 0; col < mCols; col++) {
-                FieldBlock block = mFieldBlocks[row][col];
-                if (block.getBlockNum() == blockNum) {
-                    return block;
+                FieldTile tile = mFieldTiles[row][col];
+                if (tile.getTileLocation().blocknum == tileNum) {
+                    return tile;
                 }
             }
         }
@@ -97,7 +126,38 @@ public class FieldGraph {
         return null;
     }
 
-    public boolean addRoute(int routeHandle,ArrayList<Integer> routeList){
-        return true;
+    /**
+     * translates the location to a tile
+     * @return GraphPosition or null if coords invalid
+     */
+    public GraphPosition getGraphPositionAt(double x, double y){
+        double ymax = (mRows * mTileHeight)/2.0d;
+        double xmax = (mCols * mTileWidth)/2.0d;
+        if ((Math.abs(x) > xmax) || (Math.abs(y) > ymax)){
+            return null;
+        }
+        // Translate x and y coordinates from center to bottom left corner by adding the xmax
+        // and ymax values
+        double xt = x + xmax;
+        double yt = y + ymax;
+
+        // Now find the tile that this coord is in.
+        for (int row = 0; row < mRows; row++) {
+            for (int col = 0; col < mCols; col++) {
+                FieldTile tile = mFieldTiles[row][col];
+                FieldTile.TileLocation location = tile.getTileLocation();
+                if ((xt > location.x) && (xt < (location.x + mTileWidth))){
+                    // right column
+                    if ((yt > location.y) && (yt < (location.y + mTileWidth))){
+                        // This is it
+                        GraphPosition pos = new GraphPosition(getTile(location.blocknum), (xt-location.x),(yt-location.y));
+                        return pos;
+                    }
+
+                }
+            }
+        }
+        return null;  // Shouldn't happen for validated coords.
     }
+
 }
