@@ -12,7 +12,7 @@ public class FourBarArm extends Arm {
 
     public static final String ARM_MOTOR_NAME = "arm_motor";
     public static final String CLAW_SERVO_NAME = "claw";
-    public static final String LIMIT_SENSOR_NAME = "arm_limit_sensor";
+    public static final String LIMIT_SENSOR_NAME = "armlimitsw";
 
     private Servo mClawServo = null;
     private DigitalChannel mLimitSwitch = null;
@@ -87,7 +87,9 @@ public class FourBarArm extends Arm {
         } catch (Exception e) {
             initErrString += "Claw servo init failed";
         }
-
+        if (initErrString.length() > 0){
+            throw new Exception(initErrString);
+        }
         if (mArmMotor != null) {
             if (mMode == ANGLE_MODE) {
                 mArmMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);

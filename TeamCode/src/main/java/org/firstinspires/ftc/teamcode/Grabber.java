@@ -30,7 +30,7 @@ public class Grabber {
             mLeftMotor = tryMapMotor(LEFT_GRABBER_MOTOR_NAME);
             mLeftMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         } catch (Exception e) {
-            initErrString += "left,";
+            initErrString += "left grabber,";
          }
         try {
             mRightMotor = tryMapMotor(RIGHT_GRABBER_MOTOR_NAME);
@@ -38,7 +38,7 @@ public class Grabber {
             // Right side is reversed to suck in on postive power
             mRightMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         } catch (Exception e) {
-            initErrString += "right";
+            initErrString += "right grabber,";
         }
         // If we have an error then throw an exception at the end so that
         // owner can catch and post a message
