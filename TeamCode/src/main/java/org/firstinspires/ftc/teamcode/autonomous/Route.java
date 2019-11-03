@@ -33,7 +33,6 @@ public class Route {
         FieldTile tile = mGraph.getTile(tileNum);
         if (tile == null)
             return false;
-        mRouteTileTransitions.add(tile);
         tile.setStartOfRoute(this);
         mCurrentBuildTile = tile;
         return true;
@@ -74,10 +73,8 @@ public class Route {
     private int getTransitionIndex(FieldTile tile){
         // crawl the route to find the first occurence which have an outgoing edge or the endge tile
         for(int index = 0;index < mRouteTileTransitions.size();index++){
-            FieldTile aTile = mRouteTileTransitions.get(index);
-            if (aTile == tile){
-                return index;
-            }
+            RouteTransition transition = mRouteTileTransitions.get(index);
+            return 0;  // TODO
         }
         return -1;
     }
@@ -99,7 +96,7 @@ public class Route {
         if (tile == null)
             return false;
         boolean retcod = tile.setEndOfRoute(this);
-        mRouteTileTransitions.add(tile);
+        //mRouteTileTransitions.add(tile);
         return retcod;
     }
 
