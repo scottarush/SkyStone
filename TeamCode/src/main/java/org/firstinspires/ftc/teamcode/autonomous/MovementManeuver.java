@@ -6,7 +6,10 @@ public class MovementManeuver extends Maneuver {
     public double yDelta;
     public int destTilenum;
 
-    public MovementManeuver(){
+    public MovementManeuver(double xDelta,double yDelta,int destTilenum){
         super("Movement");
+        this.xDelta = xDelta;
+        this.yDelta = yDelta;
+        this.destTilenum = destTilenum;
     }
 }

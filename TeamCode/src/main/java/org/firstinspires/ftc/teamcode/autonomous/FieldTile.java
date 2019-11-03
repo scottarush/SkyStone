@@ -10,7 +10,7 @@ import java.util.HashMap;
  */
 public class FieldTile {
 
-    private static final int INVALID_EDGE = -1;
+    public static final int EDGE_INVALID = -1;
 
     public static final int EDGE_TOP = 0;
     public static final int EDGE_RIGHT = 1;
@@ -34,25 +34,19 @@ public class FieldTile {
     /**
      * Array of Lists of incoming routes on each edges
      */
-    private ArrayList<Route> mIncomingRoutesArray[] = null;
+    private ArrayList<Route> mIncomingRoutesArray[] = new ArrayList[4];
     /**
      * Array of Lists of outgoing routes on each edges.
      */
-    private ArrayList<Route> mOutgoingRoutesArray[] = null;
+    private ArrayList<Route> mOutgoingRoutesArray[] =  new ArrayList[4];
 
     private HashMap<Route,Action> mRouteEntryActionMap = new HashMap<>();
 
-    private TileLocation mTileCoord = null;
-
-    private double mWidth = 0d;
-    private double mHeight = 0d;
-
+    private TileLocation mTileLocation = null;
 
     public FieldTile(int tileNum,double width, double height, double xbase, double ybase){
-        mTileCoord = new TileLocation(tileNum,xbase,ybase);
-        mWidth = width;
-        mHeight = height;
-        for(int i=0;i < 3;i++){
+        mTileLocation = new TileLocation(tileNum,xbase,ybase);
+        for(int i=0;i <= 3;i++){
             mIncomingRoutesArray[i] = new ArrayList<>();
             mOutgoingRoutesArray[i] = new ArrayList<>();
         }
@@ -62,19 +56,27 @@ public class FieldTile {
         TileLocation(int tileNum, double x, double y){
             this.x = x;
             this.y = y;
-            this.blocknum = tileNum;
+            this.mTileNum = tileNum;
 
         }
         /** left edge of tile  **/
         public double x = 0;
         /** lower edge of tile  **/
         public double y = 0;
-        public int blocknum = 0;
+        public int mTileNum = 0;
     }
 
+    /**
+     *
+     * @return the number of this tile.
+     *
+     */
+    public int getTileNum(){
+       return mTileLocation.mTileNum;
+    }
 
     public TileLocation getTileLocation(){
-        return mTileCoord;
+        return mTileLocation;
     }
     /**
      * Sets a neighboor
@@ -95,15 +97,21 @@ public class FieldTile {
         return true;
     }
 
-    public boolean hasNeighbor(int edge){
+    /**
+     * @return the neighboring tile on the selected edge or null if no
+     * neighbor on that edge
+     * @param edge
+     */
+
+    public FieldTile getNeighbor(int edge){
         if (!isEdgeValid(edge))
-            return false;
-        return mNeighbors[edge] != null;
+            return null;
+        return mNeighbors[edge];
     }
 
     /**
      * Called to set this tile as the start of a route.
-     * @param r
+     * @param r the route to set as start
      */
     public void setStartOfRoute(Route r){
         mStartingRoutes.add(r);
@@ -136,14 +144,14 @@ public class FieldTile {
      */
     public boolean addRouteTransition(Route r, FieldTile destTile,Action action){
         // Find the edge where the route goes.
-        int edge = 0;
-        for(int i=0;i <= 3;i++){
-            if (mNeighbors[i] == destTile){
+        for(int edge=0;edge <= 3;edge++){
+            FieldTile tile = mNeighbors[edge];
+            if (tile == destTile){
                 // This is it.  add it to the correct edge array
-                mOutgoingRoutesArray[i].add(r);
-                // And add this tile to the mIncomingRoutesArray on the correct edge
+                mOutgoingRoutesArray[edge].add(r);
+                // And add this tile to the mIncomingRoutesArray the destTiles correct edge
                 int destEdge = 0;
-                switch(i){
+                switch(edge){
                     case EDGE_LEFT:
                         destEdge = EDGE_RIGHT;
                         break;
@@ -178,40 +186,32 @@ public class FieldTile {
     }
 
     /**
-     * @return the next maneuver on the current outgoing route or null if route is not valid for this tile.
+     * @return the outgoing edge of the supplied route or EDGE_INVALID if the route is not
+     * an outgoing route on this tile.
      */
-    public Maneuver getNextManeuver(Route r){
-        int edge = INVALID_EDGE;
-        for(int i=0;i <= 3;i++) {
-            if (mOutgoingRoutesArray[i].contains(r)){
-                edge = i;
-                break;
+    public int getOutgoingEdge(Route r){
+        for(int edge=0;edge <= 3;edge++){
+            if (mOutgoingRoutesArray[edge].contains(r)){
+                return edge;
             }
         }
-        if (edge == INVALID_EDGE)
-            return null;
-        // Otherwise we move from current location to next tile
-        double xdelta = 0;
-        double ydelta = 0;
-        switch(edge){
-            case EDGE_LEFT:
-                xdelta = -mWidth;
-                ydelta = 0;
-                break;
-            case EDGE_RIGHT:
-                xdelta = mWidth;
-                ydelta = 0;
-                break;
-            case EDGE_BOTTOM:
-                xdelta = 0;
-                ydelta = -mHeight;
-                break;
-            case EDGE_TOP:
-                xdelta = mHeight;
-                ydelta = 0;
-                break;
-        }
-        // TODO - create the Maneuver
-        return null;
+        return EDGE_INVALID;
+    }
+
+    /**
+     * @return list of starting routes on this tile.
+     *
+     */
+    public ArrayList<Route> getStartingRoutes(){
+        return mStartingRoutes;
+    }
+
+    /** @return list of incoming routes to this tile as an array indexed EDGE. **/
+    public ArrayList<Route>[] getIncomingRoutes(){
+        return mIncomingRoutesArray;
+    }
+    /** @return list of outgoing routes to this tile as an array indexed EDGE. **/
+    public ArrayList<Route>[] getOutgoingRoutes(){
+        return mOutgoingRoutesArray;
     }
 }
