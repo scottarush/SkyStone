@@ -140,9 +140,9 @@ public class FieldTile {
      * @param r
      * @param destTile
      * @param action Action to be taken on entry to destTile or null if no action
-     * @return false if the destTile is not a neighbor of this tile.
+     * @return RouteTransition or null if destTile is not a neigher
      */
-    public boolean addRouteTransition(Route r, FieldTile destTile,Action action){
+    public RouteTransition addRouteTransition(Route r, FieldTile destTile,Action action){
         // Find the edge where the route goes.
         for(int edge=0;edge <= 3;edge++){
             FieldTile tile = mNeighbors[edge];
@@ -169,11 +169,11 @@ public class FieldTile {
                 if (action != null){
                     destTile.mRouteEntryActionMap.put(r,action);
                 }
-                return true;
+                return new RouteTransition(this,destTile,0);
             }
         }
         // Must not have been a neighbor
-        return false;
+        return null;
     }
 
     /**
@@ -191,9 +191,7 @@ public class FieldTile {
      */
     public int getOutgoingEdge(Route r){
         for(int edge=0;edge <= 3;edge++){
-            if (mOutgoingRoutesArray[edge].contains(r)){
                 return edge;
-            }
         }
         return EDGE_INVALID;
     }

@@ -12,7 +12,7 @@ public class Route {
 
     FieldTile mCurrentBuildTile = null;
 
-    private ArrayList<FieldTile> mRouteTileTransitions = new ArrayList<>();
+    private ArrayList<RouteTransition> mRouteTileTransitions = new ArrayList<>();
 
     private int mCurrentTransitionIndex = 0;
 
@@ -43,12 +43,14 @@ public class Route {
         FieldTile tile = mGraph.getTile(destTileNum);
         if (tile == null)
             return false;
-        boolean retcode = mCurrentBuildTile.addRouteTransition(this,tile,entryAction);
-        if (retcode){
+        RouteTransition transition = mCurrentBuildTile.addRouteTransition(this,tile,entryAction);
+        if (transition != null){
             mCurrentBuildTile = tile;
-            mRouteTileTransitions.add(tile);
+            // Set the transition number now that we know it to the next index
+            transition.transitionNumber = mRouteTileTransitions.size();
+            mRouteTileTransitions.add(transition);
         }
-        return retcode;
+        return (transition != null);
     }
 
     /**
