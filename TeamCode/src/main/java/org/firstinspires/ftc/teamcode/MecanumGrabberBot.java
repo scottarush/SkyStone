@@ -31,6 +31,8 @@ public class MecanumGrabberBot extends Robot {
 
     private FourBarArm arm = null;
 
+    private Hook hook = null;
+
     private boolean mManualArmMode = false;
 
     public MecanumGrabberBot(OpMode opMode, boolean manualArmMode){
@@ -75,12 +77,24 @@ public class MecanumGrabberBot extends Robot {
         catch(Exception e){
             initErrString += e.getMessage();
         }
+         // Initialize the hook
+        try{
+            hook = new Hook(opMode);
+        }
+        catch(Exception e){
+            initErrString += e.getMessage();
+        }
         if (initErrString.length() > 0) {
             throw new Exception("Robot init errs: " + initErrString);
         }
+
     }
 
     public FourBarArm getArm(){
         return arm;
+    }
+
+    public Hook getHook(){
+        return hook;
     }
 }

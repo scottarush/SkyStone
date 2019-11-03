@@ -37,7 +37,7 @@ public class SkystoneFieldGraph extends FieldGraph {
         // Translate coords
         double xtrans = x+FIELD_WIDTH/2d;
         double ytrans = y+FIELD_HEIGHT/2d;
-        setRobotPosition(xtrans,ytrans,null);
+        resetRobotPosition(xtrans,ytrans,null);
         return true;
     }
 
@@ -60,7 +60,6 @@ public class SkystoneFieldGraph extends FieldGraph {
         r.addRouteTransition(31,null);
         r.addRouteTransition(25,null);
         r.addRouteTransition(19,null);
-        r.setEndTile(19);
     }
 
 

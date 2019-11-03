@@ -21,22 +21,24 @@ public class FieldTile {
     private FieldTile mNeighbors[] = new FieldTile[4];
 
     /**
-     * List of routes that start on this tile. Routes in this
-     * list will also be in the outgoing routes
+     * List of routes that start on this tile. This is used to automatically selecte
+     * a route when the robot is placed on the field in FieldGraph.getNextManeuver.
      */
     private ArrayList<Route>mStartingRoutes = new ArrayList<>();
     /**
      * List of routes that end on this tile.  Routes in this
-     * list will also be in the incoming routes.
+     * list will also be in the incoming routes.  This is not used anywhere
      */
     private ArrayList<Route>mEndingRoutes = new ArrayList<>();
 
     /**
-     * Array of Lists of incoming routes on each edges
+     * Array of Lists of incoming routes on each edges.
+     * This is not used anywhere.  May be able to eliminate.
      */
     private ArrayList<Route> mIncomingRoutesArray[] = new ArrayList[4];
     /**
-     * Array of Lists of outgoing routes on each edges.
+     * Array of Lists of outgoing routes on each edges.  This is only used to be able
+     * to find a route if the robot is placed on or veers into the middle of one.
      */
     private ArrayList<Route> mOutgoingRoutesArray[] =  new ArrayList[4];
 
@@ -44,6 +46,14 @@ public class FieldTile {
 
     private TileLocation mTileLocation = null;
 
+    /**
+     * Constructs a new FieldTile
+     * @param tileNum
+     * @param width
+     * @param height
+     * @param xbase
+     * @param ybase
+     */
     public FieldTile(int tileNum,double width, double height, double xbase, double ybase){
         mTileLocation = new TileLocation(tileNum,xbase,ybase);
         for(int i=0;i <= 3;i++){
@@ -169,7 +179,9 @@ public class FieldTile {
                 if (action != null){
                     destTile.mRouteEntryActionMap.put(r,action);
                 }
-                return new RouteTransition(this,destTile,0);
+                // Return a RouteTransition with a default transitionIndex that will be filled
+                // in by caller with the actual index
+                return new RouteTransition(this,edge,destTile,destEdge,0);
             }
         }
         // Must not have been a neighbor
@@ -186,17 +198,6 @@ public class FieldTile {
     }
 
     /**
-     * @return the outgoing edge of the supplied route or EDGE_INVALID if the route is not
-     * an outgoing route on this tile.
-     */
-    public int getOutgoingEdge(Route r){
-        for(int edge=0;edge <= 3;edge++){
-                return edge;
-        }
-        return EDGE_INVALID;
-    }
-
-    /**
      * @return list of starting routes on this tile.
      *
      */
@@ -204,10 +205,6 @@ public class FieldTile {
         return mStartingRoutes;
     }
 
-    /** @return list of incoming routes to this tile as an array indexed EDGE. **/
-    public ArrayList<Route>[] getIncomingRoutes(){
-        return mIncomingRoutesArray;
-    }
     /** @return list of outgoing routes to this tile as an array indexed EDGE. **/
     public ArrayList<Route>[] getOutgoingRoutes(){
         return mOutgoingRoutesArray;

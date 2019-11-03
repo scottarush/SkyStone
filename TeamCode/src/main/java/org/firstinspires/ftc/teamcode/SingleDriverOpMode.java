@@ -32,9 +32,6 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.firstinspires.ftc.teamcode.arm.FourBarArm;
-import org.firstinspires.ftc.teamcode.drivetrain.MecanumDrive;
-
 
 /**
  * This is the class to be used for the single driver competition mode.
@@ -53,32 +50,34 @@ public class SingleDriverOpMode extends OpMode{
 
     public static final double DELTA_ARM_ANGLE_STEP = 5.0d;
 
-      /*
+    /*
      * Code to run ONCE when the driver hits INIT
      */
     @Override
     public void init() {
         robot = new MecanumGrabberBot(this, true);
         /*
-        * Initialize the robot.  Be sure to catch exception and dump out as
-        * the exception string will have details of what didn't initialize and
-        * we can figure out what went wrong.
+         * Initialize the robot.  Be sure to catch exception and dump out as
+         * the exception string will have details of what didn't initialize and
+         * we can figure out what went wrong.
          */
+        String statusMsg = "Success";
         try{
             robot.init();
         }
         catch(Exception e){
-            telemetry.addData("Robot init error:",e.getMessage());
-            telemetry.update();
+            statusMsg = "InitErrors:"+e.getMessage();
         }
-     }
+        telemetry.addData("Status",statusMsg);
+        telemetry.update();
+    }
 
     /*
      * Code to run REPEATEDLY after the driver hits INIT, but before they hit PLAY
      */
     @Override
     public void init_loop() {
-     }
+    }
 
     /*
      * Code to run ONCE when the driver hits PLAY
@@ -92,7 +91,7 @@ public class SingleDriverOpMode extends OpMode{
      */
     @Override
     public void loop() {
-         // Run wheels in tank mode (note: The joystick goes negative when pushed forwards, so negate it)
+        // Run wheels in tank mode (note: The joystick goes negative when pushed forwards, so negate it)
         double xleft = gamepad1.left_stick_x;
         double yleft = -gamepad1.left_stick_y;
         double xright = gamepad1.right_stick_x;
@@ -104,37 +103,50 @@ public class SingleDriverOpMode extends OpMode{
         // Read the bumpers and triggers for the grabber.
         robot.getGrabber().moveGrabber(gamepad1.left_bumper,gamepad1.right_bumper, gamepad1.left_trigger,gamepad1.right_trigger);
 
+
+        // Do arm handling
         // If a reset is in progress then call teh service routine in the arm
         if (robot.getArm().isResetToRetractInProgress()){
             int retcode = robot.getArm().resetToRetractPosition();
         }
-
-        // dpad handling.
-        if (robot.getArm().isAngleMode()){
-            // Read gamepad and move delta degrees per press
-            if (gamepad1.dpad_up) {
-                if (!robot.getArm().isArmMoving()) {
-                    // Arm has stopped.  Move it another 5 degrees.
-                    robot.getArm().moveDeltaAngle(DELTA_ARM_ANGLE_STEP);
+        else{
+            if (robot.getArm().isAngleMode()) {
+                // Read gamepad and move delta degrees per press
+                if (gamepad1.dpad_up) {
+                    if (!robot.getArm().isArmMoving()) {
+                        // Arm has stopped.  Move it another 5 degrees.
+                        robot.getArm().moveDeltaAngle(DELTA_ARM_ANGLE_STEP);
+                    }
+                } else if (gamepad1.dpad_down) {
+                    if (!robot.getArm().isArmMoving()) {
+                        // Arm has stopped.  Move it another 5 degrees.
+                        robot.getArm().moveDeltaAngle(-DELTA_ARM_ANGLE_STEP);
+                    }
                 }
-             } else if (gamepad1.dpad_down) {
-                if (!robot.getArm().isArmMoving()) {
-                    // Arm has stopped.  Move it another 5 degrees.
-                    robot.getArm().moveDeltaAngle(-DELTA_ARM_ANGLE_STEP);
-                }
-            }
-        }
-        else {
-            // Manual arm mode read the d-pad up and down for the arm moti
-            if (gamepad1.dpad_up) {
-                // While dpad-up pressed move the arm in up direction
-                robot.getArm().moveArm(true);
-            } else if (gamepad1.dpad_down) {
-                robot.getArm().moveArm(false);
             } else {
-                robot.getArm().stop();
+                // Manual arm mode read the d-pad up and down for the arm moti
+                if (gamepad1.dpad_up) {
+                    // While dpad-up pressed move the arm in up direction
+                    robot.getArm().moveArm(true);
+                } else if (gamepad1.dpad_down) {
+                    robot.getArm().moveArm(false);
+                } else {
+                    robot.getArm().stop();
+                }
             }
         }
+        // Process the hook
+        if (gamepad1.x) {
+            robot.getHook().setPosition(Hook.OPEN);
+        }
+        else if (gamepad1.a){
+            robot.getHook().setPosition(Hook.CLOSED);
+        }
+        else if (gamepad1.b){
+            robot.getHook().setPosition(Hook.RETRACTED);
+        }
+
+
     }
 
     /*
@@ -142,8 +154,8 @@ public class SingleDriverOpMode extends OpMode{
      */
     @Override
     public void stop() {
-         robot.getDrivetrain().stop();
+        robot.getDrivetrain().stop();
     }
 
 
- }
+}
