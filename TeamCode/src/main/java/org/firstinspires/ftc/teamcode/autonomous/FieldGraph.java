@@ -132,7 +132,7 @@ public class FieldGraph {
      * @return returns the current robot position or null if position has not been set
      */
     public GraphPosition getRobotPosition() {
-         return mRobotPosition;
+        return mRobotPosition;
     }
 
     /**
@@ -176,7 +176,7 @@ public class FieldGraph {
      * @param route preferred starting route or null if no preference
      * @return false if either the location or a non-null if route is not a Starting route on this tile.
      */
-    protected boolean setRobotPosition(double x, double y, Route route){
+    protected boolean resetRobotPosition(double x, double y, Route route){
         if ((x < 0d) || (x > mFieldWidth))
             return false;
         if ((y < 0d) || (y > mFieldHeight))
@@ -200,9 +200,33 @@ public class FieldGraph {
     }
 
     /**
-     * @return the next maneuver on the currently selected route.  If no route is currently selected,
-     * the a route will be selected - either the first found starting route or first outgoing
-     * route starting from top edge and working clockwise
+     * updates the robot position.
+     * @return true if the robot position matches the expected position on the route, false
+     * if they don't match or no route has been selected.
+     *
+     */
+    public boolean updateRobotPosition(double x, double y, Route route) {
+        if ((x < 0d) || (x > mFieldWidth))
+            return false;
+        if ((y < 0d) || (y > mFieldHeight))
+            return false;
+        mRobotPosition = getGraphPosition(x, y);
+        if (mSelectedRoute == null)
+            return false;
+        return mSelectedRoute.getNextRouteTransition().startTile != mRobotPosition.mTile;
+     }
+
+    /**
+     *
+     *
+     * @return the next maneuver on the currently selected route or null if either a route can't be
+     * found or if the robot position and the starting tile of the maneuver don't match.
+     * If no route is currently selected then a route will be selected based on the current robot
+     * position - either the first found starting route or first outgoing
+     * route starting from top edge and working clockwise.
+     *
+     * @note The caller is responsible for incrementing the route index on the Route within the
+     * maneuver when the maneuver is complete and/or insuring that the robot is on the correct tile.
      *
      **/
     public Maneuver getNextManeuver(){
@@ -224,7 +248,7 @@ public class FieldGraph {
                     if (routes.size() > 0){
                         mSelectedRoute = routes.get(0);
                         mSelectedRoute.resetRouteOnTile(mRobotPosition.mTile);
-                         break;
+                        break;
                     }
                 }
                 if (mSelectedRoute == null) {
@@ -234,13 +258,15 @@ public class FieldGraph {
             }
         }
         // Now get the tile at the current route index
-        int edge = mRobotPosition.mTile.getOutgoingEdge(mSelectedRoute);
-         if (edge == FieldTile.EDGE_INVALID){
-             return null;  // have to punt
-         }
-        // Otherwise we move from current location to center of next tile
+        RouteTransition transition = mSelectedRoute.getNextRouteTransition();
+        // Make sure that the starting tile is the current robot position
+        if (transition.startTile != mRobotPosition.mTile){
+            return null;
+        }
+        // Otherwise, compute the maneuver
         double xdelta = 0;
         double ydelta = 0;
+        int edge = transition.startTileOutEdge;
         switch(edge){
             case FieldTile.EDGE_LEFT:
                 xdelta = -mRobotPosition.mXOffset-mTileWidth;
@@ -259,13 +285,9 @@ public class FieldGraph {
                 ydelta = 0;
                 break;
         }
-        // Get the neighbor on the edge.  If it's invalid return null, but this shouldn't happen
-        FieldTile destTile = mRobotPosition.mTile.getNeighbor(edge);
-        if (destTile == null){
-            return null;  // This shouldn't be possible because an outgoing route can't be added on a perimiter edge
-        }
-        MovementManeuver maneuver = new MovementManeuver(xdelta,ydelta,destTile.getTileNum());
+        MovementManeuver maneuver = new MovementManeuver(xdelta,ydelta,mSelectedRoute,transition.transitionIndex);
         return maneuver;
     }
+
 
 }
