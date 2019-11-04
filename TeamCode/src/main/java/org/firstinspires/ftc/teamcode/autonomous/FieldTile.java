@@ -74,6 +74,7 @@ public class FieldTile {
         /** lower edge of tile  **/
         public double y = 0;
         public int mTileNum = 0;
+
     }
 
     /**

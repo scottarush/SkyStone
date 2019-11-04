@@ -8,7 +8,7 @@ public class Maneuver {
 
     public Maneuver(String name){
         mName = name;
-    }
+     }
 
     public String getName(){
         return  mName;
