@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.autonomous;
 
+import android.graphics.Point;
+
 /**
  * SkystoneFile specific graph.  Layout is as follows:
  *
@@ -19,7 +21,7 @@ public class SkystoneFieldGraph extends FieldGraph {
 
     private GraphPosition[][] mTileLocations;
 
-    private Route mWhiteRouteBlue = new Route("BLUE_WHITE", this);
+    public Route mWhiteRouteBlue = new Route("BLUE_WHITE", this);
 
     public SkystoneFieldGraph(){
         super(NUM_ROWS, NUM_COLS,TILE_WIDTH,TILE_HEIGHT);
@@ -33,14 +35,24 @@ public class SkystoneFieldGraph extends FieldGraph {
      * be translated into absolute coords.
      * @return true if location was valid, false otherwise
      */
-    public boolean setSkystoneFieldPosition(double x, double y){
+    public boolean setSkystoneFieldPosition(double x, double y,Route startingRoute){
         // Translate coords
         double xtrans = x+FIELD_WIDTH/2d;
         double ytrans = y+FIELD_HEIGHT/2d;
-        resetRobotPosition(xtrans,ytrans,null);
+        resetRobotPosition(xtrans,ytrans,startingRoute);
         return true;
     }
 
+    public FieldGraph.GraphPosition convertSkystonePosition(double x, double y){
+        GraphPosition position = getGraphPosition(x,y);
+        return position;
+    }
+
+    public static PointD translateSkystonePosition(double x, double y){
+        double xtrans = x+FIELD_WIDTH/2d;
+        double ytrans = y+FIELD_HEIGHT/2d;
+        return new PointD(xtrans,ytrans);
+    }
 
 
     /**
@@ -65,10 +77,28 @@ public class SkystoneFieldGraph extends FieldGraph {
 
     public static void main(String[] args){
         SkystoneFieldGraph graph = new SkystoneFieldGraph();
-        boolean retcode = graph.setSkystoneFieldPosition(-55,-36);
+        double robotx = -55;
+        double roboty = -36;
+        boolean retcode = graph.setSkystoneFieldPosition(-55,-36,graph.mWhiteRouteBlue);
         GraphPosition position = graph.getRobotPosition();
 
-        Maneuver maneuver = graph.getNextManeuver();
+
+        while(true){
+            MovementManeuver maneuver = (MovementManeuver)graph.getNextManeuver();
+            if (maneuver == null) {
+                break;
+            }
+            // Prinout the maneuver
+            System.out.println(maneuver.toString());
+            robotx += maneuver.xDelta;
+            roboty += maneuver.yDelta;
+            PointD point = translateSkystonePosition(robotx,roboty);
+            graph.updateRobotPosition(point.x,point.y,graph.mWhiteRouteBlue);
+            if (graph.mWhiteRouteBlue.isLastTransition()){
+                break;
+            }
+            graph.mWhiteRouteBlue.incrementTransitionIndex();
+        }
 
     }
 }

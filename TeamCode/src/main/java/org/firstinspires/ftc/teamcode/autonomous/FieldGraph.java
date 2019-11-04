@@ -139,7 +139,7 @@ public class FieldGraph {
      * Translates an absolute field position to a tile-relative position.
      * @return GraphPosition or null if coords invalid
      */
-    private GraphPosition getGraphPosition(double x, double y){
+    protected GraphPosition getGraphPosition(double x, double y){
         if ((x < 0d)|| (x > mFieldWidth)){
             return null;
         }
@@ -170,13 +170,13 @@ public class FieldGraph {
     /**
      * Sets the location of the robot in the field graph at the provided location in absolute
      * coordinates.  If the position is not on the currently selected route, then the route will be updated to
-     * the
+     * the provided route.
      * @param x xposition in field coordinates
      * @param y yposition in field coorindates
-     * @param route preferred starting route or null if no preference
+     * @param startingRoute preferred starting route or null if no preference
      * @return false if either the location or a non-null if route is not a Starting route on this tile.
      */
-    protected boolean resetRobotPosition(double x, double y, Route route){
+    protected boolean resetRobotPosition(double x, double y, Route startingRoute){
         if ((x < 0d) || (x > mFieldWidth))
             return false;
         if ((y < 0d) || (y > mFieldHeight))
@@ -186,9 +186,9 @@ public class FieldGraph {
 
         ArrayList<Route> routes = mRobotPosition.mTile.getStartingRoutes();
         if (routes.size() > 0){
-            if (route != null) {
-                if (routes.contains(route)) {
-                    mSelectedRoute = route;
+            if (startingRoute != null) {
+                if (routes.contains(startingRoute)) {
+                    mSelectedRoute = startingRoute;
                     return true;
                 }
                 else{
@@ -200,10 +200,11 @@ public class FieldGraph {
     }
 
     /**
-     * updates the robot position.
-     * @return true if the robot position matches the expected position on the route, false
+     * updates the robot position
+     * @param x x coordinate of robot center in field coordinates
+     * @param y y coordinate or robot center in field coordinates
+     * @return true if the robot position matches the expected tile on the route, false
      * if they don't match or no route has been selected.
-     *
      */
     public boolean updateRobotPosition(double x, double y, Route route) {
         if ((x < 0d) || (x > mFieldWidth))
@@ -217,75 +218,34 @@ public class FieldGraph {
      }
 
     /**
+     * @return the next maneuver on the currently selected route or null if either a route has not been
+     * set, the robot is no longer on the route, or we have reached the end of the selected route.
      *
-     *
-     * @return the next maneuver on the currently selected route or null if either a route can't be
-     * found or if the robot position and the starting tile of the maneuver don't match.
-     * If no route is currently selected then a route will be selected based on the current robot
-     * position - either the first found starting route or first outgoing
-     * route starting from top edge and working clockwise.
-     *
-     * @note The caller is responsible for incrementing the route index on the Route within the
+     * Notes:
+     * 1. The caller is responsible for incrementing the route index on the Route within the
      * maneuver when the maneuver is complete and/or insuring that the robot is on the correct tile.
+     *
+     * 2.  The robot is assumed to be on the mSelectedRoute.  If it has moved off of the route then
+     * the maneuver provided will be a direct vector to the next tile.  This may or may not be
+     * a possible movement, but no checks are made for possible obstructions.
      *
      **/
     public Maneuver getNextManeuver(){
         if (mRobotPosition == null)
             return null;
         if (mSelectedRoute == null){
-            // No route so pick one.  start with starting routes on this tile
-            if (mRobotPosition.mTile.getStartingRoutes().size() > 0) {
-                // take the first one
-                mSelectedRoute = mRobotPosition.mTile.getStartingRoutes().get(0);
-                // And clear the current index to start of route
-                mSelectedRoute.resetRouteOnTile(mRobotPosition.mTile);
-            }
-            else{
-                // Look for outgoing routes.  This is a fallback when we don't have a starting
-                // route
-                for(int i=0;i <= 3;i++){
-                    ArrayList<Route> routes = mRobotPosition.mTile.getOutgoingRoutes()[i];
-                    if (routes.size() > 0){
-                        mSelectedRoute = routes.get(0);
-                        mSelectedRoute.resetRouteOnTile(mRobotPosition.mTile);
-                        break;
-                    }
-                }
-                if (mSelectedRoute == null) {
-                    // No outgoing routes on the selected tile.  punt
-                    return null;
-                }
-            }
-        }
-        // Now get the tile at the current route index
-        RouteTransition transition = mSelectedRoute.getNextRouteTransition();
-        // Make sure that the starting tile is the current robot position
-        if (transition.startTile != mRobotPosition.mTile){
             return null;
         }
-        // Otherwise, compute the maneuver
-        double xdelta = 0;
-        double ydelta = 0;
-        int edge = transition.startTileOutEdge;
-        switch(edge){
-            case FieldTile.EDGE_LEFT:
-                xdelta = -mRobotPosition.mXOffset-mTileWidth;
-                ydelta = 0;
-                break;
-            case FieldTile.EDGE_RIGHT:
-                xdelta = mRobotPosition.mXOffset+mTileWidth;
-                ydelta = 0;
-                break;
-            case FieldTile.EDGE_BOTTOM:
-                xdelta = 0;
-                ydelta = -mRobotPosition.mYOffset-mTileHeight;
-                break;
-            case FieldTile.EDGE_TOP:
-                xdelta = mRobotPosition.mYOffset+mTileHeight;
-                ydelta = 0;
-                break;
+        // Now get the tile at the current route index
+        if (mSelectedRoute.isLastTransition()){
+            return null;
         }
-        MovementManeuver maneuver = new MovementManeuver(xdelta,ydelta,mSelectedRoute,transition.transitionIndex);
+        RouteTransition transition = mSelectedRoute.getNextRouteTransition();
+        // GCompute the offset to move the current robot location tile location to the end one.
+        double ydelta = (transition.endTile.getTileLocation().y)-(mRobotPosition.mYOffset+mRobotPosition.mTile.getTileLocation().y);
+        double xdelta = (transition.endTile.getTileLocation().x)-(mRobotPosition.mXOffset+mRobotPosition.mTile.getTileLocation().x);
+
+        MovementManeuver maneuver = new MovementManeuver(xdelta,ydelta,transition);
         return maneuver;
     }
 
