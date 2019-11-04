@@ -1,7 +1,5 @@
 package org.firstinspires.ftc.teamcode.autonomous;
 
-import android.graphics.Point;
-
 /**
  * SkystoneFile specific graph.  Layout is as follows:
  *
@@ -21,14 +19,12 @@ public class SkystoneFieldGraph extends FieldGraph {
 
     private GraphPosition[][] mTileLocations;
 
-    public Route mWhiteRouteBlue = new Route("BLUE_WHITE", this);
+    public Route mRoute = new Route("BLUE_WHITE", this);
 
     public SkystoneFieldGraph(){
         super(NUM_ROWS, NUM_COLS,TILE_WIDTH,TILE_HEIGHT);
 
-        // Add all the routes
-        addBlueWhiteRoute(mWhiteRouteBlue);
-    }
+     }
 
     /**
      * Sets the robot location on the field in absolute skystone coordinates which will
@@ -55,10 +51,38 @@ public class SkystoneFieldGraph extends FieldGraph {
     }
 
 
+    public static void main(String[] args){
+        SkystoneFieldGraph graph = new SkystoneFieldGraph();
+        addTestRoute(graph);
+
+        double robotx = -55;
+        double roboty = -36;
+        boolean retcode = graph.setSkystoneFieldPosition(-55,-36,graph.mRoute);
+        GraphPosition position = graph.getRobotPosition();
+
+
+        while(true){
+            MovementManeuver maneuver = (MovementManeuver)graph.getNextManeuver();
+            if (maneuver == null) {
+                break;
+            }
+            // Prinout the maneuver
+            System.out.println(maneuver.toString());
+            robotx += maneuver.xDelta;
+            roboty += maneuver.yDelta;
+            PointD point = translateSkystonePosition(robotx,roboty);
+            graph.updateRobotPosition(point.x,point.y,graph.mRoute);
+            if (graph.mRoute.isLastTransition()){
+                break;
+            }
+            graph.mRoute.incrementTransitionIndex();
+        }
+    }
     /**
-     *  Blue White route.
+     *  Adds a route to the graph only used for testing
      */
-    private void addBlueWhiteRoute(Route r){
+    private static void addTestRoute(SkystoneFieldGraph graph){
+        Route r = new Route("BlueWhite",graph);
         r.setStartTile(7);
         r.addRouteTransition(1,null);
         r.addRouteTransition(2,null);
@@ -74,31 +98,4 @@ public class SkystoneFieldGraph extends FieldGraph {
         r.addRouteTransition(19,null);
     }
 
-
-    public static void main(String[] args){
-        SkystoneFieldGraph graph = new SkystoneFieldGraph();
-        double robotx = -55;
-        double roboty = -36;
-        boolean retcode = graph.setSkystoneFieldPosition(-55,-36,graph.mWhiteRouteBlue);
-        GraphPosition position = graph.getRobotPosition();
-
-
-        while(true){
-            MovementManeuver maneuver = (MovementManeuver)graph.getNextManeuver();
-            if (maneuver == null) {
-                break;
-            }
-            // Prinout the maneuver
-            System.out.println(maneuver.toString());
-            robotx += maneuver.xDelta;
-            roboty += maneuver.yDelta;
-            PointD point = translateSkystonePosition(robotx,roboty);
-            graph.updateRobotPosition(point.x,point.y,graph.mWhiteRouteBlue);
-            if (graph.mWhiteRouteBlue.isLastTransition()){
-                break;
-            }
-            graph.mWhiteRouteBlue.incrementTransitionIndex();
-        }
-
-    }
 }
