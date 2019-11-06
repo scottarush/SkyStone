@@ -27,6 +27,10 @@ public class FourBarArm extends Arm {
     public static final double MAX_ANGLE = 155;
     public static final double FULL_RETRACT_ANGLE = 0;
 
+    private double mCurrentPower = 0d;
+
+    public static final int MOVEMENT_POWER_RAMPUP_TIME_MS = 1000;
+    private double mMovementStartRuntime = 0d;
 
     public static final int MANUAL_MODE = 0;
     public static final int ANGLE_MODE = 1;
@@ -36,7 +40,12 @@ public class FourBarArm extends Arm {
     private double mCurrentAngle = 0.0;
     private boolean mFullRetractAngleValid = true;
 
-    private double mMotorPower = 0.0;
+    public static final double EXTEND_MAX_POWER = 0.5d;
+    public static final double EXTEND_START_POWER = 0.2d;
+    public static final double EXTEND_POWER_SLOPE_PER_MS = (EXTEND_MAX_POWER - EXTEND_START_POWER)/MOVEMENT_POWER_RAMPUP_TIME_MS;
+    public static final double RETRACT_MAX_POWER = 0.5d;
+    public static final double RETRACT_START_POWER = 0.2d;
+    public static final double RETRACT_POWER_SLOPE_PER_MS = (RETRACT_MAX_POWER - RETRACT_START_POWER)/MOVEMENT_POWER_RAMPUP_TIME_MS;
 
     private boolean mResetToRetractInProgress = false;
     private double mResetToRetractStartTime = 0d;
@@ -173,14 +182,41 @@ public class FourBarArm extends Arm {
      * @return false if the arm motor wasn't init correctly or the arm was initialized in angle mode
      */
     @Override
-    public boolean moveArm(boolean up){
+    public boolean moveArm(boolean extend){
         if ((mArmMotor == null) || (mMode == ANGLE_MODE))
             return false;
-        double power = mMotorPower;
-        if (up == false)
-            power = -power;
+         if (mCurrentPower == 0d){
+            // We are stopped so reset the ramp timer and set power to start
+            mMovementStartRuntime = opMode.getRuntime();
+            if (extend){
+                mCurrentPower = -EXTEND_START_POWER;
+            }
+            else{
+                mCurrentPower = RETRACT_START_POWER;
+            }
+        }
+        else if (mCurrentPower > 0d){
+            // retracting.  power goes more positive until limit
+             double elapsed = opMode.getRuntime()-mMovementStartRuntime;
+             if (elapsed < MOVEMENT_POWER_RAMPUP_TIME_MS){
+                 mCurrentPower = mCurrentPower + RETRACT_POWER_SLOPE_PER_MS * elapsed;
+             }
+             if (mCurrentPower > RETRACT_MAX_POWER){
+                 mCurrentPower = RETRACT_MAX_POWER;
+             }
+         }
+        else if (mCurrentPower < 0){
+             // extending.  Power goes more negative until limit
+             double elapsed = opMode.getRuntime()-mMovementStartRuntime;
+             if (elapsed < MOVEMENT_POWER_RAMPUP_TIME_MS){
+                 mCurrentPower = mCurrentPower - EXTEND_POWER_SLOPE_PER_MS * elapsed;
+             }
+             if (Math.abs(mCurrentPower) > EXTEND_MAX_POWER){
+                 mCurrentPower = -EXTEND_MAX_POWER;
+             }
 
-        mArmMotor.setPower(power);
+         }
+         mArmMotor.setPower(mCurrentPower);
         return true;
     }
 
@@ -201,13 +237,15 @@ public class FourBarArm extends Arm {
         if (mArmMotor == null)
             return;
         mArmMotor.setPower(0);
-        if (mMode == ANGLE_MODE) {
+         if (mMode == ANGLE_MODE) {
             mCurrentAngle = getArmCurrentPosition() / COUNTS_PER_DEGREE;
         }
     }
 
     @Override
     public void gotoAngle(double targetAngle) {
+        if (mArmMotor == null)
+            return; // init error
         // Return without action if not init'ed for angle mode or the retract angle is invalid
         if (mMode != ANGLE_MODE){
             opMode.telemetry.addData("Error","Cannot call FourBarArm.gotoAngle in manual mode");
@@ -231,8 +269,7 @@ public class FourBarArm extends Arm {
         int counts = (int) Math.round(deltaDegrees * COUNTS_PER_DEGREE);
 
         // move the arm
-        setArmMotorPower(mMotorPower);
-        setArmTargetPosition(counts);
+        mArmMotor.setTargetPosition(counts);
 
         mCurrentAngle = getCurrentAngle();
     }
@@ -257,33 +294,6 @@ public class FourBarArm extends Arm {
     @Override
     public double getCurrentAngle() {
         return getArmCurrentPosition() / COUNTS_PER_DEGREE;
-    }
-
-    @Override
-    public void setPower(double power) {
-        mMotorPower = power;
-    }
-
-    /**
-     * Internal helper to set the arm power for isolating null refs on error
-     *
-     * @param power
-     */
-    private void setArmMotorPower(double power) {
-        if (mArmMotor != null) {
-            mArmMotor.setPower(power);
-        }
-    }
-
-    /**
-     * Helper to set the arm target pos for isolating null refs on error
-     *
-     * @param counts
-     */
-    private void setArmTargetPosition(int counts) {
-        if (mArmMotor != null) {
-            mArmMotor.setTargetPosition(counts);
-        }
     }
 
     /**

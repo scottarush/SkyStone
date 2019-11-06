@@ -54,11 +54,6 @@ public abstract class Arm {
      */
     public abstract boolean isArmMoving();
 
-        /**
-         * Sets the power of the arm
-         * @speed power between 0 and 1 to move the arm at the next gotoAngle or moveArm call
-         */
-    public abstract void setPower(double power);
 
     /**
      * Retrieves the current arm position.

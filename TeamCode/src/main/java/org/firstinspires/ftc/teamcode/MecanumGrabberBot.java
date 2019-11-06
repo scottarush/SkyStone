@@ -66,6 +66,7 @@ public class MecanumGrabberBot extends Robot {
         // base drivetrain init must have been OK so init the rest of the bot.
         try{
             grabber = new Grabber(opMode);
+            grabber.init(opMode.hardwareMap);
         }
         catch (Exception e) {
             initErrString += e.getMessage();
@@ -73,6 +74,7 @@ public class MecanumGrabberBot extends Robot {
         // Initialize the arm to manual mode
         try{
             arm = new FourBarArm(opMode, mManualArmMode);
+            arm.init(opMode.hardwareMap);
         }
         catch(Exception e){
             initErrString += e.getMessage();
@@ -80,6 +82,7 @@ public class MecanumGrabberBot extends Robot {
          // Initialize the hook
         try{
             hook = new Hook(opMode);
+            hook.init(opMode.hardwareMap);
         }
         catch(Exception e){
             initErrString += e.getMessage();

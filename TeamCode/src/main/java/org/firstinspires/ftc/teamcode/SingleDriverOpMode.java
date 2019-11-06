@@ -136,13 +136,13 @@ public class SingleDriverOpMode extends OpMode{
             }
         }
         // Process the hook
-        if (gamepad1.x) {
+        if (gamepad1.b) {
             robot.getHook().setPosition(Hook.OPEN);
         }
         else if (gamepad1.a){
             robot.getHook().setPosition(Hook.CLOSED);
         }
-        else if (gamepad1.b){
+        else if (gamepad1.y){
             robot.getHook().setPosition(Hook.RETRACTED);
         }
 
