@@ -88,8 +88,6 @@ public class MecanumDrive extends Drivetrain{
         String motorInitError = "";
         try {
             lfMotor = tryMapMotor("lf");
-            // Left side motors are reversed
-            lfMotor.setDirection(DcMotorSimple.Direction.REVERSE);
          }
         catch (Exception e){
             motorInitError += "lf,";
@@ -101,8 +99,7 @@ public class MecanumDrive extends Drivetrain{
             motorInitError += "rf,";
         }
         try {
-            lrMotor = tryMapMotor("lr");
-            // Left side motors are reversed
+             lrMotor = tryMapMotor("lr");
             lrMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         }
         catch(Exception e){
@@ -110,6 +107,7 @@ public class MecanumDrive extends Drivetrain{
         }
         try {
             rrMotor = tryMapMotor("rr");
+             rrMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         }
         catch(Exception e){
             motorInitError += "rr,";
