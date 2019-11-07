@@ -31,6 +31,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 
 /**
@@ -46,10 +47,10 @@ public class SingleDriverOpMode extends OpMode{
 
     private MecanumGrabberBot robot  = null;
 
-    public static final double ARM_POWER = 0.75d;
-
     public static final double DELTA_ARM_ANGLE_STEP = 5.0d;
 
+    public ElapsedTime mRetractTimer = new ElapsedTime();
+    private static final double RETRACT_TIME = 1.0d;
     /*
      * Code to run ONCE when the driver hits INIT
      */
@@ -135,17 +136,41 @@ public class SingleDriverOpMode extends OpMode{
                 }
             }
         }
-        // Process the hook
-        if (gamepad1.b) {
-            robot.getHook().setPosition(Hook.OPEN);
-        }
-        else if (gamepad1.a){
-            robot.getHook().setPosition(Hook.CLOSED);
-        }
-        else if (gamepad1.y){
-            robot.getHook().setPosition(Hook.RETRACTED);
-        }
+        // Process the hook unless timer is still less than the debounce time.
+            switch(robot.getHook().getPosition()) {
+                case Hook.OPEN:
+                    if (gamepad1.y) {
+                        mRetractTimer.reset();
+                        if (mRetractTimer.time() > RETRACT_TIME) {
+                            robot.getHook().setPosition(Hook.RETRACTED);
+                        }
+                        else {
+                            mRetractTimer.reset();
+                        }
+                    } else if (gamepad1.a) {
+                        robot.getHook().setPosition(Hook.CLOSED);
+                    }
+                    break;
+                case Hook.CLOSED:
+                    if (gamepad1.y) {
+                        robot.getHook().setPosition(Hook.OPEN);
+                    }
+                    break;
+                case Hook.RETRACTED:
+                    if (gamepad1.a) {
+                        robot.getHook().setPosition(Hook.OPEN);
+                    }
+                    break;
 
+        }
+        // Do the clase
+        if (gamepad1.x){
+            // Open the clase
+            robot.getArm().setClaw(true);
+        }
+        else if (gamepad1.b){
+            robot.getArm().setClaw(false);
+        }
 
     }
 

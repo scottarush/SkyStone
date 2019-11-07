@@ -11,7 +11,7 @@ import org.firstinspires.ftc.teamcode.Grabber;
  * left and right grabber motors respectively.
  */
 @TeleOp(name="TestGrabber", group="Robot")
-//@Disabled
+@Disabled
 public class TestGrabber extends OpMode {
 
     private Grabber grabber;

@@ -18,7 +18,7 @@ public class Hook {
 
     public static final String HOOK_SERVER_NAME = "hookservo";
 
-    private static final double CLOSED_POSITION = 0d;
+    private static final double CLOSED_POSITION = 0.0d;
     private static final double OPEN_POSITION = 0.5d;
     private static final double RETRACT_POSITION = 1.0d;
 
@@ -36,6 +36,8 @@ public class Hook {
         String initErrString = "";
         try {
             mServo = mHWMap.get(Servo.class, HOOK_SERVER_NAME);
+            // Force servo to closed position to start
+            mServo.setPosition(Hook.CLOSED);
         } catch (Exception e) {
             initErrString += "Hook Servo init failed,";
         }
@@ -49,7 +51,7 @@ public class Hook {
      *
      */
     public int getPosition(){
-        return mPosition;
+         return mPosition;
     }
     /** Sets the hook to either OPEN, CLOSED, or RETRACTED.
      * @return true on success, false on any error. **/

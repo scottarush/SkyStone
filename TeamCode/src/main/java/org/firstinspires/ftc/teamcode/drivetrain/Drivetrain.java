@@ -31,19 +31,37 @@ public abstract class Drivetrain {
     }
 
     /**
-     * Utility function moves the robot a delta x and y.  Base class function does
-     * nothing.
+     * starts a drive by encoder session.  If robot is moving, it will be stopped.
      *
      * @param speed   speed to move
      * @param xdist   distance in x inches to move
      * @param ydist   distance in y inches to move
      * @param timeout timeout in seconds to abort if move not completed.
+     *
+     * @return true if session started, false on error.
      */
-    public void driveByEncoder(double speed, double xdist, double ydist, double timeout){
-
+     public boolean startDriveByEncoderSession(double speed, double xdist, double ydist, double timeout) {
+        return false;
     }
+    /**
+     * continues a drive by encoder session.  If robot is moving, it will be stopped.
+     * @return true if the session is still active.  false if session complete.
+     */
+    public boolean continueDriveByEncoder() {
+        return false;
+    }
+    /**
+     * @return true if the last encoder movement was successful, false if it timed out.
+     **/
+    public boolean driveByEncoderSuccess() {
+        return false;
+    }
+    /**
+     * @return true if the drivetrain is moving.  false if stopped.
+     */
+    public abstract boolean isMoving();
 
-        /**
+    /**
          *  Utility function to handle motor initialization.  init must have been called
          *  with a non-null hwMap or exception will be thrown.
          *

@@ -27,7 +27,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.archive;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -38,6 +38,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackable;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackableDefaultListener;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
+import org.firstinspires.ftc.teamcode.VuforiaCommon;
 import org.firstinspires.ftc.teamcode.drivetrain.Drivetrain;
 import org.firstinspires.ftc.teamcode.drivetrain.MecanumDrive;
 
@@ -101,7 +102,7 @@ public class VuforiaMotionMethods {
     /**
      * initialization function for findStone.
      */
-    public void initFindStone(){
+    public void initFindStone() throws Exception{
         vuforiaCommon.initTensorFlowObjectDetection();
     }
     /**
@@ -175,7 +176,7 @@ public class VuforiaMotionMethods {
     /**
      * initialization function for moveRobotToStone.
      */
-    public void initMoveRobotToStone(){
+    public void initMoveRobotToStone() throws Exception{
         vuforiaCommon.initTensorFlowObjectDetection();
     }
     /**

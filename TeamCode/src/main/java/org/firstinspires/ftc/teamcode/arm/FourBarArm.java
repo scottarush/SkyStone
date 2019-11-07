@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 public class FourBarArm extends Arm {
 
@@ -14,10 +15,15 @@ public class FourBarArm extends Arm {
     public static final String CLAW_SERVO_NAME = "claw";
     public static final String LIMIT_SENSOR_NAME = "armlimitsw";
 
+    public static final double CLAW_CLOSED_POSITION = 0d;
+    public static final double CLAW_OPEN_POSITION = 1.0d;
+
+
+
     private Servo mClawServo = null;
     private DigitalChannel mLimitSwitch = null;
 
-     // Constants
+    // Constants
     public static final double ARM_GEAR_REDUCTION_RATIO = Math.pow(125d / 30d, 2d);
     public static final double HEX_MOTOR_COUNTS_PER_REVOLUTION = 545d;  // This should be 288d but we are off by a factor of 2
     public static final double COUNTS_PER_ARM_360_ROTATION = ARM_GEAR_REDUCTION_RATIO * HEX_MOTOR_COUNTS_PER_REVOLUTION;
@@ -27,10 +33,7 @@ public class FourBarArm extends Arm {
     public static final double MAX_ANGLE = 155;
     public static final double FULL_RETRACT_ANGLE = 0;
 
-    private double mCurrentPower = 0d;
-
-    public static final int MOVEMENT_POWER_RAMPUP_TIME_MS = 1000;
-    private double mMovementStartRuntime = 0d;
+    private ElapsedTime mRampTimer = new ElapsedTime();
 
     public static final int MANUAL_MODE = 0;
     public static final int ANGLE_MODE = 1;
@@ -41,14 +44,15 @@ public class FourBarArm extends Arm {
     private boolean mFullRetractAngleValid = true;
 
     public static final double EXTEND_MAX_POWER = 0.5d;
-    public static final double EXTEND_START_POWER = 0.2d;
-    public static final double EXTEND_POWER_SLOPE_PER_MS = (EXTEND_MAX_POWER - EXTEND_START_POWER)/MOVEMENT_POWER_RAMPUP_TIME_MS;
+    public static final double EXTEND_START_POWER = 0.1d;
+    public static final double EXTEND_RAMP_UP_TIME = 1.0;
+    public static final double EXTEND_POWER_SLOPE_PER_MS = (EXTEND_MAX_POWER - EXTEND_START_POWER)/ EXTEND_RAMP_UP_TIME;
     public static final double RETRACT_MAX_POWER = 0.5d;
-    public static final double RETRACT_START_POWER = 0.2d;
-    public static final double RETRACT_POWER_SLOPE_PER_MS = (RETRACT_MAX_POWER - RETRACT_START_POWER)/MOVEMENT_POWER_RAMPUP_TIME_MS;
+    public static final double RETRACT_RAMP_UP_TIME = 0.5;
+    public static final double RETRACT_START_POWER = 0.1d;
+    public static final double RETRACT_POWER_SLOPE_PER_MS = (RETRACT_MAX_POWER - RETRACT_START_POWER)/ RETRACT_RAMP_UP_TIME;
 
     private boolean mResetToRetractInProgress = false;
-    private double mResetToRetractStartTime = 0d;
     public static final double MAX_RESET_TO_RETRACT_TIME_SEC = 5d;
     public static final double RESET_TO_RETRACT_POWER = 0.5;
 
@@ -123,7 +127,7 @@ public class FourBarArm extends Arm {
      * means reset is done, RESET_RETRACT_ERROR means the reset didn't complete within a maximum
      * time and cannot finish.  Also returns RESET_RETRACT_ERROR if the motor or limit switch did
      * not initialize properly.
-      */
+     */
     public int resetToRetractPosition(){
         if ((mArmMotor == null) || (mLimitSwitch == null))
             return RESET_RETRACT_ERROR;
@@ -137,10 +141,10 @@ public class FourBarArm extends Arm {
                 mArmMotor.setPower(0);
                 mArmMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                 // Initialize timer to current run-time
-                mResetToRetractStartTime = opMode.time;
+                mRampTimer.reset();
                 mArmMotor.setPower(RESET_TO_RETRACT_POWER);
                 return RESET_RETRACT_IN_PROGRESS;
-             }
+            }
             // Otherwise a reset is in progress.
             // Now check if limit switch has been pressed.
             if (mLimitSwitch.getState()){
@@ -156,8 +160,7 @@ public class FourBarArm extends Arm {
             }
             else{
                 // arm still moving but no limit switch.  Check for max reset time
-                double time = opMode.time - mResetToRetractStartTime;
-                if (time > MAX_RESET_TO_RETRACT_TIME_SEC){
+                if (mRampTimer.time() > MAX_RESET_TO_RETRACT_TIME_SEC){
                     // Time exceeded but reset did not complete.  stop motor. If position mode
                     // is enabled then set error flag as we now no longer know where zero is
                     mArmMotor.setPower(0d);
@@ -185,38 +188,46 @@ public class FourBarArm extends Arm {
     public boolean moveArm(boolean extend){
         if ((mArmMotor == null) || (mMode == ANGLE_MODE))
             return false;
-         if (mCurrentPower == 0d){
+        double power = mArmMotor.getPower();
+        // Use absolute value of power to do the ramp calc and then set the
+        // sign for extend or retract at end
+        double abspower = Math.abs(power);
+        if (mArmMotor.getPower() == 0d){
             // We are stopped so reset the ramp timer and set power to start
-            mMovementStartRuntime = opMode.getRuntime();
+            mRampTimer.reset();
             if (extend){
-                mCurrentPower = -EXTEND_START_POWER;
+                abspower = EXTEND_START_POWER;
             }
             else{
-                mCurrentPower = RETRACT_START_POWER;
+                abspower = RETRACT_START_POWER;
             }
         }
-        else if (mCurrentPower > 0d){
-            // retracting.  power goes more positive until limit
-             double elapsed = opMode.getRuntime()-mMovementStartRuntime;
-             if (elapsed < MOVEMENT_POWER_RAMPUP_TIME_MS){
-                 mCurrentPower = mCurrentPower + RETRACT_POWER_SLOPE_PER_MS * elapsed;
-             }
-             if (mCurrentPower > RETRACT_MAX_POWER){
-                 mCurrentPower = RETRACT_MAX_POWER;
-             }
-         }
-        else if (mCurrentPower < 0){
-             // extending.  Power goes more negative until limit
-             double elapsed = opMode.getRuntime()-mMovementStartRuntime;
-             if (elapsed < MOVEMENT_POWER_RAMPUP_TIME_MS){
-                 mCurrentPower = mCurrentPower - EXTEND_POWER_SLOPE_PER_MS * elapsed;
-             }
-             if (Math.abs(mCurrentPower) > EXTEND_MAX_POWER){
-                 mCurrentPower = -EXTEND_MAX_POWER;
-             }
+        else if (power > 0d){
+            // retracting.
+            if (mRampTimer.time() < RETRACT_RAMP_UP_TIME){
+                abspower = abspower + (RETRACT_POWER_SLOPE_PER_MS * mRampTimer.time());
+            }
+            if (abspower > RETRACT_MAX_POWER){
+                abspower = RETRACT_MAX_POWER;
+            }
+        }
+        else if (power < 0d){
+            // extending.  Power goes more negative until limit
+            if (mRampTimer.time() < EXTEND_RAMP_UP_TIME){
+                abspower = abspower +(EXTEND_POWER_SLOPE_PER_MS * mRampTimer.time());
+            }
+            if (abspower > EXTEND_MAX_POWER){
+                abspower = EXTEND_MAX_POWER;
+            }
 
-         }
-         mArmMotor.setPower(mCurrentPower);
+        }
+        // If extending, then negate the absolute power
+        power = abspower;
+        if (extend) {
+            power = -abspower;
+        }
+
+        mArmMotor.setPower(power);
         return true;
     }
 
@@ -237,7 +248,7 @@ public class FourBarArm extends Arm {
         if (mArmMotor == null)
             return;
         mArmMotor.setPower(0);
-         if (mMode == ANGLE_MODE) {
+        if (mMode == ANGLE_MODE) {
             mCurrentAngle = getArmCurrentPosition() / COUNTS_PER_DEGREE;
         }
     }
@@ -304,5 +315,20 @@ public class FourBarArm extends Arm {
             return mArmMotor.getCurrentPosition();
         else
             return 0;
+    }
+
+    /**
+     * Sets the claw to either open or closed
+     */
+    public void setClaw(boolean open){
+        if (mClawServo == null){
+            return;
+        }
+        if (open){
+            mClawServo.setPosition(CLAW_OPEN_POSITION);
+        }
+        else{
+            mClawServo.setPosition(CLAW_CLOSED_POSITION);
+        }
     }
 }

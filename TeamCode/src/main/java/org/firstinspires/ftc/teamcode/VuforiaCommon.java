@@ -35,6 +35,7 @@ import org.firstinspires.ftc.robotcontroller.external.samples.ConceptVuforiaNavi
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
+import org.firstinspires.ftc.robotcore.external.matrices.VectorF;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackable;
@@ -57,6 +58,40 @@ import static org.firstinspires.ftc.robotcore.external.navigation.AxesReference.
  *
  */
 public class VuforiaCommon {
+
+    /**
+     * Class encapsulate location data returned by getVuforiaLocation
+     */
+    public class VuforiaLocation{
+        public double x = 0d;
+        public double y = 0d;
+        public double z = 0d;
+        public double heading = 0d;
+        public boolean valid = false;
+
+        /**
+         * Constructor with a valid location
+         * @param x
+         * @param y
+         * @param z
+         * @param heading
+         */
+        public VuforiaLocation(double x,double y, double z,double heading){
+            valid = true;
+            this.x = x;
+            this.y = y;
+            this.z = z;
+            this.heading = heading;
+        }
+
+        /**
+         * Default for a non-valid heading
+         */
+        public VuforiaLocation(){
+
+        }
+    }
+
     // Since ImageTarget trackables use mm to specifiy their dimensions, we must use mm for all the physical dimension.
     // We will define some constants and conversions here
     static final float mmPerInch        = 25.4f;
@@ -91,8 +126,15 @@ public class VuforiaCommon {
     /** Initializer flag for vuforia. **/
     private boolean vuforiaInitialized = false;
 
+    /**
+     * Error flag is cleared on success
+     */
+    private boolean initializationError = true;
+
     /** initializer flag for vuforia targets. **/
     private boolean vuforiaTargetsInitialized = false;
+
+    private boolean mVuforiaNavigationActive = false;
 
     /** vuforia trackables for use in vuforia navigation. Declared public so common methods
      * can access. **/
@@ -113,6 +155,8 @@ public class VuforiaCommon {
     private boolean tensorFlowInitialized = false;
 
     OpenGLMatrix robotFromCamera = null;
+
+    private OpenGLMatrix lastLocation = null;
 
     /**
      * List of all trackables initialized in initVuforia.  Declared public for access from
@@ -135,17 +179,19 @@ public class VuforiaCommon {
     * @param hardwareMap needed so this class can find the webcam*/
     public VuforiaCommon(HardwareMap hardwareMap) {
         hwMap = hardwareMap;
-
     }
 
 
     /**
-     * Initializes the Vuforia engine.  Returns immediately if already init'ed**/
-    private void initVuforia() {
+     * Initializes the Vuforia engine. Returns immediately if already inited.
+     * @throws Exception if camera can't be found.
+     **/
+    private void initVuforia() throws Exception {
         if (vuforiaInitialized)
             return;
 
         webcamName = tryWebcam();
+
         /*
          * To start up Vuforia, tell it the view that we wish to use for camera monitor (on the RC phone);
          * If no camera monitor is desired, use the parameterless constructor instead (commented out below).
@@ -168,8 +214,15 @@ public class VuforiaCommon {
         this.vuforia = ClassFactory.getInstance().createVuforia(parameters);
 
         vuforiaInitialized = true;
+        // If we got this far without error then clear the error flag
+        initializationError = false;
     }
-    public void initVuforiaNavigation(){
+
+    /**
+     *
+     * @throws Exception if webcam can't be found
+     */
+    public void initVuforiaNavigation() throws Exception{
         if (vuforiaTargetsInitialized)
             return;
         initVuforia();
@@ -294,9 +347,76 @@ public class VuforiaCommon {
         vuforiaTargetsInitialized = true;
     }
     /**
+     * Starts  vuforia navigation.
+     */
+    public void startVuforiaNavigation(){
+        if (mVuforiaNavigationActive)
+            return;
+        if (initializationError)
+            return;
+        targetsSkyStone.activate();
+    }
+
+    /**
+     * Stops vuforia navigation
+     */
+    public void stopVuforiaNavigation(){
+        if (!mVuforiaNavigationActive)
+            return;
+        if (initializationError)
+            return;
+        mVuforiaNavigationActive = false;
+        targetsSkyStone.deactivate();
+    }
+    /**
+     * Returns location info for VuforiaNavigation.
+     */
+    public VuforiaLocation getVuforiaNavLocation(){
+        if (initializationError){
+            return new VuforiaLocation();
+        }
+        // check all the trackable targets to see which one (if any) is visible.
+        boolean targetVisible = false;
+        for (VuforiaTrackable trackable : allTrackables) {
+            if (((VuforiaTrackableDefaultListener)trackable.getListener()).isVisible()) {
+                targetVisible = true;
+
+                // getUpdatedRobotLocation() will return null if no new information is available since
+                // the last time that call was made, or if the trackable is not currently visible.
+                OpenGLMatrix robotLocationTransform = ((VuforiaTrackableDefaultListener)trackable.getListener()).getUpdatedRobotLocation();
+                if (robotLocationTransform != null) {
+                    lastLocation = robotLocationTransform;
+                }
+                break;
+            }
+        }
+
+        // Provide feedback as to where the robot is located (if we know).
+        if (targetVisible) {
+            // express position (translation) of robot in inches.
+            VectorF translation = lastLocation.getTranslation();
+ //           telemetry.addData("Pos (in)", "{X, Y, Z} = %.1f, %.1f, %.1f",
+ //                   translation.get(0) / mmPerInch, translation.get(1) / mmPerInch, translation.get(2) / mmPerInch);
+
+            // express the rotation of the robot in degrees.
+            Orientation rotation = Orientation.getOrientation(lastLocation, EXTRINSIC, XYZ, DEGREES);
+  //          telemetry.addData("Rot (deg)", "{Roll, Pitch, Heading} = %.0f, %.0f, %.0f", rotation.firstAngle, rotation.secondAngle, rotation.thirdAngle);
+
+            // Return the valid location data
+            VuforiaLocation loc = new VuforiaLocation(translation.get(0),
+                    translation.get(1),translation.get(2),rotation.thirdAngle);
+            return loc;
+        }
+        else {
+            // return a
+            VuforiaLocation loc = new VuforiaLocation();
+            return loc;
+        }
+    }
+    /**
      * Initialize the TensorFlow Object Detection engine. returns immediately if already inited
      */
-    public void initTensorFlowObjectDetection() {
+    public void initTensorFlowObjectDetection() throws Exception {
         if (tensorFlowInitialized)
             return;
         initVuforia();
@@ -311,13 +431,13 @@ public class VuforiaCommon {
     }
 
     /** try method to get the webcam. **/
-    private WebcamName tryWebcam(){
+    private WebcamName tryWebcam() throws Exception {
         WebcamName name = null;
         try {
-             name = hwMap.get(WebcamName.class, "Webcam 1");
+             name = hwMap.get(WebcamName.class, "webcam");
         }
         catch(Exception e){
-            e.printStackTrace();
+            throw new Exception("Cannot find 'webcam'");
         }
         return name;
     }

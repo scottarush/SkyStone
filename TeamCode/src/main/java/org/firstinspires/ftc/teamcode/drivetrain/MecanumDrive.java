@@ -61,6 +61,7 @@ public class MecanumDrive extends Drivetrain{
     private DcMotor lrMotor = null;
     private DcMotor rrMotor = null;
 
+    private boolean mDriveByEncoderSuccess = false;
     /**
      * Wheel circumference in inches
      **/
@@ -75,6 +76,10 @@ public class MecanumDrive extends Drivetrain{
     public MecanumDrive(OpMode opMode) {
         super(opMode);
     }
+
+    private ElapsedTime mDriveByEncoderTimeoutTimer = null;
+    private boolean mDriveByEncoderActive = false;
+    private double mDriveByEncoderTimeout = 0d;
 
     /* Initialize standard Hardware interfaces.
      * NOTE:  This class throws Exception on any hardware init error so be sure to catch and
@@ -201,6 +206,11 @@ public class MecanumDrive extends Drivetrain{
         setPower(0.0, 0.0, 0.0, 0.0);
     }
 
+    @Override
+    public boolean isMoving() {
+        return isAnyMotorBusy();
+    }
+
     /** helper function returns true if any motor is busy. **/
     private boolean isAnyMotorBusy(){
         if (lfMotor != null){
@@ -221,23 +231,21 @@ public class MecanumDrive extends Drivetrain{
         }
         return false;
     }
+
     /**
-     * Utility function moves the robot a delta x and y distance using MecanumDrive
+     * starts a drive by encoder session.  If robot is moving, it will be stopped.
      *
      * @param speed   speed to move
      * @param xdist   distance in x inches to move
      * @param ydist   distance in y inches to move
      * @param timeout timeout in seconds to abort if move not completed.
+     *
+     * @return true if session started, false on error.
      */
     @Override
-    public void driveByEncoder(double speed, double xdist, double ydist, double timeout) {
-        if (!(opMode instanceof  LinearOpMode)){
-            opMode.telemetry.addData("Error:  Can only use driveByEncoder with a LinearOpMode",0);
-            opMode.telemetry.update();
-            return;
-        }
-        LinearOpMode myOpMode = (LinearOpMode)opMode;
+    public boolean startDriveByEncoderSession(double speed, double xdist, double ydist, double timeout) {
 
+        mDriveByEncoderTimeout = timeout;
         // Compute the number of encoder counts for each wheel to move the requested distanc
         int lfDeltaCounts = (int) Math.round((xdist + ydist) * MecanumDrive.COUNTS_PER_INCH);
         int rfDeltaCounts = (int) Math.round((ydist - xdist) * MecanumDrive.COUNTS_PER_INCH);
@@ -254,31 +262,44 @@ public class MecanumDrive extends Drivetrain{
         setMotorModes(DcMotor.RunMode.RUN_TO_POSITION);
 
         // Reset timer and set motor power
-        ElapsedTime drivetimeout = new ElapsedTime();
-        drivetimeout.reset();
+        mDriveByEncoderTimeoutTimer = new ElapsedTime();
+        mDriveByEncoderTimeoutTimer.reset();
         double aspeed = Math.abs(speed);
         if (aspeed > 1.0)
             aspeed = 1.0;
         setPower(aspeed, aspeed, aspeed, aspeed);
-
-        while (myOpMode.opModeIsActive() && (drivetimeout.seconds() < timeout) &&
-                isAnyMotorBusy()) {
-
-            myOpMode.telemetry.addData("TargetPositions", "lf:%7d rf:%7d lr:%7d rr:%7d",
-                    getTargetPosition(lfMotor),
-                    getTargetPosition(rfMotor),
-                   getTargetPosition(lrMotor),
-                    getTargetPosition(rrMotor));
-            opMode.telemetry.addData("Positions:", "lf:%7d rf:%7d lr:%7d rr:%7d",
-                    getCurrentPosition(lfMotor),
-                    getCurrentPosition(rfMotor),
-                    getCurrentPosition(lrMotor),
-                    getCurrentPosition(rrMotor));
-            opMode.telemetry.update();
-        }
-        // Stop all
-        stop();
+        mDriveByEncoderActive = true;
+        return true;
     }
+    /**
+     * continues a drive by encoder session.  If robot is moving, it will be stopped.
+     * @return true if the session is still active.  false if session complete.
+     */
+    @Override
+     public boolean continueDriveByEncoder() {
+         if (!mDriveByEncoderActive)
+             return false;
+         if (mDriveByEncoderTimeoutTimer.seconds() > mDriveByEncoderTimeout){
+             stop();
+             mDriveByEncoderActive = false;
+             mDriveByEncoderSuccess = false;
+             return false;
+         }
+         if (!isAnyMotorBusy()) {
+             // Successful move before timeout so set success flag and return
+            mDriveByEncoderActive = false;
+            mDriveByEncoderSuccess = true;
+            return false;
+         }
+         return true;   // Still moving.
+     }
+    /*
+     * @return true
+     */
+    public boolean driveByEncoderSuccess(){
+        return mDriveByEncoderSuccess;
+    }
+
     /**
      * This is a helper function that takes input from a dual joy stick and computes the speed
      * of each Mecanum wheel motor.
