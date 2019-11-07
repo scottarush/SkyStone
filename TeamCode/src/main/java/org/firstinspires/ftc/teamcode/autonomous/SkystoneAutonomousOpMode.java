@@ -5,16 +5,17 @@ import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.firstinspires.ftc.teamcode.Robot;
+import org.firstinspires.ftc.teamcode.VuforiaCommon;
 import org.firstinspires.ftc.teamcode.autonomous.options.GamepadMenu;
+import org.firstinspires.ftc.teamcode.drivetrain.MecanumDrive;
 
 @Autonomous(name="AutonomousMode", group="Robot")
-@Disabled
+//@Disabled
 public class SkystoneAutonomousOpMode extends OpMode {
 
     private SkystoneFieldGraph mFieldGraph;
 
     private Robot mRobot = new Robot(Robot.DriveTrainStyle.MECANUM, this);
-
 
     /** team options. **/
     private static final String[] TEAM_OPTIONS = new String[]{"BLUE","RED"};
@@ -26,7 +27,9 @@ public class SkystoneAutonomousOpMode extends OpMode {
     private static final String[] ROUTE_OPTIONS = new String[]{"WHITE","BLACK"};
     public static final int WHITE_ROUTE = 0;
     public static final int BLACK_ROUTE = 1;
-    private int mRoute = WHITE_ROUTE;
+    private int mSelectedRouteOptionIndex = WHITE_ROUTE;
+
+    private Route mSelectedRoute = null;
 
     /** confirmation **/
     private static final String[] SETUP_COMPLETE_OPTIONS = new String[]{"NO","YES"};
@@ -41,6 +44,15 @@ public class SkystoneAutonomousOpMode extends OpMode {
     private GamepadMenu mMenus[];
     private int mCurrentMenu = 0;
 
+    private boolean mRouteComplete = false;
+    private boolean mDriveByEncoderActive = false;
+    public static final double DRIVE_BY_ENCODER_POWER = 1.0d;
+
+    /**
+     * Reference to VuforiaCommon utilities
+     */
+    VuforiaCommon mVuforia = null;
+
     public SkystoneAutonomousOpMode(){
 
         // Create the field graph
@@ -54,17 +66,30 @@ public class SkystoneAutonomousOpMode extends OpMode {
 
     @Override
     public void init() {
-        boolean noerrs = true;
+        String initErrs = "";
         try {
             mRobot.init();
         }
         catch(Exception e){
-            noerrs = false;
-            telemetry.addData("Init errors:",e.getMessage());
+            initErrs += e.getMessage();
+        }
+        // Initialize Vuforia
+        mVuforia = new VuforiaCommon(hardwareMap);
+        try{
+            mVuforia.initVuforiaNavigation();
+            // No exception so start Vuforia navigation
+            mVuforia.startVuforiaNavigation();
+        }
+        catch(Exception e){
+            initErrs += e.getMessage();
+        }
+
+        if (initErrs.length() == 0){
+            telemetry.addData("Status:","Robot init complete");
             telemetry.update();
         }
-        if (noerrs){
-            telemetry.addData("Status:","Robot init complete");
+        else{
+            telemetry.addData("Init errors:",initErrs);
             telemetry.update();
         }
 
@@ -92,7 +117,7 @@ public class SkystoneAutonomousOpMode extends OpMode {
                     mTeam = option;
                     break;
                 case ROUTE_MENU_INDEX:
-                    mRoute = option;
+                    mSelectedRouteOptionIndex = option;
                     break;
                 case SETUP_COMPLETE_MENU_INDEX:
                     if (option == COMPLETE_YES){
@@ -104,23 +129,88 @@ public class SkystoneAutonomousOpMode extends OpMode {
 
             }
         }
+
     }
 
     /**
      * called once after setup is complete to initalize with the selected parameters
      */
     private String doSetupCompleteInit(){
-        return "";
+        String rets = "";
+        if (mTeam == BLUE_TEAM){
+            rets = doBlueTeamInit();
+        }
+        else {
+            rets = doRedTeamInit();
+        }
+        return rets;
+     }
+
+    private String doRedTeamInit(){
+        return "Error:  Red team init is TBD";
+    }
+    private String doBlueTeamInit(){
+        String rets = "";
+        switch(mSelectedRouteOptionIndex){
+            case WHITE_ROUTE:
+                // Add the route
+                mSelectedRoute = addBlueWhiteRoute();
+                // And place the robot on the field
+                if (!mFieldGraph.setSkystoneFieldPosition(-60,-36,mSelectedRoute)){
+                    rets += "Error setting robot position on BlueWhite route.";
+                }
+                rets +=  "Blue team White route set.";
+                break;
+        }
+        return rets;
+
     }
 
     @Override
     public void loop() {
+        if (mRouteComplete)
+            return;
+        if (mRobot.getDrivetrain().isMoving()){
+            // Robot is moving so wait until it stops.
+            return;
+        }
+        if (mDriveByEncoderActive){
+            mDriveByEncoderActive = mRobot.getDrivetrain().continueDriveByEncoder();
+            if (!mDriveByEncoderActive){
+                // This was the end of the session. check if it timed out or not
+                if (!mRobot.getDrivetrain().driveByEncoderSuccess()){
+                    telemetry.addData("Error:","Drive by encoder timed out");
+                    telemetry.update();
+                }
+                return;
+            }
+        }
+        // Otherwise check if an encoder session is active
+        Maneuver maneuver = mFieldGraph.getNextManeuver();
+        if (maneuver == null){
+            if (!mRouteComplete){
+                mRouteComplete = true;
+                telemetry.addData("Status",mSelectedRoute.getName()+" complete");
+                telemetry.update();
+            }
+            return;
+        }
 
+        // Update our location
+        VuforiaCommon.VuforiaLocation location = mVuforia.getVuforiaNavLocation();
+        if (location.valid){
+            telemetry.addData("Found location","x="+location.x+",y="+location.y+", heading="+location.heading);
+        }
+
+        if (maneuver instanceof MovementManeuver){
+            MovementManeuver movement = (MovementManeuver)maneuver;
+            mDriveByEncoderActive = mRobot.getDrivetrain().startDriveByEncoderSession(DRIVE_BY_ENCODER_POWER,movement.xDelta,movement.yDelta,3);
+        }
     }
     /**
      *  Adds the BlueWhite route to the graph
      */
-    public void addBlueWhiteRoute(){
+    public Route addBlueWhiteRoute(){
         Route r = new Route("BlueWhite",mFieldGraph);
         r.setStartTile(7);
         r.addRouteTransition(1,null);
@@ -135,6 +225,7 @@ public class SkystoneAutonomousOpMode extends OpMode {
         r.addRouteTransition(31,null);
         r.addRouteTransition(25,null);
         r.addRouteTransition(19,null);
+        return r;
     }
 
 }

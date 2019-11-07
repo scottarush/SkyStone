@@ -39,13 +39,13 @@ public class TestHook extends OpMode {
 
     @Override
     public void loop() {
-        if (gamepad1.x) {
+        if (gamepad1.b) {
             mHook.setPosition(Hook.OPEN);
         }
         else if (gamepad1.a){
             mHook.setPosition(Hook.CLOSED);
         }
-        else if (gamepad1.b){
+        else if (gamepad1.y){
             mHook.setPosition(Hook.RETRACTED);
         }
     }

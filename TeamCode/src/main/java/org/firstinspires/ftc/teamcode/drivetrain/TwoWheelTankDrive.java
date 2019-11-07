@@ -31,5 +31,11 @@ public class TwoWheelTankDrive extends Drivetrain {
     public void setMotorModes(DcMotor.RunMode mode) {
 
     }
-    
+    /**
+     * @return true if the drivetrain is moving.  false if stopped.
+     */
+    public boolean isMoving(){
+        return false;
+    }
+
 }
