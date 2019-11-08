@@ -49,8 +49,10 @@ public class SingleDriverOpMode extends OpMode{
 
     public static final double DELTA_ARM_ANGLE_STEP = 5.0d;
 
-    public ElapsedTime mRetractTimer = new ElapsedTime();
+    public ElapsedTime mRetractDebounceTimer = new ElapsedTime();
     private static final double RETRACT_TIME = 1.0d;
+    private boolean mRetractButtonPressed = false;
+
     /*
      * Code to run ONCE when the driver hits INIT
      */
@@ -136,34 +138,9 @@ public class SingleDriverOpMode extends OpMode{
                 }
             }
         }
-        // Process the hook unless timer is still less than the debounce time.
-            switch(robot.getHook().getPosition()) {
-                case Hook.OPEN:
-                    if (gamepad1.y) {
-                        mRetractTimer.reset();
-                        if (mRetractTimer.time() > RETRACT_TIME) {
-                            robot.getHook().setPosition(Hook.RETRACTED);
-                        }
-                        else {
-                            mRetractTimer.reset();
-                        }
-                    } else if (gamepad1.a) {
-                        robot.getHook().setPosition(Hook.CLOSED);
-                    }
-                    break;
-                case Hook.CLOSED:
-                    if (gamepad1.y) {
-                        robot.getHook().setPosition(Hook.OPEN);
-                    }
-                    break;
-                case Hook.RETRACTED:
-                    if (gamepad1.a) {
-                        robot.getHook().setPosition(Hook.OPEN);
-                    }
-                    break;
-
-        }
-        // Do the clase
+        // Do the hook
+        processHookPosition();
+         // Do the claw
         if (gamepad1.x){
             // Open the clase
             robot.getArm().setClaw(true);
@@ -174,6 +151,46 @@ public class SingleDriverOpMode extends OpMode{
 
     }
 
+    /**
+     * Processes the hook buttons y and a
+     */
+    private void processHookPosition(){
+        if (gamepad1.y){
+            if (mRetractButtonPressed){
+                // Check for exceed of debounce timer.
+                if (mRetractDebounceTimer.time() > RETRACT_TIME){
+                    robot.getHook().setPosition(Hook.RETRACTED);
+                }
+            }
+            else{
+                // Initial press so start the timer.
+                mRetractDebounceTimer.reset();
+                mRetractButtonPressed = true;
+            }
+        }
+        else{
+            // y button released.
+            if (mRetractButtonPressed) {
+                if (mRetractDebounceTimer.time() < RETRACT_TIME) {
+                    // y was pressed and released shorter than retract time so go to Open if
+                    // current state closed, other wise we already went to RETRACTED above
+                    if (robot.getHook().getPosition() == Hook.CLOSED) {
+                        robot.getHook().setPosition(Hook.OPEN);
+                    }
+                }
+            }
+        }
+        // Now do a button
+        if (gamepad1.a){
+            if (robot.getHook().getPosition() == Hook.RETRACTED){
+                robot.getHook().setPosition(Hook.OPEN);
+            }
+            else if (robot.getHook().getPosition() == Hook.OPEN){
+                robot.getHook().setPosition(Hook.CLOSED);
+            }
+        }
+
+    }
     /*
      * Code to run ONCE after the driver hits STOP
      */
