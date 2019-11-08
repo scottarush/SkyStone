@@ -45,12 +45,12 @@ public class FourBarArm extends Arm {
 
     public static final double EXTEND_MAX_POWER = 0.5d;
     public static final double EXTEND_START_POWER = 0.1d;
-    public static final double EXTEND_RAMP_UP_TIME = 1.0;
-    public static final double EXTEND_POWER_SLOPE_PER_MS = (EXTEND_MAX_POWER - EXTEND_START_POWER)/ EXTEND_RAMP_UP_TIME;
+    public static final double EXTEND_RAMP_UP_TIME = 1.0d;
+    public static final double EXTEND_POWER_SLOPE_PER_SEC = (EXTEND_MAX_POWER - EXTEND_START_POWER)/ EXTEND_RAMP_UP_TIME;
     public static final double RETRACT_MAX_POWER = 0.5d;
-    public static final double RETRACT_RAMP_UP_TIME = 0.5;
+    public static final double RETRACT_RAMP_UP_TIME = 0.5d;
     public static final double RETRACT_START_POWER = 0.1d;
-    public static final double RETRACT_POWER_SLOPE_PER_MS = (RETRACT_MAX_POWER - RETRACT_START_POWER)/ RETRACT_RAMP_UP_TIME;
+    public static final double RETRACT_POWER_SLOPE_PER_SEC = (RETRACT_MAX_POWER - RETRACT_START_POWER)/ RETRACT_RAMP_UP_TIME;
 
     private boolean mResetToRetractInProgress = false;
     public static final double MAX_RESET_TO_RETRACT_TIME_SEC = 5d;
@@ -205,7 +205,7 @@ public class FourBarArm extends Arm {
         else if (power > 0d){
             // retracting.
             if (mRampTimer.time() < RETRACT_RAMP_UP_TIME){
-                abspower = abspower + (RETRACT_POWER_SLOPE_PER_MS * mRampTimer.time());
+                abspower = abspower + (RETRACT_POWER_SLOPE_PER_SEC * mRampTimer.time());
             }
             if (abspower > RETRACT_MAX_POWER){
                 abspower = RETRACT_MAX_POWER;
@@ -214,7 +214,7 @@ public class FourBarArm extends Arm {
         else if (power < 0d){
             // extending.  Power goes more negative until limit
             if (mRampTimer.time() < EXTEND_RAMP_UP_TIME){
-                abspower = abspower +(EXTEND_POWER_SLOPE_PER_MS * mRampTimer.time());
+                abspower = abspower +(EXTEND_POWER_SLOPE_PER_SEC * mRampTimer.time());
             }
             if (abspower > EXTEND_MAX_POWER){
                 abspower = EXTEND_MAX_POWER;

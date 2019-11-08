@@ -14,7 +14,7 @@ import org.firstinspires.ftc.teamcode.drivetrain.MecanumDrive;
  * -------------------------------------------------
  * Port0:  left grabber motor  "lgrabber"
  * Port1:  right grabber motor "rgrabber"
- *
+ * Port2:  arm motor           "arm_motor"
  *
  * HUB1 Layout:
  * -------------------------------------------------
@@ -23,7 +23,10 @@ import org.firstinspires.ftc.teamcode.drivetrain.MecanumDrive;
  * Port2:  left rear wheel hex motor "lr"
  * Port3:  right rear wheel hex motor "rr"
  *
- * Dig0/1:  arm limit switch "armlimitsw"
+ * Dig0:  arm limit switch "armlimitsw"
+ *
+ * Servo0:  Front hook servo "hookservo"
+ * Servo1:  Arm claw servo "claw"
  */
 public class MecanumGrabberBot extends Robot {
 

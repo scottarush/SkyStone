@@ -49,8 +49,11 @@ public class SingleDriverOpMode extends OpMode{
 
     public static final double DELTA_ARM_ANGLE_STEP = 5.0d;
 
-    public ElapsedTime mRetractDebounceTimer = new ElapsedTime();
-    private static final double RETRACT_TIME = 1.0d;
+    public ElapsedTime mRetractButtonHoldTimer = new ElapsedTime();
+
+     private boolean mAButtonPressed = false;
+
+    private static final double RETRACT_BUTTON_HOLD_TIME = 1.0d;
     private boolean mRetractButtonPressed = false;
 
     /*
@@ -156,38 +159,45 @@ public class SingleDriverOpMode extends OpMode{
      */
     private void processHookPosition(){
         if (gamepad1.y){
-            if (mRetractButtonPressed){
-                // Check for exceed of debounce timer.
-                if (mRetractDebounceTimer.time() > RETRACT_TIME){
+            // If the robot isn't retracted then check for a push and hold
+            if (robot.getHook().getPosition() == Hook.OPEN){
+                if (!mRetractButtonPressed) {
+                    // This is an initial press of the y button so start the timer
+                    mRetractButtonHoldTimer.reset();
+                    mRetractButtonPressed = true;
+                }
+                else if (mRetractButtonHoldTimer.time() > RETRACT_BUTTON_HOLD_TIME){
                     robot.getHook().setPosition(Hook.RETRACTED);
                 }
             }
-            else{
-                // Initial press so start the timer.
-                mRetractDebounceTimer.reset();
-                mRetractButtonPressed = true;
+            else if (robot.getHook().getPosition() == Hook.CLOSED){
+                robot.getHook().setPosition(Hook.OPEN);
             }
         }
         else{
-            // y button released.
-            if (mRetractButtonPressed) {
-                if (mRetractDebounceTimer.time() < RETRACT_TIME) {
-                    // y was pressed and released shorter than retract time so go to Open if
-                    // current state closed, other wise we already went to RETRACTED above
-                    if (robot.getHook().getPosition() == Hook.CLOSED) {
-                        robot.getHook().setPosition(Hook.OPEN);
-                    }
-                }
-            }
+            // y button released.  Just clear the press flag
+            mRetractButtonPressed = false;
         }
         // Now do a button
         if (gamepad1.a){
-            if (robot.getHook().getPosition() == Hook.RETRACTED){
-                robot.getHook().setPosition(Hook.OPEN);
+             if (robot.getHook().getPosition() == Hook.RETRACTED){
+                 if (!mAButtonPressed) {
+                     // This is an initial press of the a button so go to Open
+                     robot.getHook().setPosition(Hook.OPEN);
+                     // And set the flag to debounce
+                     mAButtonPressed = true;
+                 }
             }
             else if (robot.getHook().getPosition() == Hook.OPEN){
-                robot.getHook().setPosition(Hook.CLOSED);
+                if (!mAButtonPressed) {
+                    robot.getHook().setPosition(Hook.CLOSED);
+                    mAButtonPressed = true;
+                }
             }
+        }
+        else{
+            // Clear the flag for the next press
+            mAButtonPressed = false;
         }
 
     }

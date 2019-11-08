@@ -12,7 +12,7 @@ import org.firstinspires.ftc.teamcode.arm.FourBarArm;
  * OpMode to test the hook using the gamepad.
  */
 @TeleOp(name="TestHook", group="Robot")
-//@Disabled
+@Disabled
 public class TestHook extends OpMode {
 
     private Hook mHook;
