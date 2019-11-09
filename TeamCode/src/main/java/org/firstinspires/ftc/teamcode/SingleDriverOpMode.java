@@ -31,6 +31,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 
@@ -106,24 +107,36 @@ public class SingleDriverOpMode extends OpMode{
         // the speeds with the new gamepad inputs
         robot.getDrivetrain().setTankDriveJoystickInput(xleft,yleft,xright,yright);
 
-        // Read the bumpers and triggers for the grabber.
-        robot.getGrabber().moveGrabber(gamepad1.left_bumper,gamepad1.right_bumper, gamepad1.left_trigger,gamepad1.right_trigger);
+        boolean leftBumper = gamepad1.left_bumper || gamepad2.right_bumper;
+        boolean rightBumper = gamepad1.right_bumper || gamepad2.right_bumper;
 
+        double leftTrigger = gamepad1.left_trigger;
+        if (Math.abs(leftTrigger) < 0.05d){
+            leftTrigger = gamepad2.left_trigger;
+        }
+        double rightTrigger = gamepad1.right_trigger;
+        if (Math.abs(rightTrigger) < 0.05d){
+            rightTrigger = gamepad2.right_trigger;
+        }
+
+        // Read the bumpers and triggers for the grabber.
+         robot.getGrabber().moveGrabber(leftBumper,rightBumper,leftTrigger,rightTrigger);
 
         // Do arm handling
         // If a reset is in progress then call teh service routine in the arm
+        Gamepad armPad = gamepad2;
         if (robot.getArm().isResetToRetractInProgress()){
             int retcode = robot.getArm().resetToRetractPosition();
         }
         else{
             if (robot.getArm().isAngleMode()) {
                 // Read gamepad and move delta degrees per press
-                if (gamepad1.dpad_up) {
+                if (armPad.dpad_up) {
                     if (!robot.getArm().isArmMoving()) {
                         // Arm has stopped.  Move it another 5 degrees.
                         robot.getArm().moveDeltaAngle(DELTA_ARM_ANGLE_STEP);
                     }
-                } else if (gamepad1.dpad_down) {
+                } else if (armPad.dpad_down) {
                     if (!robot.getArm().isArmMoving()) {
                         // Arm has stopped.  Move it another 5 degrees.
                         robot.getArm().moveDeltaAngle(-DELTA_ARM_ANGLE_STEP);
@@ -131,10 +144,10 @@ public class SingleDriverOpMode extends OpMode{
                 }
             } else {
                 // Manual arm mode read the d-pad up and down for the arm moti
-                if (gamepad1.dpad_up) {
+                if (armPad.dpad_up) {
                     // While dpad-up pressed move the arm in up direction
                     robot.getArm().moveArm(true);
-                } else if (gamepad1.dpad_down) {
+                } else if (armPad.dpad_down) {
                     robot.getArm().moveArm(false);
                 } else {
                     robot.getArm().stop();
@@ -158,7 +171,8 @@ public class SingleDriverOpMode extends OpMode{
      * Processes the hook buttons y and a
      */
     private void processHookPosition(){
-        if (gamepad1.y){
+        boolean yButtonState = (gamepad2.y || gamepad1.y);
+        if (yButtonState){
             // If the robot isn't retracted then check for a push and hold
             if (robot.getHook().getPosition() == Hook.OPEN){
                 if (!mRetractButtonPressed) {
@@ -179,7 +193,8 @@ public class SingleDriverOpMode extends OpMode{
             mRetractButtonPressed = false;
         }
         // Now do a button
-        if (gamepad1.a){
+        boolean aButtonState = (gamepad1.a || gamepad2.a);
+        if (aButtonState){
              if (robot.getHook().getPosition() == Hook.RETRACTED){
                  if (!mAButtonPressed) {
                      // This is an initial press of the a button so go to Open
