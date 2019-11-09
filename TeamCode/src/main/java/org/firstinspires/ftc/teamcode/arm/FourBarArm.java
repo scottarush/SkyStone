@@ -15,7 +15,7 @@ public class FourBarArm extends Arm {
     public static final String CLAW_SERVO_NAME = "claw";
     public static final String LIMIT_SENSOR_NAME = "armlimitsw";
 
-    public static final double CLAW_CLOSED_POSITION = 0d;
+    public static final double CLAW_CLOSED_POSITION = 0.3d;
     public static final double CLAW_OPEN_POSITION = 1.0d;
 
 
@@ -123,7 +123,8 @@ public class FourBarArm extends Arm {
      * This function is called from the OpMode run loop continuously to reset
      * the arm to the fully retracted position using the limit switch to detect when the
      * position has been reached.
-     * @return RESET_RETRACT_IN_PROGRESS means keep calling to complete, RESET_RETRACT_COMPLETE
+     * @return RESET_RETRACT_IN_PROGRESS means keep calling to co
+     * mplete, RESET_RETRACT_COMPLETE
      * means reset is done, RESET_RETRACT_ERROR means the reset didn't complete within a maximum
      * time and cannot finish.  Also returns RESET_RETRACT_ERROR if the motor or limit switch did
      * not initialize properly.
