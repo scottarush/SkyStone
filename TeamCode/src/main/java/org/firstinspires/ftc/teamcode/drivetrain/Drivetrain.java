@@ -1,12 +1,9 @@
 package org.firstinspires.ftc.teamcode.drivetrain;
 
-import android.graphics.Path;
-
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-
-import org.firstinspires.ftc.teamcode.Robot;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 public abstract class Drivetrain {
 
@@ -24,10 +21,15 @@ public abstract class Drivetrain {
     public abstract void setMotorModes(DcMotor.RunMode mode);
 
      /** OpMode in order to access telemetry from subclasses. **/
-    protected OpMode opMode;
+    protected OpMode mOpMode;
+    protected ElapsedTime mDriveByEncoderTimer = new ElapsedTime();
+    protected boolean mDriveByEncoderSuccess = false;
+    protected boolean mDriveByEncoderActive = false;
+    protected double mDriveByEncoderTimeout = 0d;
+    protected boolean mRotationInProgress = false;
 
     public Drivetrain(OpMode opMode){
-        this.opMode = opMode;
+        this.mOpMode = opMode;
     }
 
     /**
@@ -40,7 +42,7 @@ public abstract class Drivetrain {
      *
      * @return true if session started, false on error.
      */
-     public boolean startDriveByEncoderSession(double speed, double xdist, double ydist, double timeout) {
+     public boolean startDriveByEncoder(double speed, double xdist, double ydist, double timeout) {
         return false;
     }
     /**
@@ -54,8 +56,44 @@ public abstract class Drivetrain {
      * @return true if the last encoder movement was successful, false if it timed out.
      **/
     public boolean driveByEncoderSuccess() {
+        return mDriveByEncoderSuccess;
+    }
+    /**
+     * open loop rotate function
+     */
+    public void startRotation(double cwDegrees) {
+
+    }
+    /**
+     * continues a rotation if one is active.  Returns true on rotation still active.
+     */
+    public boolean continueRotation() {
         return false;
     }
+    /**
+     * @return true if a rotate is still active
+     */
+    public boolean isRotationInProgress(){
+        return mRotationInProgress;
+    }
+
+    /**
+         * @return the amount of time that an encoder session has been active or 0 if no session active.
+         */
+    public double getDriveByEncoderTime(){
+        if (!mDriveByEncoderActive){
+            return 0.0d;
+        }
+        else
+            return mDriveByEncoderTimer.time();
+    }
+    /**
+     * @return true if drive by encoder session active, false otherwise
+     */
+    public boolean isDriveByEncoderSessionActive(){
+        return mDriveByEncoderActive;
+    }
+
     /**
      * @return true if the drivetrain is moving.  false if stopped.
      */

@@ -1,0 +1,93 @@
+%class DragFoundationController
+%package org.firstinspires.ftc.teamcode.autonomous
+
+%start DragFoundation::Idle
+
+%map DragFoundation
+%%
+
+    /*
+    * idle state until started by controller
+    */
+    Idle
+    {
+        evStart DriveForward {}
+    }
+
+
+    /*
+    * drives forward toward foundation and (hopefully) stops at foundation.
+    */
+    DriveForward
+        Entry {
+            setLogMessage("DriveForward");
+            openHook();
+            // start drive forward
+            startDriveToFoundation();
+        }
+    {
+        evDriveSuccess DriveForwardSuccess {}
+        evDriveFail DriveForwardFail {}
+    }
+
+
+    /*
+    * Stop after drive forward and check to see if we are at foundation.
+    */
+    DriveForwardSuccess
+        Entry{
+            setLogMessage("DriveForwardSuccess");
+            // close the hook and wait for it stop
+            closeHook();
+            startHookTimer();
+        }
+    {
+        evHookTimeout DragFoundation { }
+    }
+    /*
+    * Stop after drive forward and check to see if we are at foundation.
+    */
+    DriveForwardFail
+        Entry{
+            setLogMessage("DriveForwardFail");
+            // TODO Try to get location and correct
+        }
+    {
+
+    }
+
+    /*
+    * Drag the foundation back
+    */
+    DragFoundation
+        Entry {
+            setLogMessage("DragFoundation");
+            // pull the foundation backward
+            startDragFoundation();
+        }
+    {
+        evDriveSuccess Success {  openHook(); }
+    }
+
+    /*
+    * Rotate the robot to drive toward the quarry
+    */
+    RotateToQuarry
+    Entry {
+        setLogMessage("RotateToQuarry");
+
+    }
+    {
+        evRotationComplete Success {}
+    }
+
+    Success
+        Entry{
+            setLogMessage("Success");
+
+        }
+    {
+
+    }
+%%
+

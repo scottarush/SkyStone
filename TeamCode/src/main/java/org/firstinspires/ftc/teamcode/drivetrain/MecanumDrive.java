@@ -29,7 +29,6 @@
 
 package org.firstinspires.ftc.teamcode.drivetrain;
 
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -61,7 +60,6 @@ public class MecanumDrive extends Drivetrain{
     private DcMotor lrMotor = null;
     private DcMotor rrMotor = null;
 
-    private boolean mDriveByEncoderSuccess = false;
     /**
      * Wheel circumference in inches
      **/
@@ -72,14 +70,30 @@ public class MecanumDrive extends Drivetrain{
      **/
     public static final int COUNTS_PER_INCH = (int) Math.round(ENCODER_COUNTS_PER_ROTATION / MECANUM_WHEEL_CIRCUMFERENCE);
 
-    /* Constructor */
-    public MecanumDrive(OpMode opMode) {
+    /**
+     * Approximate number of seconds per degree to rotate.
+     */
+    public static final double ROTATION_SECONDS_PER_DEGREE = 2d / 90d;
+
+    /**
+     * Power to use when rotating.
+     */
+    public static final double ROTATION_POWER = 1.0d;
+
+
+    private ElapsedTime mRotationTimer = null;
+    private double mRotationTimeout = 0;
+
+    private boolean mDemoFrameBot = false;
+    /**
+    * @param
+     * @param demoFrameBot true if using demo, false for grabber bot
+    **/
+    public MecanumDrive(OpMode opMode,boolean demoFrameBot) {
         super(opMode);
+        mDemoFrameBot = demoFrameBot;
     }
 
-    private ElapsedTime mDriveByEncoderTimeoutTimer = null;
-    private boolean mDriveByEncoderActive = false;
-    private double mDriveByEncoderTimeout = 0d;
 
     /* Initialize standard Hardware interfaces.
      * NOTE:  This class throws Exception on any hardware init error so be sure to catch and
@@ -93,18 +107,21 @@ public class MecanumDrive extends Drivetrain{
         String motorInitError = "";
         try {
             lfMotor = tryMapMotor("lf");
-         }
+            if (mDemoFrameBot){
+                lfMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+            }
+        }
         catch (Exception e){
             motorInitError += "lf,";
         }
         try {
             rfMotor = tryMapMotor("rf");
-        }
+         }
         catch(Exception e){
             motorInitError += "rf,";
         }
         try {
-             lrMotor = tryMapMotor("lr");
+            lrMotor = tryMapMotor("lr");
             lrMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         }
         catch(Exception e){
@@ -112,7 +129,12 @@ public class MecanumDrive extends Drivetrain{
         }
         try {
             rrMotor = tryMapMotor("rr");
-             rrMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+            if (mDemoFrameBot){
+                rrMotor.setDirection(DcMotorSimple.Direction.FORWARD);
+            }
+            else{
+                rrMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+            }
         }
         catch(Exception e){
             motorInitError += "rr,";
@@ -199,11 +221,15 @@ public class MecanumDrive extends Drivetrain{
     }
 
     /**
-     * helper function to stop all motors on the robot.
+     * helper function to stop all motors on the robot and return motor modes to
+     * manual mode if they had been changed to run to position.
      */
     @Override
     public void stop() {
         setPower(0.0, 0.0, 0.0, 0.0);
+        // Return motors to manual control
+        setMotorModes(DcMotor.RunMode.RUN_USING_ENCODER);
+
     }
 
     @Override
@@ -243,7 +269,7 @@ public class MecanumDrive extends Drivetrain{
      * @return true if session started, false on error.
      */
     @Override
-    public boolean startDriveByEncoderSession(double speed, double xdist, double ydist, double timeout) {
+    public boolean startDriveByEncoder(double speed, double xdist, double ydist, double timeout) {
 
         mDriveByEncoderTimeout = timeout;
         // Compute the number of encoder counts for each wheel to move the requested distanc
@@ -262,8 +288,7 @@ public class MecanumDrive extends Drivetrain{
         setMotorModes(DcMotor.RunMode.RUN_TO_POSITION);
 
         // Reset timer and set motor power
-        mDriveByEncoderTimeoutTimer = new ElapsedTime();
-        mDriveByEncoderTimeoutTimer.reset();
+        mDriveByEncoderTimer.reset();
         double aspeed = Math.abs(speed);
         if (aspeed > 1.0)
             aspeed = 1.0;
@@ -276,28 +301,23 @@ public class MecanumDrive extends Drivetrain{
      * @return true if the session is still active.  false if session complete.
      */
     @Override
-     public boolean continueDriveByEncoder() {
-         if (!mDriveByEncoderActive)
-             return false;
-         if (mDriveByEncoderTimeoutTimer.seconds() > mDriveByEncoderTimeout){
-             stop();
-             mDriveByEncoderActive = false;
-             mDriveByEncoderSuccess = false;
-             return false;
-         }
-         if (!isAnyMotorBusy()) {
-             // Successful move before timeout so set success flag and return
+    public boolean continueDriveByEncoder() {
+        if (!mDriveByEncoderActive)
+            return false;
+        if (mDriveByEncoderTimer.seconds() > mDriveByEncoderTimeout){
+            stop();
+            mDriveByEncoderActive = false;
+            mDriveByEncoderSuccess = false;
+            return false;
+        }
+        if (!isAnyMotorBusy()) {
+            stop();  // Already stopped, but need to reset motor modes
+            // Successful move before timeout so set success flag and return
             mDriveByEncoderActive = false;
             mDriveByEncoderSuccess = true;
             return false;
-         }
-         return true;   // Still moving.
-     }
-    /*
-     * @return true
-     */
-    public boolean driveByEncoderSuccess(){
-        return mDriveByEncoderSuccess;
+        }
+        return true;   // Still moving.
     }
 
     /**
@@ -336,4 +356,36 @@ public class MecanumDrive extends Drivetrain{
         setPower(lfPower,rfPower,lrPower,rrPower);
     }
 
+   /**
+     * open loop rotate function
+     */
+    @Override
+    public void startRotation(double cwDegrees){
+        // Compute the time to rotate
+        mRotationTimeout = Math.abs(cwDegrees) * ROTATION_SECONDS_PER_DEGREE;
+        mRotationTimer.reset();
+
+        double rotpower = ROTATION_POWER;
+        if (cwDegrees < 0){
+            rotpower = -rotpower;
+        }
+        mRotationTimer = new ElapsedTime();
+        double lfPower = rotpower;
+        double rfPower = -rotpower;
+        double lrPower = rotpower;
+        double rrPower = -rotpower;
+        setPower(lfPower,rfPower,lrPower,rrPower);
+    }
+    /**
+     * continues a rotation if one is active.  Returns true on rotation still active.
+     */
+    public boolean continueRotation(){
+        if (mRotationInProgress) {
+            if (mRotationTimer.time() >= mRotationTimeout) {
+                mRotationInProgress = false;
+                stop();
+            }
+        }
+        return mRotationInProgress;
+    }
 }

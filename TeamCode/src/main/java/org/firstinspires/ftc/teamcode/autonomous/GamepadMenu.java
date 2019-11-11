@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.autonomous.options;
+package org.firstinspires.ftc.teamcode.autonomous;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.Gamepad;
@@ -11,12 +11,14 @@ public class GamepadMenu {
 
     private String[] mOptionStrings = new String[1];
     private String mCaption = "";
-    private int mSelectedOption = -1;
+    private int mSelectedOption = 0;
+    private Gamepad mGamepad = null;
 
-    public GamepadMenu(OpMode opMode, String caption, String[] options){
+    public GamepadMenu(OpMode opMode, Gamepad gamepad,String caption, String[] options){
         mOpMode = opMode;
         mCaption = caption;
         mOptionStrings = options;
+        mGamepad = gamepad;
     }
 
     /**
@@ -24,25 +26,25 @@ public class GamepadMenu {
      * @return true when the option has been selected.
      */
     public boolean doOptionMenu(){
-        if (mOpMode.gamepad1.b){
+        if (mGamepad.b){
             return true;
         }
-        if (mOpMode.gamepad1.dpad_up){
+        if (mGamepad.dpad_up){
             mSelectedOption++;
             if (mSelectedOption > mOptionStrings.length-1){
                 mSelectedOption = 0;
             }
         }
-        else if (mOpMode.gamepad1.dpad_down){
+        else if (mGamepad.dpad_down){
             mSelectedOption--;
             if (mSelectedOption < 0){
-                mSelectedOption = mOptionStrings.length-1;
+                mSelectedOption = 0;
             }
         }
         // Show the currently option
         mOpMode.telemetry.addData(mCaption, mOptionStrings[mSelectedOption]);
         mOpMode.telemetry.update();
-        return true;
+        return false;
     }
 
     /**

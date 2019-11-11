@@ -13,8 +13,9 @@ import org.firstinspires.ftc.teamcode.drivetrain.TwoWheelTankDrive;
 public class Robot {
 
     public enum DriveTrainStyle{
-        MECANUM(0),
-        TWO_WHEEL_TANK(1);
+        MECANUM_HEX_BOT(0),
+        MECANUM_REV_DEV_BOT(1),
+        TWO_WHEEL_TANK(2);
 
         private final int id;
 
@@ -41,14 +42,17 @@ public class Robot {
         this.opMode = om;
 
         switch(activeDTS) {
-            case MECANUM:
-                drivetrain = new MecanumDrive(om);
+            case MECANUM_HEX_BOT:
+                drivetrain = new MecanumDrive(om,false);
+                break;
+            case MECANUM_REV_DEV_BOT:
+                drivetrain = new MecanumDrive(om,true);
                 break;
             case TWO_WHEEL_TANK:
                 drivetrain = new TwoWheelTankDrive(om);
                 break;
             default:
-                drivetrain = new MecanumDrive(om);
+                drivetrain = new MecanumDrive(om,false);
                 break;
         }
         // This is for the other hardware for new stuff
