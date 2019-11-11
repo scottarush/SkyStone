@@ -57,7 +57,7 @@ public class TestFindStone extends LinearOpMode {
     @Override
     public void runOpMode() {
         try {
-            drivetrain = new MecanumDrive(this);
+            drivetrain = new MecanumDrive(this,true);
             drivetrain.init(hardwareMap);
 
             utilities = new VuforiaMotionMethods(drivetrain);

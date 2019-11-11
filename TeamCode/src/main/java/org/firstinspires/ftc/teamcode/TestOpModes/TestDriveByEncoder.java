@@ -55,7 +55,7 @@ public class TestDriveByEncoder extends LinearOpMode {
     @Override
     public void runOpMode() {
         try {
-            drivetrain = new MecanumDrive(this);
+            drivetrain = new MecanumDrive(this,true);
             drivetrain.init(hardwareMap);
             utilities = new VuforiaMotionMethods(drivetrain);
         }
@@ -66,7 +66,7 @@ public class TestDriveByEncoder extends LinearOpMode {
         telemetry.addData("Say","Robot Initialized");
         waitForStart();
 
-        drivetrain.startDriveByEncoderSession(0.5,5,0,5);
+        drivetrain.startDriveByEncoder(0.5,5,0,5);
         drivetrain.stop();
     }
 

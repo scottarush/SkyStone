@@ -41,7 +41,7 @@ This class implements the equations that Marcus derived on October 3.
   */
 
 @TeleOp(name="TestTankDrive", group="Robot")
-@Disabled
+//@Disabled
 public class TestTankOpMode extends OpMode{
 
     /* Declare OpMode members. */
@@ -56,7 +56,7 @@ public class TestTankOpMode extends OpMode{
          * The init() method of the hardware class does all the work here
          */
         try {
-            drivetrain = new MecanumDrive(this);
+            drivetrain = new MecanumDrive(this,true);
             drivetrain.init(hardwareMap);
         }
         catch(Exception e){

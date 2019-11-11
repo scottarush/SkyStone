@@ -19,7 +19,7 @@ public class TestRobot extends OpMode {
 
     @Override
     public void init() {
-        robot = new Robot(Robot.DriveTrainStyle.MECANUM, this);
+        robot = new Robot(Robot.DriveTrainStyle.MECANUM_HEX_BOT, this);
         try {
             robot.init();
         }

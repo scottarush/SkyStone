@@ -2,10 +2,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
-import org.firstinspires.ftc.teamcode.Grabber;
-import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.arm.FourBarArm;
-import org.firstinspires.ftc.teamcode.drivetrain.Drivetrain;
 import org.firstinspires.ftc.teamcode.drivetrain.MecanumDrive;
 
 /**
@@ -39,7 +36,7 @@ public class MecanumGrabberBot extends Robot {
     private boolean mManualArmMode = false;
 
     public MecanumGrabberBot(OpMode opMode, boolean manualArmMode){
-        super(DriveTrainStyle.MECANUM,opMode);
+        super(DriveTrainStyle.MECANUM_HEX_BOT,opMode);
         mManualArmMode = manualArmMode;
     }
 
