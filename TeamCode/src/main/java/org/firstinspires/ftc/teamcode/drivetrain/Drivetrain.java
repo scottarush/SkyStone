@@ -26,11 +26,14 @@ public abstract class Drivetrain {
     protected boolean mDriveByEncoderSuccess = false;
     protected boolean mDriveByEncoderActive = false;
     protected double mDriveByEncoderTimeout = 0d;
-    protected boolean mRotationInProgress = false;
+    protected boolean mDriveByTimeInProgress = false;
+    protected ElapsedTime mDriveByTimeTimer = new ElapsedTime();
+    private double mDriveByTimeTimeout = 0.0d;
 
     public Drivetrain(OpMode opMode){
         this.mOpMode = opMode;
     }
+
 
     /**
      * starts a drive by encoder session.  If robot is moving, it will be stopped.
@@ -45,6 +48,35 @@ public abstract class Drivetrain {
      public boolean startDriveByEncoder(double speed, double xdist, double ydist, double timeout) {
         return false;
     }
+
+    /**
+     * Drives for a set amount of time in the forward or reverse direction
+     */
+    public void driveByTime(boolean forward,double time){
+        mDriveByTimeInProgress = true;
+        mDriveByTimeTimeout = time;
+        mDriveByTimeTimer.reset();
+    }
+
+    /**
+     * services the drive by time if it is currently active.
+     * @return true if still active, false if stopped
+     */
+    public boolean continueDriveByTime(){
+        if (mDriveByTimeInProgress){
+            if (mDriveByTimeTimer.time() >= mDriveByTimeTimeout) {
+                mDriveByTimeInProgress = false;
+                stop();
+            }
+        }
+        return mDriveByTimeInProgress;
+    }
+    /**
+     * @return true if drive by time is active.  false, otherwise
+     */
+    public boolean isDriveByTimeInProgress(){
+        return mDriveByTimeInProgress;
+    }
     /**
      * continues a drive by encoder session.  If robot is moving, it will be stopped.
      * @return true if the session is still active.  false if session complete.
@@ -58,6 +90,7 @@ public abstract class Drivetrain {
     public boolean driveByEncoderSuccess() {
         return mDriveByEncoderSuccess;
     }
+
     /**
      * open loop rotate function
      */
@@ -74,7 +107,7 @@ public abstract class Drivetrain {
      * @return true if a rotate is still active
      */
     public boolean isRotationInProgress(){
-        return mRotationInProgress;
+        return false;
     }
 
     /**

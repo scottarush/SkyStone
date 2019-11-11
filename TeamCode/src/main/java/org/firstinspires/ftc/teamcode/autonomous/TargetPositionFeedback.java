@@ -1,7 +1,7 @@
 package org.firstinspires.ftc.teamcode.autonomous;
 
 
-import org.firstinspires.ftc.teamcode.VuforiaCommon;
+import org.firstinspires.ftc.teamcode.util.VuforiaCommon;
 
 /**
  * Class encapsulates Vuforia continous Vuforia location checking and issues a callback when

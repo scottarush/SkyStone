@@ -4,6 +4,8 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.firstinspires.ftc.teamcode.Hook;
 import org.firstinspires.ftc.teamcode.MecanumGrabberBot;
+import org.firstinspires.ftc.teamcode.util.VuforiaCommon;
+import org.firstinspires.ftc.teamcode.util.OneShotTimer;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -18,17 +20,25 @@ public class DragFoundationController {
 
     private MecanumGrabberBot robot = null;
 
-    private ArrayList<StateTimer> mStateTimers = new ArrayList<>();
+    private ArrayList<OneShotTimer> mStateTimers = new ArrayList<>();
 
-    private StateTimer mHookTimer = new StateTimer(1.0d,new HookTimeout());
+    private OneShotTimer mHookTimer = new OneShotTimer(1.0d,new HookTimeout());
 
     private boolean mCheckDrivingSuccess = false;
 
-    public DragFoundationController(OpMode opMode, MecanumGrabberBot robot,boolean blueTeam){
+    private int mControlMode = 0;
+
+    private VuforiaCommon mVuforia = null;
+
+    public DragFoundationController(OpMode opMode, MecanumGrabberBot robot,VuforiaCommon vuforia,boolean blueTeam,int controlMode){
         dragsm = new DragFoundationContext(this);
         this.opMode = opMode;
         this.blueTeam = blueTeam;
         this.robot = robot;
+        mControlMode = controlMode;
+        mVuforia = vuforia;
+        // Add all the timers to the state timers
+        mStateTimers.add(mHookTimer);
 
     }
 
@@ -40,7 +50,7 @@ public class DragFoundationController {
 
         // Check all the timers to trigger any timeout events
         checkTimers();
-        // Check for success or failure of driving if active on last cycle
+        // Service any driving mode and check for success or failure of driving if active on last cycle
         if (mCheckDrivingSuccess){
             if (!robot.getDrivetrain().isDriveByEncoderSessionActive()){
                 // Session no longer active so check for success
@@ -58,8 +68,16 @@ public class DragFoundationController {
                 robot.getDrivetrain().continueDriveByEncoder();
             }
         }
-        if (robot.getDrivetrain().isRotationInProgress()) {
-            if (robot.getDrivetrain().continueRotation()) {
+        else if (robot.getDrivetrain().isDriveByTimeInProgress()){
+            boolean active = robot.getDrivetrain().continueDriveByTime();
+            if (!active){
+                // we just finished so assume success, however unlikely :(
+                dragsm.evDriveSuccess();
+            }
+        }
+        // if a rotation is progress, then service the rotation and check for completion.
+        if (robot.getDrivetrain().isRotationInProgress()){
+            if (!robot.getDrivetrain().continueRotation()){
                 dragsm.evRotationComplete();
             }
         }
@@ -88,13 +106,33 @@ public class DragFoundationController {
      * Called from state machine to drive toward the foundation
      */
     public void startDriveToFoundation(){
-        startDriveByEncoder(1.0d, 36.0d,0d,3.0d);
-     }
+        switch(mControlMode){
+            case SkystoneAutonomousOpMode.ENCODER_CONTROL:
+                startDriveByEncoder(1.0d, 36.0d,0d,3.0d);
+                break;
+            case SkystoneAutonomousOpMode.OPEN_LOOP_TIME:
+                robot.getDrivetrain().driveByTime(true,1.0d);
+                break;
+            case SkystoneAutonomousOpMode.CLOSED_LOOP_VUFORIA:
+                // TODO
+                break;
+        }
+    }
     /**
      * Called from state machine to drive toward the foundation
      */
     public void startDragFoundation(){
-        startDriveByEncoder(1.0d, -36.0d,0d,3.0d);
+        switch(mControlMode){
+            case SkystoneAutonomousOpMode.ENCODER_CONTROL:
+                startDriveByEncoder(1.0d, -36.0d,0d,3.0d);
+                break;
+            case SkystoneAutonomousOpMode.OPEN_LOOP_TIME:
+                robot.getDrivetrain().driveByTime(false,1.0d);
+                break;
+            case SkystoneAutonomousOpMode.CLOSED_LOOP_VUFORIA:
+                // TODO
+                break;
+        }
     }
 
     /**
@@ -130,21 +168,19 @@ public class DragFoundationController {
     }
 
     public void startHookTimer(){
-        mHookTimer.reset();
-        mStateTimers.add(mHookTimer);
+       mHookTimer.start();
     }
 
-    private class HookTimeout implements StateTimer.IStateTimerCallback{
+    private class HookTimeout implements OneShotTimer.IOneShotTimerCallback {
         @Override
         public void timeoutComplete() {
-            mStateTimers.remove(mHookTimer);
             dragsm.evHookTimeout();
         }
     }
 
     private void checkTimers(){
-        for(Iterator<StateTimer>iter=mStateTimers.iterator();iter.hasNext();){
-            StateTimer timer = iter.next();
+        for(Iterator<OneShotTimer> iter = mStateTimers.iterator(); iter.hasNext();){
+            OneShotTimer timer = iter.next();
             timer.checkTimer();
         }
     }
@@ -153,4 +189,7 @@ public class DragFoundationController {
         opMode.telemetry.addData("Status",msg);
         opMode.telemetry.update();
     }
+
+
 }
+

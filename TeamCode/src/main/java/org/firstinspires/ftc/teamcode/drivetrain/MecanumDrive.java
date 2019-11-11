@@ -35,6 +35,8 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.teamcode.util.OneShotTimer;
+
 /**
  * This is NOT an opmode.
  *
@@ -73,17 +75,17 @@ public class MecanumDrive extends Drivetrain{
     /**
      * Approximate number of seconds per degree to rotate.
      */
-    public static final double ROTATION_SECONDS_PER_DEGREE = 2d / 90d;
+    public static final double ROTATION_SECONDS_PER_DEGREE = 0.700d / 90d;
 
     /**
      * Power to use when rotating.
      */
     public static final double ROTATION_POWER = 1.0d;
 
+    private ElapsedTime mRotationTimer = new ElapsedTime();
+    private boolean mRotationInProgress = false;
 
-    private ElapsedTime mRotationTimer = null;
-    private double mRotationTimeout = 0;
-
+    private double mRotationTimeout = 0d;
     private boolean mDemoFrameBot = false;
     /**
     * @param
@@ -311,7 +313,7 @@ public class MecanumDrive extends Drivetrain{
             return false;
         }
         if (!isAnyMotorBusy()) {
-            stop();  // Already stopped, but need to reset motor modes
+            stop();  // Already stopped, but need to start motor modes
             // Successful move before timeout so set success flag and return
             mDriveByEncoderActive = false;
             mDriveByEncoderSuccess = true;
@@ -355,7 +357,18 @@ public class MecanumDrive extends Drivetrain{
 
         setPower(lfPower,rfPower,lrPower,rrPower);
     }
+    /**
+     * Drives for a set amount of time in the forward or reverse direction
+     */
+    public void driveByTime(boolean forward,double time){
+        super.driveByTime(forward,time);
+        double power = 1.0d;
+        if (!forward){
+            power = -power;
+        }
 
+        setPower(power,power,power,power);
+    }
    /**
      * open loop rotate function
      */
@@ -363,27 +376,43 @@ public class MecanumDrive extends Drivetrain{
     public void startRotation(double cwDegrees){
         // Compute the time to rotate
         mRotationTimeout = Math.abs(cwDegrees) * ROTATION_SECONDS_PER_DEGREE;
+        mRotationInProgress = true;
+        // And start
         mRotationTimer.reset();
 
         double rotpower = ROTATION_POWER;
         if (cwDegrees < 0){
             rotpower = -rotpower;
         }
-        mRotationTimer = new ElapsedTime();
         double lfPower = rotpower;
         double rfPower = -rotpower;
         double lrPower = rotpower;
         double rrPower = -rotpower;
         setPower(lfPower,rfPower,lrPower,rrPower);
     }
+
+    private class RotationTimerCallback implements OneShotTimer.IOneShotTimerCallback {
+        @Override
+        public void timeoutComplete() {
+             stop();
+        }
+    }
+
+    /**
+     * @return true if a rotate is still active
+     */
+    public boolean isRotationInProgress(){
+        return mRotationInProgress;
+    }
+
     /**
      * continues a rotation if one is active.  Returns true on rotation still active.
      */
     public boolean continueRotation(){
-        if (mRotationInProgress) {
+        if (mRotationInProgress){
             if (mRotationTimer.time() >= mRotationTimeout) {
-                mRotationInProgress = false;
                 stop();
+                mRotationInProgress = false;
             }
         }
         return mRotationInProgress;

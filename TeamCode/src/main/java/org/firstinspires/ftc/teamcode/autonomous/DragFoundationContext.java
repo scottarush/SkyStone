@@ -427,18 +427,28 @@ public class DragFoundationContext
         {
             DragFoundationController ctxt = context.getOwner();
 
-            (context.getState()).exit(context);
+            DragFoundationControllerState endState = context.getState();
             context.clearState();
             try
             {
                 ctxt.openHook();
+                ctxt.startHookTimer();
             }
             finally
             {
-                context.setState(DragFoundation.Success);
-                (context.getState()).entry(context);
+                context.setState(endState);
             }
 
+            return;
+        }
+
+        @Override
+        protected void evHookTimeout(DragFoundationContext context)
+        {
+
+            (context.getState()).exit(context);
+            context.setState(DragFoundation.RotateToQuarry);
+            (context.getState()).entry(context);
             return;
         }
 
@@ -471,6 +481,7 @@ public class DragFoundationContext
                 DragFoundationController ctxt = context.getOwner();
 
             ctxt.setLogMessage("RotateToQuarry");
+            ctxt.rotateToQuarry();
             return;
         }
 

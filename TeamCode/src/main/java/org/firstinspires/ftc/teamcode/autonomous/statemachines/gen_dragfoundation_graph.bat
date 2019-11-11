@@ -1,0 +1,1 @@
+java -jar Smc.jar -graph -glevel 2 -d ../ DragFoundation.sm

@@ -38,9 +38,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackable;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackableDefaultListener;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
-import org.firstinspires.ftc.teamcode.VuforiaCommon;
+import org.firstinspires.ftc.teamcode.util.VuforiaCommon;
 import org.firstinspires.ftc.teamcode.drivetrain.Drivetrain;
-import org.firstinspires.ftc.teamcode.drivetrain.MecanumDrive;
 
 import java.util.List;
 
@@ -201,7 +200,7 @@ public class VuforiaMotionMethods {
 
         OpenGLMatrix lastLocation = null;
 
-        // Assume that the skyStone is somewhere in front of the drivetrain so reset the stoneTarget
+        // Assume that the skyStone is somewhere in front of the drivetrain so start the stoneTarget
         vuforiaCommon.stoneTarget.setLocation(OpenGLMatrix
                 .translation(0, 0, stoneZ)
                 .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 0, 0, 0)));

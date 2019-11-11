@@ -120,12 +120,12 @@ public class FourBarArm extends Arm {
     public final static int RESET_RETRACT_COMPLETE = 1;
     public final static int RESET_RETRACT_ERROR = 2;
     /**
-     * This function is called from the OpMode run loop continuously to reset
+     * This function is called from the OpMode run loop continuously to start
      * the arm to the fully retracted position using the limit switch to detect when the
      * position has been reached.
      * @return RESET_RETRACT_IN_PROGRESS means keep calling to co
      * mplete, RESET_RETRACT_COMPLETE
-     * means reset is done, RESET_RETRACT_ERROR means the reset didn't complete within a maximum
+     * means start is done, RESET_RETRACT_ERROR means the start didn't complete within a maximum
      * time and cannot finish.  Also returns RESET_RETRACT_ERROR if the motor or limit switch did
      * not initialize properly.
      */
@@ -137,7 +137,7 @@ public class FourBarArm extends Arm {
         synchronized (this) {
             if (!mResetToRetractInProgress) {
                 // This is the first call.  Stop all motors, initialize the max limit timer, and
-                // begin the reset
+                // begin the start
                 mResetToRetractInProgress = true;
                 mArmMotor.setPower(0);
                 mArmMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -146,7 +146,7 @@ public class FourBarArm extends Arm {
                 mArmMotor.setPower(RESET_TO_RETRACT_POWER);
                 return RESET_RETRACT_IN_PROGRESS;
             }
-            // Otherwise a reset is in progress.
+            // Otherwise a start is in progress.
             // Now check if limit switch has been pressed.
             if (mLimitSwitch.getState()){
                 // Switch has tripped.  Stop the motor and either return or set motors back
@@ -160,22 +160,22 @@ public class FourBarArm extends Arm {
                 return RESET_RETRACT_COMPLETE;
             }
             else{
-                // arm still moving but no limit switch.  Check for max reset time
+                // arm still moving but no limit switch.  Check for max start time
                 if (mRampTimer.time() > MAX_RESET_TO_RETRACT_TIME_SEC){
-                    // Time exceeded but reset did not complete.  stop motor. If position mode
+                    // Time exceeded but start did not complete.  stop motor. If position mode
                     // is enabled then set error flag as we now no longer know where zero is
                     mArmMotor.setPower(0d);
                     mFullRetractAngleValid = false;
                     return RESET_RETRACT_ERROR;
                 }
-                // Return that the reset is still in progress
+                // Return that the start is still in progress
                 return RESET_RETRACT_IN_PROGRESS;
             }
         }
     }
 
     /**
-     * @return true if a reset is in progress
+     * @return true if a start is in progress
      */
     public boolean isResetToRetractInProgress(){
         return mResetToRetractInProgress;
@@ -194,7 +194,7 @@ public class FourBarArm extends Arm {
         // sign for extend or retract at end
         double abspower = Math.abs(power);
         if (mArmMotor.getPower() == 0d){
-            // We are stopped so reset the ramp timer and set power to start
+            // We are stopped so start the ramp timer and set power to start
             mRampTimer.reset();
             if (extend){
                 abspower = EXTEND_START_POWER;
