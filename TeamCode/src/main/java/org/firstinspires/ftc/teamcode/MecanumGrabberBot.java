@@ -35,8 +35,8 @@ public class MecanumGrabberBot extends Robot {
 
     private boolean mManualArmMode = false;
 
-    public MecanumGrabberBot(OpMode opMode, boolean manualArmMode){
-        super(DriveTrainStyle.MECANUM_HEX_BOT,opMode);
+    public MecanumGrabberBot(OpMode opMode, DriveTrainStyle driveTrainStyle,boolean manualArmMode){
+        super(driveTrainStyle,opMode);
         mManualArmMode = manualArmMode;
     }
 

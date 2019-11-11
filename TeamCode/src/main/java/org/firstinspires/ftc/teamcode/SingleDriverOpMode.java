@@ -62,7 +62,7 @@ public class SingleDriverOpMode extends OpMode{
      */
     @Override
     public void init() {
-        robot = new MecanumGrabberBot(this, true);
+        robot = new MecanumGrabberBot(this, Robot.DriveTrainStyle.MECANUM_HEX_BOT,true);
         /*
          * Initialize the robot.  Be sure to catch exception and dump out as
          * the exception string will have details of what didn't initialize and
@@ -123,7 +123,7 @@ public class SingleDriverOpMode extends OpMode{
          robot.getGrabber().moveGrabber(leftBumper,rightBumper,leftTrigger,rightTrigger);
 
         // Do arm handling
-        // If a reset is in progress then call teh service routine in the arm
+        // If a start is in progress then call teh service routine in the arm
         Gamepad armPad = gamepad2;
         if (robot.getArm().isResetToRetractInProgress()){
             int retcode = robot.getArm().resetToRetractPosition();

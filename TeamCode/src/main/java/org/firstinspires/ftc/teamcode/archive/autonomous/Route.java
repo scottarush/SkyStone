@@ -103,7 +103,7 @@ public class Route {
 
     /**
      * Resets the route to run on the provided tile
-     * @return true if reset, false if tile was invalid.
+     * @return true if start, false if tile was invalid.
      */
     public boolean resetRouteOnTile(FieldTile tile){
         int index =  getTransitionIndex(tile);
