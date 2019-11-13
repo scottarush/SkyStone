@@ -1,9 +1,9 @@
-%class DragFoundationController
+%class AutonomousController
 %package org.firstinspires.ftc.teamcode.autonomous
 
-%start DragFoundation::Idle
+%start AutonomousStateMachine::Idle
 
-%map DragFoundation
+%map AutonomousStateMachine
 %%
 
     /*
