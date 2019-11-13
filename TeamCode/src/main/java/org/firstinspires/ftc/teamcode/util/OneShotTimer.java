@@ -1,21 +1,20 @@
 package org.firstinspires.ftc.teamcode.util;
 
-import com.qualcomm.robotcore.util.ElapsedTime;
-
 /**
  * One-shot timer that triggers a IOneShotTimerCallback after the timeout from .start occurs.
+ * This class does not spawn a separate thread and must receive service after .start() via
+ * repeated calls to .checkTimer()
  */
 public class OneShotTimer {
-    private double mTimeout;
+    private int mTimeoutMS;
     private IOneShotTimerCallback callback;
-    private ElapsedTime mElapsedTime = null;
+    private long mTimeoutSystemTimeMS = 0;
 
-    private boolean mIsEnabled = false;
+    private boolean mIsRunning = false;
 
-    public OneShotTimer(double timeout, IOneShotTimerCallback callback){
+    public OneShotTimer(int timeoutms, IOneShotTimerCallback callback){
         this.callback = callback;
-        mTimeout = timeout;
-        mElapsedTime = new ElapsedTime();
+        mTimeoutMS = timeoutms;
     }
 
     public interface IOneShotTimerCallback {
@@ -25,39 +24,44 @@ public class OneShotTimer {
     /**
      * changes the timeout to the supplied value
      */
-    public void setTimeout(double timeout){
-        mTimeout = timeout;
-
+    public void setTimeout(int timeoutms){
+        mTimeoutMS = timeoutms;
     }
     /**
      * Returns true if running, false if expired
      */
     public boolean isRunning(){
-        if (mIsEnabled){
-            return mElapsedTime.time() < mTimeout;
-        }
-        return false;
+        return mIsRunning;
+    }
+
+    /**
+     * Cancels the timer.
+     */
+    public void cancel(){
+        mIsRunning = false;
     }
     /**
      * Re-enables and restarts the timer.
      */
     public void start(){
-        mElapsedTime.reset();
-        mIsEnabled = true;
+        mTimeoutSystemTimeMS = System.currentTimeMillis() + mTimeoutMS;
+        mIsRunning = true;
     }
 
-     public void checkTimer(){
-        if (mIsEnabled) {
-            if (mElapsedTime.time() >= mTimeout){
+
+    public boolean checkTimer(){
+        if (mIsRunning) {
+            if (System.currentTimeMillis() >= mTimeoutSystemTimeMS){
                 // Disable for next time and make the callback
-                mIsEnabled = false;
+                mIsRunning = false;
                 callback.timeoutComplete();
             }
         }
+        return mIsRunning;
     }
 
-  /**  public static void main(String[] args){
-        OneShotTimer timer = new OneShotTimer(0.700d, new IOneShotTimerCallback() {
+    public static void main(String[] args){
+        OneShotTimer timer = new OneShotTimer(2000, new IOneShotTimerCallback() {
 
             @Override
             public void timeoutComplete() {
@@ -71,5 +75,5 @@ public class OneShotTimer {
         }
 
     }
-   **/
+
 }
