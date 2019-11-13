@@ -4,6 +4,8 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.firstinspires.ftc.teamcode.Hook;
 import org.firstinspires.ftc.teamcode.MecanumGrabberBot;
+import org.firstinspires.ftc.teamcode.arm.FourBarArm;
+import org.firstinspires.ftc.teamcode.drivetrain.MecanumDrive;
 import org.firstinspires.ftc.teamcode.util.VuforiaCommon;
 import org.firstinspires.ftc.teamcode.util.OneShotTimer;
 
@@ -22,7 +24,7 @@ public class DragFoundationController {
 
     private ArrayList<OneShotTimer> mStateTimers = new ArrayList<>();
 
-    private OneShotTimer mHookTimer = new OneShotTimer(1.0d,new HookTimeout());
+    private OneShotTimer mHookTimer = new OneShotTimer(1000,new HookTimeout());
 
     private boolean mCheckDrivingSuccess = false;
 
@@ -42,6 +44,9 @@ public class DragFoundationController {
 
     }
 
+    /**
+     * Called from the OpMode loop until the state machine reaches Success
+     */
      public void doOpmode(){
         // If we haven't started then kick if off.
         if (dragsm.getState() == DragFoundationContext.DragFoundation.Idle){
@@ -55,7 +60,7 @@ public class DragFoundationController {
             if (!robot.getDrivetrain().isDriveByEncoderSessionActive()){
                 // Session no longer active so check for success
                 if (robot.getDrivetrain().driveByEncoderSuccess()){
-                    dragsm.evDriveSuccess();
+                    dragsm.evDriveComplete();
                 }
                 else{
                     dragsm.evDriveFail();
@@ -68,11 +73,12 @@ public class DragFoundationController {
                 robot.getDrivetrain().continueDriveByEncoder();
             }
         }
-        else if (robot.getDrivetrain().isDriveByTimeInProgress()){
+        // Service a drive by time session if active
+        if (robot.getDrivetrain().isDriveByTimeInProgress()){
             boolean active = robot.getDrivetrain().continueDriveByTime();
             if (!active){
                 // we just finished so assume success, however unlikely :(
-                dragsm.evDriveSuccess();
+                dragsm.evDriveComplete();
             }
         }
         // if a rotation is progress, then service the rotation and check for completion.
@@ -81,7 +87,14 @@ public class DragFoundationController {
                 dragsm.evRotationComplete();
             }
         }
-
+        // If a reset of the arm is active, then service it by calling it from here.
+         if (robot.getArm().isResetToRetractInProgress()){
+             int status = robot.getArm().resetToRetractPosition();
+             if (status != FourBarArm.RESET_RETRACT_IN_PROGRESS){
+                 // Assume same event even if we fail to retract.
+                 dragsm.evArmRetracted();
+             }
+         }
     }
 
     public boolean isDragFoundationComplete(){
@@ -105,13 +118,13 @@ public class DragFoundationController {
     /**
      * Called from state machine to drive toward the foundation
      */
-    public void startDriveToFoundation(){
+    public void driveToFoundation(){
         switch(mControlMode){
             case SkystoneAutonomousOpMode.ENCODER_CONTROL:
                 startDriveByEncoder(1.0d, 36.0d,0d,3.0d);
                 break;
             case SkystoneAutonomousOpMode.OPEN_LOOP_TIME:
-                robot.getDrivetrain().driveByTime(true,1.0d);
+                robot.getDrivetrain().driveByTime(12d);
                 break;
             case SkystoneAutonomousOpMode.CLOSED_LOOP_VUFORIA:
                 // TODO
@@ -121,13 +134,29 @@ public class DragFoundationController {
     /**
      * Called from state machine to drive toward the foundation
      */
-    public void startDragFoundation(){
+    public void dragFoundation(){
         switch(mControlMode){
             case SkystoneAutonomousOpMode.ENCODER_CONTROL:
                 startDriveByEncoder(1.0d, -36.0d,0d,3.0d);
                 break;
             case SkystoneAutonomousOpMode.OPEN_LOOP_TIME:
-                robot.getDrivetrain().driveByTime(false,1.0d);
+                robot.getDrivetrain().driveByTime(-12d);
+                break;
+            case SkystoneAutonomousOpMode.CLOSED_LOOP_VUFORIA:
+                // TODO
+                break;
+        }
+    }
+    /**
+     * Called from state machine to drive toward quarry
+     */
+    public void driveToQuarry(){
+        switch(mControlMode){
+            case SkystoneAutonomousOpMode.ENCODER_CONTROL:
+                startDriveByEncoder(1.0d, 36.0d,0d,3.0d);
+                break;
+            case SkystoneAutonomousOpMode.OPEN_LOOP_TIME:
+                robot.getDrivetrain().driveByTime(40);
                 break;
             case SkystoneAutonomousOpMode.CLOSED_LOOP_VUFORIA:
                 // TODO
@@ -135,6 +164,20 @@ public class DragFoundationController {
         }
     }
 
+    /**
+     * Called from state machine to lower the arm until it hits the limit switch.
+     */
+    public void retractArm(){
+        // Start the retract.  OpMode loop will do the rest
+        robot.getArm().resetToRetractPosition();
+    }
+
+    /**
+     * Called from OpMode when the arm has closed.
+     */
+    public void armRetracted(){
+
+    }
     /**
      * Called from state machine to open the hook
      */
@@ -153,11 +196,11 @@ public class DragFoundationController {
     public void rotateToQuarry(){
         if (blueTeam){
             // Rotate -90
-            robot.getDrivetrain().startRotation(-90d);
+            robot.getDrivetrain().startRotationByTime(-90);
         }
         else{
             // Red team is +90
-            robot.getDrivetrain().startRotation(90d);
+            robot.getDrivetrain().startRotationByTime(90);
         }
     }
     /**

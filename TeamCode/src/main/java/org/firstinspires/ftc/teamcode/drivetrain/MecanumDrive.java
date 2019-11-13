@@ -67,32 +67,34 @@ public class MecanumDrive extends Drivetrain{
      **/
     public static final double MECANUM_WHEEL_CIRCUMFERENCE = 12.1211;
 
+
+    public static final int ENCODER_COUNTS_PER_ROTATION = 1120;  // This is the Rev robotics motor.
     /**
      * Number of counts per inch of direct wheel movement.
      **/
     public static final int COUNTS_PER_INCH = (int) Math.round(ENCODER_COUNTS_PER_ROTATION / MECANUM_WHEEL_CIRCUMFERENCE);
 
     /**
-     * Approximate number of seconds per degree to rotate.
+     * Approximate number of mseconds per degree to rotate.
      */
-    public static final double ROTATION_SECONDS_PER_DEGREE = 0.700d / 90d;
+    public static final int ROTATION_MICROSECONDS_PER_DEGREE = (int)(Math.round(0.700d/90d * 1000000));
 
+    /**
+     * Approximate number of milliseconds per inch forward and rearward at full power.
+     */
+    public static final int LINEAR_MILLISECONDS_PER_INCH = 50;
     /**
      * Power to use when rotating.
      */
     public static final double ROTATION_POWER = 1.0d;
 
-    private ElapsedTime mRotationTimer = new ElapsedTime();
-    private boolean mRotationInProgress = false;
-
-    private double mRotationTimeout = 0d;
     private boolean mDemoFrameBot = false;
     /**
-    * @param
+     * @param
      * @param demoFrameBot true if using demo, false for grabber bot
-    **/
+     **/
     public MecanumDrive(OpMode opMode,boolean demoFrameBot) {
-        super(opMode);
+        super(opMode,ROTATION_MICROSECONDS_PER_DEGREE,LINEAR_MILLISECONDS_PER_INCH);
         mDemoFrameBot = demoFrameBot;
     }
 
@@ -118,7 +120,7 @@ public class MecanumDrive extends Drivetrain{
         }
         try {
             rfMotor = tryMapMotor("rf");
-         }
+        }
         catch(Exception e){
             motorInitError += "rf,";
         }
@@ -228,6 +230,7 @@ public class MecanumDrive extends Drivetrain{
      */
     @Override
     public void stop() {
+
         setPower(0.0, 0.0, 0.0, 0.0);
         // Return motors to manual control
         setMotorModes(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -358,28 +361,27 @@ public class MecanumDrive extends Drivetrain{
         setPower(lfPower,rfPower,lrPower,rrPower);
     }
     /**
-     * Drives for a set amount of time in the forward or reverse direction
+     * Drives for the set distance using the linear time rate supplied in the constructor.
+     * @param linearDistance desired distance + forward or - rearward
      */
-    public void driveByTime(boolean forward,double time){
-        super.driveByTime(forward,time);
+    @Override
+    public void driveByTime(double linearDistance){
+        super.driveByTime(linearDistance);
         double power = 1.0d;
-        if (!forward){
+        if (linearDistance < 0d){
             power = -power;
         }
 
         setPower(power,power,power,power);
     }
-   /**
-     * open loop rotate function
+    /**
+     * Drives for a set amount of time in the forward or reverse direction
      */
     @Override
-    public void startRotation(double cwDegrees){
-        // Compute the time to rotate
-        mRotationTimeout = Math.abs(cwDegrees) * ROTATION_SECONDS_PER_DEGREE;
-        mRotationInProgress = true;
-        // And start
-        mRotationTimer.reset();
+    public void startRotationByTime(int cwDegrees){
+        super.startRotationByTime(cwDegrees);
 
+        double power = 1.0d;
         double rotpower = ROTATION_POWER;
         if (cwDegrees < 0){
             rotpower = -rotpower;
@@ -389,32 +391,5 @@ public class MecanumDrive extends Drivetrain{
         double lrPower = rotpower;
         double rrPower = -rotpower;
         setPower(lfPower,rfPower,lrPower,rrPower);
-    }
-
-    private class RotationTimerCallback implements OneShotTimer.IOneShotTimerCallback {
-        @Override
-        public void timeoutComplete() {
-             stop();
-        }
-    }
-
-    /**
-     * @return true if a rotate is still active
-     */
-    public boolean isRotationInProgress(){
-        return mRotationInProgress;
-    }
-
-    /**
-     * continues a rotation if one is active.  Returns true on rotation still active.
-     */
-    public boolean continueRotation(){
-        if (mRotationInProgress){
-            if (mRotationTimer.time() >= mRotationTimeout) {
-                stop();
-                mRotationInProgress = false;
-            }
-        }
-        return mRotationInProgress;
     }
 }

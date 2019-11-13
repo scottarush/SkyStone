@@ -5,12 +5,10 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.teamcode.util.OneShotTimer;
+
 public abstract class Drivetrain {
 
-    /**
-     * Number of encoder counts of each rotation of the shaft.
-     **/
-    public static final double ENCODER_COUNTS_PER_ROTATION = 1120;
 
     /* local OpMode members. */
     public HardwareMap hwMap = null;
@@ -26,12 +24,31 @@ public abstract class Drivetrain {
     protected boolean mDriveByEncoderSuccess = false;
     protected boolean mDriveByEncoderActive = false;
     protected double mDriveByEncoderTimeout = 0d;
-    protected boolean mDriveByTimeInProgress = false;
-    protected ElapsedTime mDriveByTimeTimer = new ElapsedTime();
-    private double mDriveByTimeTimeout = 0.0d;
+    protected OneShotTimer mDriveByTimeTimer = null;
 
-    public Drivetrain(OpMode opMode){
+    protected OneShotTimer mRotationByTimeTimer = null;
+
+    private int mRotationMicrosecondsPerDegree = 7000;
+
+    private int mLinearMillisecondsPerInch = 10;
+
+    public Drivetrain(OpMode opMode,int rotationMicrosecondsPerDegree, int linearMillisecondsPerInch){
         this.mOpMode = opMode;
+        mRotationMicrosecondsPerDegree = rotationMicrosecondsPerDegree;
+        mLinearMillisecondsPerInch = linearMillisecondsPerInch;
+        mDriveByTimeTimer = new OneShotTimer(1000, new OneShotTimer.IOneShotTimerCallback() {
+            @Override
+            public void timeoutComplete() {
+                driveByTimeComplete();
+            }
+        });
+
+        mRotationByTimeTimer = new OneShotTimer(1000, new OneShotTimer.IOneShotTimerCallback() {
+            @Override
+            public void timeoutComplete() {
+                rotationByTimeComplete();
+            }
+        });
     }
 
 
@@ -50,12 +67,13 @@ public abstract class Drivetrain {
     }
 
     /**
-     * Drives for a set amount of time in the forward or reverse direction
+     * Drives for the set distance using the linear time rate supplied in the constructor.
+     * @param linearDistance desired distance + forward or - rearward
      */
-    public void driveByTime(boolean forward,double time){
-        mDriveByTimeInProgress = true;
-        mDriveByTimeTimeout = time;
-        mDriveByTimeTimer.reset();
+    public void driveByTime(double linearDistance){
+        int timeoutms = (int) Math.round(linearDistance * mLinearMillisecondsPerInch);
+        mDriveByTimeTimer.setTimeout(timeoutms);
+        mDriveByTimeTimer.start();
     }
 
     /**
@@ -63,19 +81,26 @@ public abstract class Drivetrain {
      * @return true if still active, false if stopped
      */
     public boolean continueDriveByTime(){
-        if (mDriveByTimeInProgress){
-            if (mDriveByTimeTimer.time() >= mDriveByTimeTimeout) {
-                mDriveByTimeInProgress = false;
-                stop();
-            }
-        }
-        return mDriveByTimeInProgress;
+        return mDriveByTimeTimer.checkTimer();
+    }
+    /**
+     * called when drive time is complete and calls stop method.
+     */
+    public void driveByTimeComplete(){
+        stop();
+    }
+    /**
+     * called to cancel a drive by time.
+     */
+    public void cancelDriveByTime(){
+        mDriveByTimeTimer.cancel();
+        stop();
     }
     /**
      * @return true if drive by time is active.  false, otherwise
      */
     public boolean isDriveByTimeInProgress(){
-        return mDriveByTimeInProgress;
+        return mDriveByTimeTimer.isRunning();
     }
     /**
      * continues a drive by encoder session.  If robot is moving, it will be stopped.
@@ -94,20 +119,35 @@ public abstract class Drivetrain {
     /**
      * open loop rotate function
      */
-    public void startRotation(double cwDegrees) {
-
+    public void startRotationByTime(int cwDegrees) {
+        int timeoutms = cwDegrees * mRotationMicrosecondsPerDegree / 1000;
+        mRotationByTimeTimer.setTimeout(timeoutms);
+        mRotationByTimeTimer.start();
+    }
+    /**
+     * called when drive time is complete and calls stop method.
+     */
+    public void rotationByTimeComplete(){
+        stop();
     }
     /**
      * continues a rotation if one is active.  Returns true on rotation still active.
      */
     public boolean continueRotation() {
-        return false;
+        return mRotationByTimeTimer.isRunning();
+    }
+    /**
+     * called to cancel a rotation by time
+     */
+    public void cancelRotationByTime(){
+        mDriveByTimeTimer.cancel();
+        stop();
     }
     /**
      * @return true if a rotate is still active
      */
     public boolean isRotationInProgress(){
-        return false;
+        return mRotationByTimeTimer.isRunning();
     }
 
     /**

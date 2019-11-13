@@ -34,18 +34,26 @@ public class DragFoundationContext
         return;
     }
 
-    public void evDriveFail()
+    public void evArmRetracted()
     {
-        _transition = "evDriveFail";
-        getState().evDriveFail(this);
+        _transition = "evArmRetracted";
+        getState().evArmRetracted(this);
         _transition = "";
         return;
     }
 
-    public void evDriveSuccess()
+    public void evDriveComplete()
     {
-        _transition = "evDriveSuccess";
-        getState().evDriveSuccess(this);
+        _transition = "evDriveComplete";
+        getState().evDriveComplete(this);
+        _transition = "";
+        return;
+    }
+
+    public void evDriveFail()
+    {
+        _transition = "evDriveFail";
+        getState().evDriveFail(this);
         _transition = "";
         return;
     }
@@ -138,12 +146,17 @@ public class DragFoundationContext
         protected void entry(DragFoundationContext context) {}
         protected void exit(DragFoundationContext context) {}
 
-        protected void evDriveFail(DragFoundationContext context)
+        protected void evArmRetracted(DragFoundationContext context)
         {
             Default(context);
         }
 
-        protected void evDriveSuccess(DragFoundationContext context)
+        protected void evDriveComplete(DragFoundationContext context)
+        {
+            Default(context);
+        }
+
+        protected void evDriveFail(DragFoundationContext context)
         {
             Default(context);
         }
@@ -210,8 +223,14 @@ public class DragFoundationContext
             new DragFoundation_DragFoundation("DragFoundation.DragFoundation", 4);
         public static final DragFoundation_RotateToQuarry RotateToQuarry =
             new DragFoundation_RotateToQuarry("DragFoundation.RotateToQuarry", 5);
+        public static final DragFoundation_PrepareDriveToQuarry PrepareDriveToQuarry =
+            new DragFoundation_PrepareDriveToQuarry("DragFoundation.PrepareDriveToQuarry", 6);
+        public static final DragFoundation_DriveToQuarry DriveToQuarry =
+            new DragFoundation_DriveToQuarry("DragFoundation.DriveToQuarry", 7);
+        public static final DragFoundation_RotateToBlock RotateToBlock =
+            new DragFoundation_RotateToBlock("DragFoundation.RotateToBlock", 8);
         public static final DragFoundation_Success Success =
-            new DragFoundation_Success("DragFoundation.Success", 6);
+            new DragFoundation_Success("DragFoundation.Success", 9);
     }
 
     protected static class DragFoundation_Default
@@ -289,7 +308,17 @@ public class DragFoundationContext
 
             ctxt.setLogMessage("DriveForward");
             ctxt.openHook();
-            ctxt.startDriveToFoundation();
+            ctxt.driveToFoundation();
+            return;
+        }
+
+        @Override
+        protected void evDriveComplete(DragFoundationContext context)
+        {
+
+            (context.getState()).exit(context);
+            context.setState(DragFoundation.DriveForwardSuccess);
+            (context.getState()).entry(context);
             return;
         }
 
@@ -299,16 +328,6 @@ public class DragFoundationContext
 
             (context.getState()).exit(context);
             context.setState(DragFoundation.DriveForwardFail);
-            (context.getState()).entry(context);
-            return;
-        }
-
-        @Override
-        protected void evDriveSuccess(DragFoundationContext context)
-        {
-
-            (context.getState()).exit(context);
-            context.setState(DragFoundation.DriveForwardSuccess);
             (context.getState()).entry(context);
             return;
         }
@@ -418,12 +437,12 @@ public class DragFoundationContext
                 DragFoundationController ctxt = context.getOwner();
 
             ctxt.setLogMessage("DragFoundation");
-            ctxt.startDragFoundation();
+            ctxt.dragFoundation();
             return;
         }
 
         @Override
-        protected void evDriveSuccess(DragFoundationContext context)
+        protected void evDriveComplete(DragFoundationContext context)
         {
             DragFoundationController ctxt = context.getOwner();
 
@@ -490,8 +509,125 @@ public class DragFoundationContext
         {
 
             (context.getState()).exit(context);
+            context.setState(DragFoundation.PrepareDriveToQuarry);
+            (context.getState()).entry(context);
+            return;
+        }
+
+    //-------------------------------------------------------
+    // Member data.
+    //
+
+        //---------------------------------------------------
+        // Constants.
+        //
+
+        private static final long serialVersionUID = 1L;
+    }
+
+    private static final class DragFoundation_PrepareDriveToQuarry
+        extends DragFoundation_Default
+    {
+    //-------------------------------------------------------
+    // Member methods.
+    //
+
+        private DragFoundation_PrepareDriveToQuarry(String name, int id)
+        {
+            super (name, id);
+        }
+
+        @Override
+        protected void entry(DragFoundationContext context)
+            {
+                DragFoundationController ctxt = context.getOwner();
+
+            ctxt.retractArm();
+            return;
+        }
+
+        @Override
+        protected void evArmRetracted(DragFoundationContext context)
+        {
+
+            (context.getState()).exit(context);
+            context.setState(DragFoundation.DriveToQuarry);
+            (context.getState()).entry(context);
+            return;
+        }
+
+    //-------------------------------------------------------
+    // Member data.
+    //
+
+        //---------------------------------------------------
+        // Constants.
+        //
+
+        private static final long serialVersionUID = 1L;
+    }
+
+    private static final class DragFoundation_DriveToQuarry
+        extends DragFoundation_Default
+    {
+    //-------------------------------------------------------
+    // Member methods.
+    //
+
+        private DragFoundation_DriveToQuarry(String name, int id)
+        {
+            super (name, id);
+        }
+
+        @Override
+        protected void entry(DragFoundationContext context)
+            {
+                DragFoundationController ctxt = context.getOwner();
+
+            ctxt.setLogMessage("DriveToQuarry");
+            ctxt.driveToQuarry();
+            return;
+        }
+
+        @Override
+        protected void evDriveComplete(DragFoundationContext context)
+        {
+
+            (context.getState()).exit(context);
             context.setState(DragFoundation.Success);
             (context.getState()).entry(context);
+            return;
+        }
+
+    //-------------------------------------------------------
+    // Member data.
+    //
+
+        //---------------------------------------------------
+        // Constants.
+        //
+
+        private static final long serialVersionUID = 1L;
+    }
+
+    private static final class DragFoundation_RotateToBlock
+        extends DragFoundation_Default
+    {
+    //-------------------------------------------------------
+    // Member methods.
+    //
+
+        private DragFoundation_RotateToBlock(String name, int id)
+        {
+            super (name, id);
+        }
+
+        @Override
+        protected void entry(DragFoundationContext context)
+            {
+                DragFoundationController ctxt = context.getOwner();
+
+            ctxt.setLogMessage("RotateToBlock");
             return;
         }
 

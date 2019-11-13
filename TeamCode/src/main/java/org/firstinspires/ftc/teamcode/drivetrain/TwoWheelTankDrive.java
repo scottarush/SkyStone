@@ -9,7 +9,7 @@ public class TwoWheelTankDrive extends Drivetrain {
     //TODO - Hardware Here
 
     public  TwoWheelTankDrive(OpMode opMode) {
-        super(opMode);
+        super(opMode,7000,50);
     }
 
     @Override

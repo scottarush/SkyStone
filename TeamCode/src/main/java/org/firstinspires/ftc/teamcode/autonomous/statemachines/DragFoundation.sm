@@ -23,10 +23,10 @@
             setLogMessage("DriveForward");
             openHook();
             // start drive forward
-            startDriveToFoundation();
+            driveToFoundation();
         }
     {
-        evDriveSuccess DriveForwardSuccess {}
+        evDriveComplete DriveForwardSuccess {}
         evDriveFail DriveForwardFail {}
     }
 
@@ -63,10 +63,10 @@
         Entry {
             setLogMessage("DragFoundation");
             // pull the foundation backward
-            startDragFoundation();
+            dragFoundation();
         }
     {
-        evDriveSuccess nil {
+        evDriveComplete nil {
             openHook();
             startHookTimer();
         }
@@ -77,18 +77,52 @@
     * Rotate the robot to drive toward the quarry
     */
     RotateToQuarry
+        Entry {
+            setLogMessage("RotateToQuarry");
+            rotateToQuarry();
+        }
+    {
+        evRotationComplete PrepareDriveToQuarry {}
+    }
+
+    PrepareDriveToQuarry
     Entry {
-        setLogMessage("RotateToQuarry");
-        rotateToQuarry();
+        // Retract Arm so that we can fit under the bridge before the arm and wait here until
+        // it is retracted.
+        retractArm();
     }
     {
-        evRotationComplete Success {}
+        evArmRetracted DriveToQuarry {}
     }
 
+    /*
+    * drive to quarry.
+    */
+    DriveToQuarry
+    Entry {
+        setLogMessage("DriveToQuarry");
+        driveToQuarry();
+    }
+    {
+        evDriveComplete Success {}
+    }
+
+    /*
+    * rotate toward the block at the quarry.
+    */
+    RotateToBlock
+    Entry{
+        setLogMessage("RotateToBlock");
+    }
+    {
+    }
+
+    /*
+    * Final success state
+    */
     Success
         Entry{
- //           setLogMessage("Success");
-
+            setLogMessage("Success");
         }
     {
 
