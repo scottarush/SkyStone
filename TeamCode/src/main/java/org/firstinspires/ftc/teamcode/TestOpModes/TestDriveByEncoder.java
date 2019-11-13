@@ -33,8 +33,8 @@ import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.firstinspires.ftc.teamcode.archive.VuforiaMotionMethods;
 import org.firstinspires.ftc.teamcode.drivetrain.MecanumDrive;
+import org.firstinspires.ftc.teamcode.util.VuforiaMotionMethods;
 
 
 /**
@@ -66,7 +66,7 @@ public class TestDriveByEncoder extends LinearOpMode {
         telemetry.addData("Say","Robot Initialized");
         waitForStart();
 
-        drivetrain.startDriveByEncoder(0.5,5,0,5);
+        drivetrain.driveByEncoder(0.5,5,0,5);
         drivetrain.stop();
     }
 

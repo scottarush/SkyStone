@@ -82,13 +82,14 @@
             rotateToQuarry();
         }
     {
-        evRotationComplete PrepareDriveToQuarry {}
+        evRotationComplete PrepareDriveToQuarry { }
     }
 
     PrepareDriveToQuarry
     Entry {
         // Retract Arm so that we can fit under the bridge before the arm and wait here until
         // it is retracted.
+        setLogMessage("PrepareDriveToQuarry");
         retractArm();
     }
     {
