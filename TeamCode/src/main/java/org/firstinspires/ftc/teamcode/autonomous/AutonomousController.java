@@ -13,11 +13,11 @@ import org.firstinspires.ftc.teamcode.util.OneShotTimer;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-public class DragFoundationController {
+public class AutonomousController {
 
     private static boolean TELEMETRY_STATE_LOGGING_ENABLED = true;
 
-    private DragFoundationContext dragsm = null;
+    private AutonomousStateMachineContext mAsm = null;
 
     private OpMode opMode = null;
 
@@ -33,8 +33,8 @@ public class DragFoundationController {
 
     private VuforiaCommon mVuforia = null;
 
-    public DragFoundationController(final OpMode opMode, MecanumGrabberBot robot, VuforiaCommon vuforia, boolean blueTeam, int controlMode){
-        dragsm = new DragFoundationContext(this);
+    public AutonomousController(final OpMode opMode, MecanumGrabberBot robot, VuforiaCommon vuforia, boolean blueTeam, int controlMode){
+        mAsm = new AutonomousStateMachineContext(this);
         this.opMode = opMode;
         this.blueTeam = blueTeam;
         this.robot = robot;
@@ -47,18 +47,18 @@ public class DragFoundationController {
         robot.getDrivetrain().addDriveSessionStatusListener(new IDriveSessionStatusListener() {
             @Override
             public void driveComplete() {
-                dragsm.evDriveComplete();
+                mAsm.evDriveComplete();
             }
 
             @Override
             public void driveByEncoderTimeoutFailure() {
-                dragsm.evDriveFail();
+                mAsm.evDriveFail();
             }
         });
         robot.getDrivetrain().addRotationStatusListener(new IRotationStatusListener() {
             @Override
             public void rotationComplete() {
-                dragsm.evRotationComplete();
+                mAsm.evRotationComplete();
             }
         });
     }
@@ -68,8 +68,8 @@ public class DragFoundationController {
      */
      public void doOpmode(){
         // If we haven't started then kick if off.
-        if (dragsm.getState() == DragFoundationContext.DragFoundation.Idle){
-            dragsm.evStart();
+        if (mAsm.getState() == AutonomousStateMachineContext.AutonomousStateMachine.Idle){
+            mAsm.evStart();
         }
 
         // Check all the timers to trigger any timeout events
@@ -81,13 +81,13 @@ public class DragFoundationController {
              int status = robot.getArm().resetToRetractPosition();
              if (status != FourBarArm.RESET_RETRACT_IN_PROGRESS){
                  // Assume same event even if we fail to retract.
-                 dragsm.evArmRetracted();
+                 mAsm.evArmRetracted();
              }
          }
     }
 
     public boolean isDragFoundationComplete(){
-        return (dragsm.getState() == DragFoundationContext.DragFoundation.Success);
+        return (mAsm.getState() == AutonomousStateMachineContext.AutonomousStateMachine.Success);
     }
 
     /**
@@ -204,7 +204,7 @@ public class DragFoundationController {
     private class HookTimeout implements OneShotTimer.IOneShotTimerCallback {
         @Override
         public void timeoutComplete() {
-            dragsm.evHookTimeout();
+            mAsm.evHookTimeout();
         }
     }
 

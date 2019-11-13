@@ -42,7 +42,7 @@ public class SkystoneAutonomousOpMode extends OpMode {
 
     public static final double DRIVE_BY_ENCODER_POWER = 1.0d;
 
-    private DragFoundationController dfController = null;
+    private AutonomousController dfController = null;
 
     private Gamepad mSetupGamepad = null;
 
@@ -142,10 +142,10 @@ public class SkystoneAutonomousOpMode extends OpMode {
      */
     private String doSetupCompleteInit(){
         if (team == BLUE_TEAM){
-            dfController = new DragFoundationController(this,robot,mVuforia,true,mControlMode);
+            dfController = new AutonomousController(this,robot,mVuforia,true,mControlMode);
         }
         else {
-            dfController = new DragFoundationController(this,robot,mVuforia,false,mControlMode);
+            dfController = new AutonomousController(this,robot,mVuforia,false,mControlMode);
         }
         return "Team="+TEAM_OPTIONS[team]+" Mode="+CONTROL_MODE_OPTIONS[mControlMode];
     }

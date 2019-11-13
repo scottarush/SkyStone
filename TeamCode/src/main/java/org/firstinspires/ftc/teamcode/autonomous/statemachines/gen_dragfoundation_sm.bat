@@ -1,1 +1,0 @@
-java -jar Smc.jar -java -d ../ DragFoundation.sm
