@@ -3,13 +3,13 @@ package org.firstinspires.ftc.teamcode.drivetrain;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.util.OneShotTimer;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+
 public abstract class Drivetrain {
-
-
     /* local OpMode members. */
     public HardwareMap hwMap = null;
 
@@ -20,17 +20,18 @@ public abstract class Drivetrain {
 
      /** OpMode in order to access telemetry from subclasses. **/
     protected OpMode mOpMode;
-    protected ElapsedTime mDriveByEncoderTimer = new ElapsedTime();
-    protected boolean mDriveByEncoderSuccess = false;
-    protected boolean mDriveByEncoderActive = false;
-    protected double mDriveByEncoderTimeout = 0d;
-    protected OneShotTimer mDriveByTimeTimer = null;
+    private OneShotTimer mDriveByEncoderFailTimer = null;
 
-    protected OneShotTimer mRotationByTimeTimer = null;
+    private OneShotTimer mDriveByTimeTimer = null;
+
+    private OneShotTimer mRotationByTimeTimer = null;
 
     private int mRotationMicrosecondsPerDegree = 7000;
 
     private int mLinearMillisecondsPerInch = 10;
+
+    private ArrayList<IDriveSessionStatusListener> mDriveSessionStatusListeners = new ArrayList<>();
+    private ArrayList<IRotationStatusListener> mRotationStatusListeners = new ArrayList<>();
 
     public Drivetrain(OpMode opMode,int rotationMicrosecondsPerDegree, int linearMillisecondsPerInch){
         this.mOpMode = opMode;
@@ -39,56 +40,84 @@ public abstract class Drivetrain {
         mDriveByTimeTimer = new OneShotTimer(1000, new OneShotTimer.IOneShotTimerCallback() {
             @Override
             public void timeoutComplete() {
-                driveByTimeComplete();
+                stop();
+                for(Iterator<IDriveSessionStatusListener>iter=mDriveSessionStatusListeners.iterator();iter.hasNext();){
+                    IDriveSessionStatusListener listener = iter.next();
+                    listener.driveComplete();
+                }
             }
         });
 
         mRotationByTimeTimer = new OneShotTimer(1000, new OneShotTimer.IOneShotTimerCallback() {
             @Override
             public void timeoutComplete() {
-                rotationByTimeComplete();
+                stop();
+                for (Iterator<IRotationStatusListener> iter = mRotationStatusListeners.iterator(); iter.hasNext(); ) {
+                    IRotationStatusListener listener = iter.next();
+                    listener.rotationComplete();
+                }
+            }
+        });
+        mDriveByEncoderFailTimer = new OneShotTimer(1000, new OneShotTimer.IOneShotTimerCallback() {
+            @Override
+            public void timeoutComplete() {
+                stop();
+                for(Iterator<IDriveSessionStatusListener>iter=mDriveSessionStatusListeners.iterator();iter.hasNext();){
+                    IDriveSessionStatusListener listener = iter.next();
+                    listener.driveByEncoderTimeoutFailure();
+                }
             }
         });
     }
 
+    /**
+     * Must be called from the OpMode service loop to service timers for drive and rotation handling.
+     */
+    public void doService(){
+        mDriveByEncoderFailTimer.checkTimer();
+        continueDriveByEncoder();
+        mRotationByTimeTimer.checkTimer();
+        mDriveByTimeTimer.checkTimer();
+    }
 
     /**
-     * starts a drive by encoder session.  If robot is moving, it will be stopped.
+     * starts a drive by encoder session.  Base class handles failure timer. Subclasses
+     * override to add drivetrain specific behavior.  Subclasses should register for
+     * IDriveSessionStatusListener to receive notification of session timeout failure.
      *
      * @param speed   speed to move
      * @param xdist   distance in x inches to move
      * @param ydist   distance in y inches to move
-     * @param timeout timeout in seconds to abort if move not completed.
+     * @param timeoutms timeout in ms to abort if move not completed.
      *
      * @return true if session started, false on error.
      */
-     public boolean startDriveByEncoder(double speed, double xdist, double ydist, double timeout) {
-        return false;
+     public void driveByEncoder(double speed, double xdist, double ydist, int timeoutms) {
+         mDriveByEncoderFailTimer.setTimeout(timeoutms);
     }
 
     /**
      * Drives for the set distance using the linear time rate supplied in the constructor.
-     * @param linearDistance desired distance + forward or - rearward
+     * @param linearDistance desired distance + forward or - rearward in inches
      */
     public void driveByTime(double linearDistance){
-        int timeoutms = (int) Math.round(linearDistance * mLinearMillisecondsPerInch);
+        int timeoutms = (int) Math.abs(Math.round(linearDistance * mLinearMillisecondsPerInch));
         mDriveByTimeTimer.setTimeout(timeoutms);
         mDriveByTimeTimer.start();
     }
 
+
     /**
-     * services the drive by time if it is currently active.
-     * @return true if still active, false if stopped
+     * called to add a listener for drive status.
+     * @param listener
      */
-    public boolean continueDriveByTime(){
-        return mDriveByTimeTimer.checkTimer();
+    public void addDriveSessionStatusListener(IDriveSessionStatusListener listener){
+        if (mDriveSessionStatusListeners.contains(listener)){
+            return;
+        }
+        mDriveSessionStatusListeners.add(listener);
     }
-    /**
-     * called when drive time is complete and calls stop method.
-     */
-    public void driveByTimeComplete(){
-        stop();
-    }
+
     /**
      * called to cancel a drive by time.
      */
@@ -96,46 +125,42 @@ public abstract class Drivetrain {
         mDriveByTimeTimer.cancel();
         stop();
     }
+
     /**
-     * @return true if drive by time is active.  false, otherwise
+     * continues a drive by encoder session.
      */
-    public boolean isDriveByTimeInProgress(){
-        return mDriveByTimeTimer.isRunning();
-    }
-    /**
-     * continues a drive by encoder session.  If robot is moving, it will be stopped.
-     * @return true if the session is still active.  false if session complete.
-     */
-    public boolean continueDriveByEncoder() {
-        return false;
-    }
-    /**
-     * @return true if the last encoder movement was successful, false if it timed out.
-     **/
-    public boolean driveByEncoderSuccess() {
-        return mDriveByEncoderSuccess;
+    private void continueDriveByEncoder() {
+        boolean active = mDriveByEncoderFailTimer.checkTimer();
+
+        if (active && !isMoving()){
+            mDriveByEncoderFailTimer.cancel();
+            // motors stopped before timeout so signal success to listeners
+            for(Iterator<IDriveSessionStatusListener>iter=mDriveSessionStatusListeners.iterator();iter.hasNext();){
+                IDriveSessionStatusListener listener = iter.next();
+                listener.driveComplete();
+            }
+        }
     }
 
     /**
-     * open loop rotate function
+     * open loop rotate function.
      */
-    public void startRotationByTime(int cwDegrees) {
-        int timeoutms = cwDegrees * mRotationMicrosecondsPerDegree / 1000;
+    public void doRotationByTime(int cwDegrees) {
+        int timeoutms = Math.abs(cwDegrees * mRotationMicrosecondsPerDegree / 1000);
         mRotationByTimeTimer.setTimeout(timeoutms);
         mRotationByTimeTimer.start();
     }
+
+
     /**
-     * called when drive time is complete and calls stop method.
+     * adds listeners for rotation complete event.
      */
-    public void rotationByTimeComplete(){
-        stop();
+    public void addRotationStatusListener(IRotationStatusListener listener){
+        if (mRotationStatusListeners.contains(listener))
+            return;
+        mRotationStatusListeners.add(listener);
     }
-    /**
-     * continues a rotation if one is active.  Returns true on rotation still active.
-     */
-    public boolean continueRotation() {
-        return mRotationByTimeTimer.isRunning();
-    }
+
     /**
      * called to cancel a rotation by time
      */
@@ -143,34 +168,29 @@ public abstract class Drivetrain {
         mDriveByTimeTimer.cancel();
         stop();
     }
-    /**
-     * @return true if a rotate is still active
-     */
-    public boolean isRotationInProgress(){
-        return mRotationByTimeTimer.isRunning();
-    }
 
     /**
          * @return the amount of time that an encoder session has been active or 0 if no session active.
          */
     public double getDriveByEncoderTime(){
-        if (!mDriveByEncoderActive){
+        if (!mDriveByEncoderFailTimer.isRunning()){
             return 0.0d;
         }
         else
-            return mDriveByEncoderTimer.time();
+            return mDriveByEncoderFailTimer.getElapsedTimeMS();
     }
     /**
      * @return true if drive by encoder session active, false otherwise
      */
     public boolean isDriveByEncoderSessionActive(){
-        return mDriveByEncoderActive;
+        return mDriveByEncoderFailTimer.isRunning();
     }
 
     /**
      * @return true if the drivetrain is moving.  false if stopped.
      */
     public abstract boolean isMoving();
+
 
     /**
          *  Utility function to handle motor initialization.  init must have been called
@@ -188,5 +208,6 @@ public abstract class Drivetrain {
         }
         return motor;
     }
+
 
 }

@@ -172,6 +172,7 @@ public class SkystoneAutonomousOpMode extends OpMode {
             // Robot is moving so wait until it stops.
             return;
         }
+
         if (mDriveByEncoderActive){
             mDriveByEncoderActive = mRobot.getDrivetrain().continueDriveByEncoder();
             if (!mDriveByEncoderActive){

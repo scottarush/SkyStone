@@ -33,9 +33,6 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.util.ElapsedTime;
-
-import org.firstinspires.ftc.teamcode.util.OneShotTimer;
 
 /**
  * This is NOT an opmode.
@@ -77,7 +74,7 @@ public class MecanumDrive extends Drivetrain{
     /**
      * Approximate number of mseconds per degree to rotate.
      */
-    public static final int ROTATION_MICROSECONDS_PER_DEGREE = (int)(Math.round(0.700d/90d * 1000000));
+    public static final int ROTATION_MICROSECONDS_PER_DEGREE = (int)(Math.round(0.850d/90d * 1000000));
 
     /**
      * Approximate number of milliseconds per inch forward and rearward at full power.
@@ -237,13 +234,44 @@ public class MecanumDrive extends Drivetrain{
 
     }
 
+
+    /**
+     * starts a drive by encoder session.  If robot is moving, it will be stopped.
+     *
+     * @param speed   speed to move
+     * @param xdist   distance in x inches to move
+     * @param ydist   distance in y inches to move
+     * @param timeoutms timeout in msseconds to abort if move not completed.
+     *
+     * @return true if session started, false on error.
+     */
+    @Override
+    public void driveByEncoder(double speed, double xdist, double ydist, int timeoutms) {
+        super.driveByEncoder(speed,xdist,ydist,timeoutms);
+        // Compute the number of encoder counts for each wheel to move the requested distanc
+        int lfDeltaCounts = (int) Math.round((xdist + ydist) * MecanumDrive.COUNTS_PER_INCH);
+        int rfDeltaCounts = (int) Math.round((ydist - xdist) * MecanumDrive.COUNTS_PER_INCH);
+        int lrDeltaCounts = (int) Math.round((ydist - xdist) * MecanumDrive.COUNTS_PER_INCH);
+        int rrDeltaCounts = (int) Math.round((xdist + ydist) * MecanumDrive.COUNTS_PER_INCH);
+
+        // Set target counts for each motor to the above
+        setTargetPosition(lfMotor,lfDeltaCounts+getCurrentPosition(lfMotor));
+        setTargetPosition(rfMotor,rfDeltaCounts+getCurrentPosition(rfMotor));
+        setTargetPosition(lrMotor,lrDeltaCounts+getCurrentPosition(lrMotor));
+        setTargetPosition(rrMotor,rrDeltaCounts+getCurrentPosition(rrMotor));
+
+        // Set mode to run to position
+        setMotorModes(DcMotor.RunMode.RUN_TO_POSITION);
+
+        // set motor power
+        double aspeed = Math.abs(speed);
+        if (aspeed > 1.0)
+            aspeed = 1.0;
+        setPower(aspeed, aspeed, aspeed, aspeed);
+     }
+
     @Override
     public boolean isMoving() {
-        return isAnyMotorBusy();
-    }
-
-    /** helper function returns true if any motor is busy. **/
-    private boolean isAnyMotorBusy(){
         if (lfMotor != null){
             if (lfMotor.isBusy())
                 return true;
@@ -261,68 +289,6 @@ public class MecanumDrive extends Drivetrain{
                 return true;
         }
         return false;
-    }
-
-    /**
-     * starts a drive by encoder session.  If robot is moving, it will be stopped.
-     *
-     * @param speed   speed to move
-     * @param xdist   distance in x inches to move
-     * @param ydist   distance in y inches to move
-     * @param timeout timeout in seconds to abort if move not completed.
-     *
-     * @return true if session started, false on error.
-     */
-    @Override
-    public boolean startDriveByEncoder(double speed, double xdist, double ydist, double timeout) {
-
-        mDriveByEncoderTimeout = timeout;
-        // Compute the number of encoder counts for each wheel to move the requested distanc
-        int lfDeltaCounts = (int) Math.round((xdist + ydist) * MecanumDrive.COUNTS_PER_INCH);
-        int rfDeltaCounts = (int) Math.round((ydist - xdist) * MecanumDrive.COUNTS_PER_INCH);
-        int lrDeltaCounts = (int) Math.round((ydist - xdist) * MecanumDrive.COUNTS_PER_INCH);
-        int rrDeltaCounts = (int) Math.round((xdist + ydist) * MecanumDrive.COUNTS_PER_INCH);
-
-        // Set target counts for each motor to the above
-        setTargetPosition(lfMotor,lfDeltaCounts+getCurrentPosition(lfMotor));
-        setTargetPosition(rfMotor,lfDeltaCounts+getCurrentPosition(rfMotor));
-        setTargetPosition(lrMotor,lfDeltaCounts+getCurrentPosition(lrMotor));
-        setTargetPosition(rrMotor,lfDeltaCounts+getCurrentPosition(rrMotor));
-
-        // Set mode to run to position
-        setMotorModes(DcMotor.RunMode.RUN_TO_POSITION);
-
-        // Reset timer and set motor power
-        mDriveByEncoderTimer.reset();
-        double aspeed = Math.abs(speed);
-        if (aspeed > 1.0)
-            aspeed = 1.0;
-        setPower(aspeed, aspeed, aspeed, aspeed);
-        mDriveByEncoderActive = true;
-        return true;
-    }
-    /**
-     * continues a drive by encoder session.  If robot is moving, it will be stopped.
-     * @return true if the session is still active.  false if session complete.
-     */
-    @Override
-    public boolean continueDriveByEncoder() {
-        if (!mDriveByEncoderActive)
-            return false;
-        if (mDriveByEncoderTimer.seconds() > mDriveByEncoderTimeout){
-            stop();
-            mDriveByEncoderActive = false;
-            mDriveByEncoderSuccess = false;
-            return false;
-        }
-        if (!isAnyMotorBusy()) {
-            stop();  // Already stopped, but need to start motor modes
-            // Successful move before timeout so set success flag and return
-            mDriveByEncoderActive = false;
-            mDriveByEncoderSuccess = true;
-            return false;
-        }
-        return true;   // Still moving.
     }
 
     /**
@@ -362,24 +328,26 @@ public class MecanumDrive extends Drivetrain{
     }
     /**
      * Drives for the set distance using the linear time rate supplied in the constructor.
+     *
      * @param linearDistance desired distance + forward or - rearward
      */
     @Override
     public void driveByTime(double linearDistance){
-        super.driveByTime(linearDistance);
+        super.driveByTime(linearDistance);  // Call base class for timer handling
         double power = 1.0d;
-        if (linearDistance < 0d){
+        if (linearDistance < 0.0d){
             power = -power;
         }
 
         setPower(power,power,power,power);
     }
+
     /**
-     * Drives for a set amount of time in the forward or reverse direction
+     * Override to add mecanum specific rotation motor commands.
      */
     @Override
-    public void startRotationByTime(int cwDegrees){
-        super.startRotationByTime(cwDegrees);
+    public void doRotationByTime(int cwDegrees){
+        super.doRotationByTime(cwDegrees);  // Call base class for timer handling
 
         double power = 1.0d;
         double rotpower = ROTATION_POWER;

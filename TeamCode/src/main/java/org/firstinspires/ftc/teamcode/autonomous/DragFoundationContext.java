@@ -509,7 +509,7 @@ public class DragFoundationContext
         {
 
             (context.getState()).exit(context);
-            context.setState(DragFoundation.PrepareDriveToQuarry);
+            context.setState(DragFoundation.DriveToQuarry);
             (context.getState()).entry(context);
             return;
         }
@@ -542,6 +542,7 @@ public class DragFoundationContext
             {
                 DragFoundationController ctxt = context.getOwner();
 
+            ctxt.setLogMessage("PrepareDriveToQuarry");
             ctxt.retractArm();
             return;
         }

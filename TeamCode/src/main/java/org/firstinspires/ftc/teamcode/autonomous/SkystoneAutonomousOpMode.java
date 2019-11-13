@@ -27,7 +27,7 @@ public class SkystoneAutonomousOpMode extends OpMode {
     public static final int ENCODER_CONTROL = 0;
     public static final int OPEN_LOOP_TIME = 1;
     public static final int CLOSED_LOOP_VUFORIA = 2;
-    private int mControlMode = ENCODER_CONTROL;
+    private int mControlMode = OPEN_LOOP_TIME;
 
     /** confirmation **/
     private static final String[] SETUP_COMPLETE_OPTIONS = new String[]{"YES"};

@@ -35,6 +35,13 @@ public class OneShotTimer {
     }
 
     /**
+     * Gets the time since the last .start() call in ms
+     */
+    public int getElapsedTimeMS(){
+        int starttimems = (int)(mTimeoutSystemTimeMS-mTimeoutMS);
+        return (int)(System.currentTimeMillis()-starttimems);
+    }
+    /**
      * Cancels the timer.
      */
     public void cancel(){
@@ -60,7 +67,7 @@ public class OneShotTimer {
         return mIsRunning;
     }
 
-    public static void main(String[] args){
+ /**   public static void main(String[] args){
         OneShotTimer timer = new OneShotTimer(2000, new IOneShotTimerCallback() {
 
             @Override
@@ -68,6 +75,7 @@ public class OneShotTimer {
                 System.out.println("complete");
             }
         });
+        timer.setTimeout(3000);
         timer.start();
         System.out.println("Starting");
         while(timer.isRunning()) {
@@ -75,5 +83,5 @@ public class OneShotTimer {
         }
 
     }
-
+**/
 }
