@@ -22,9 +22,9 @@ public abstract class Drivetrain {
     protected OpMode mOpMode;
     private OneShotTimer mDriveByEncoderFailTimer = null;
 
-    private OneShotTimer mDriveByTimeTimer = null;
+    private OneShotTimer mTimedDriveTimer = null;
 
-    private OneShotTimer mRotationByTimeTimer = null;
+    private OneShotTimer mTimedRotationTimer = null;
 
     private int mRotationMicrosecondsPerDegree = 7000;
 
@@ -37,7 +37,7 @@ public abstract class Drivetrain {
         this.mOpMode = opMode;
         mRotationMicrosecondsPerDegree = rotationMicrosecondsPerDegree;
         mLinearMillisecondsPerInch = linearMillisecondsPerInch;
-        mDriveByTimeTimer = new OneShotTimer(1000, new OneShotTimer.IOneShotTimerCallback() {
+        mTimedDriveTimer = new OneShotTimer(1000, new OneShotTimer.IOneShotTimerCallback() {
             @Override
             public void timeoutComplete() {
                 stop();
@@ -48,7 +48,7 @@ public abstract class Drivetrain {
             }
         });
 
-        mRotationByTimeTimer = new OneShotTimer(1000, new OneShotTimer.IOneShotTimerCallback() {
+        mTimedRotationTimer = new OneShotTimer(1000, new OneShotTimer.IOneShotTimerCallback() {
             @Override
             public void timeoutComplete() {
                 stop();
@@ -75,9 +75,9 @@ public abstract class Drivetrain {
      */
     public void doService(){
         mDriveByEncoderFailTimer.checkTimer();
-        continueDriveByEncoder();
-        mRotationByTimeTimer.checkTimer();
-        mDriveByTimeTimer.checkTimer();
+        serviceEncoderDrive();
+        mTimedRotationTimer.checkTimer();
+        mTimedDriveTimer.checkTimer();
     }
 
     /**
@@ -92,20 +92,64 @@ public abstract class Drivetrain {
      *
      * @return true if session started, false on error.
      */
-     public void driveByEncoder(double speed, double xdist, double ydist, int timeoutms) {
+     public void encoderDrive(double speed, double xdist, double ydist, int timeoutms) {
          mDriveByEncoderFailTimer.setTimeout(timeoutms);
     }
 
     /**
-     * Drives for the set distance using the linear time rate supplied in the constructor.
+     * Drives for a set distance using open-loop, robot-specific time.
      * @param linearDistance desired distance + forward or - rearward in inches
+     * @return time to drive in ms
      */
-    public void driveByTime(double linearDistance){
+    public int doLinearTimedDrive(double linearDistance){
         int timeoutms = (int) Math.abs(Math.round(linearDistance * mLinearMillisecondsPerInch));
-        mDriveByTimeTimer.setTimeout(timeoutms);
-        mDriveByTimeTimer.start();
+        mTimedDriveTimer.setTimeout(timeoutms);
+        mTimedDriveTimer.start();
+        return timeoutms;
     }
 
+    /**
+     * Drives in an arbitrary vector using the linear
+     * @param xdistance  x coord of movement vector in in
+     * @param ydistance y coord of movement vector in in
+     * @return time in ms for the drive or -1 if not supported for this drivetrain.
+     */
+    public int doVectorTimedDrive(double xdistance,double ydistance){
+        int timeoutms = -1;
+        if (isVectorTimedDriveSupported()){
+            double angleRate = Math.sqrt(Math.pow(getVectorTimedXMSPerInch(),2.0d) + Math.pow(getVectorTimedYMSPerInch(),2.0d));
+            timeoutms = (int) Math.abs(angleRate);
+            mTimedDriveTimer.setTimeout(timeoutms);
+            mTimedDriveTimer.start();
+        }
+        return timeoutms;
+    }
+
+    /**
+     * Must be implemented by subclasses to provide time values and whether or not angled drive
+     * is supported.
+     * base function just saves values and returns false
+     * @return true if supported, false if not
+     */
+    public boolean isVectorTimedDriveSupported(){
+        return false;
+    }
+
+    /**
+     * must be implemented by subclasses to return the x timed rates if isVectorTimedDriveSupported
+     * base class just returns 0
+     */
+    public int getVectorTimedXMSPerInch(){
+        return 0;
+    }
+
+    /**
+     * must be implemented by subclasses to return the \y timed rates if isVectorTimedDriveSupported
+     * base class just returns 0
+     */
+    public int getVectorTimedYMSPerInch(){
+        return 0;
+    }
 
     /**
      * called to add a listener for drive status.
@@ -121,15 +165,15 @@ public abstract class Drivetrain {
     /**
      * called to cancel a drive by time.
      */
-    public void cancelDriveByTime(){
-        mDriveByTimeTimer.cancel();
+    public void cancelTimedDrive(){
+        mTimedDriveTimer.cancel();
         stop();
     }
 
     /**
      * continues a drive by encoder session.
      */
-    private void continueDriveByEncoder() {
+    private void serviceEncoderDrive() {
         boolean active = mDriveByEncoderFailTimer.checkTimer();
 
         if (active && !isMoving()){
@@ -145,10 +189,10 @@ public abstract class Drivetrain {
     /**
      * open loop rotate function.
      */
-    public void doRotationByTime(int cwDegrees) {
+    public void doTimedRotation(int cwDegrees) {
         int timeoutms = Math.abs(cwDegrees * mRotationMicrosecondsPerDegree / 1000);
-        mRotationByTimeTimer.setTimeout(timeoutms);
-        mRotationByTimeTimer.start();
+        mTimedRotationTimer.setTimeout(timeoutms);
+        mTimedRotationTimer.start();
     }
 
 
@@ -165,7 +209,7 @@ public abstract class Drivetrain {
      * called to cancel a rotation by time
      */
     public void cancelRotationByTime(){
-        mDriveByTimeTimer.cancel();
+        mTimedDriveTimer.cancel();
         stop();
     }
 

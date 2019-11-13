@@ -81,6 +81,14 @@ public class MecanumDrive extends Drivetrain{
      */
     public static final int LINEAR_MILLISECONDS_PER_INCH = 50;
     /**
+     * Approximate number of milliseconds per inch inch direction for vector drive
+     */
+    public static final int VECTOR_XMILLISECONDS_PER_INCH = 50;
+    /**
+     * Approximate number of milliseconds per inch in Y direction for vector drive
+     */
+    public static final int VECTOR_YMILLISECONDS_PER_INCH = 50;
+    /**
      * Power to use when rotating.
      */
     public static final double ROTATION_POWER = 1.0d;
@@ -246,8 +254,8 @@ public class MecanumDrive extends Drivetrain{
      * @return true if session started, false on error.
      */
     @Override
-    public void driveByEncoder(double speed, double xdist, double ydist, int timeoutms) {
-        super.driveByEncoder(speed,xdist,ydist,timeoutms);
+    public void encoderDrive(double speed, double xdist, double ydist, int timeoutms) {
+        super.encoderDrive(speed,xdist,ydist,timeoutms);
         // Compute the number of encoder counts for each wheel to move the requested distanc
         int lfDeltaCounts = (int) Math.round((xdist + ydist) * MecanumDrive.COUNTS_PER_INCH);
         int rfDeltaCounts = (int) Math.round((ydist - xdist) * MecanumDrive.COUNTS_PER_INCH);
@@ -326,28 +334,58 @@ public class MecanumDrive extends Drivetrain{
 
         setPower(lfPower,rfPower,lrPower,rrPower);
     }
-    /**
-     * Drives for the set distance using the linear time rate supplied in the constructor.
-     *
-     * @param linearDistance desired distance + forward or - rearward
-     */
+
     @Override
-    public void driveByTime(double linearDistance){
-        super.driveByTime(linearDistance);  // Call base class for timer handling
+    public boolean isVectorTimedDriveSupported() {
+        return true;
+     }
+
+    @Override
+    public int getVectorTimedXMSPerInch() {
+        return VECTOR_XMILLISECONDS_PER_INCH;
+    }
+
+    @Override
+    public int getVectorTimedYMSPerInch() {
+        return VECTOR_YMILLISECONDS_PER_INCH;
+    }
+
+    /**
+     * Drives for a set distance using open-loop, robot-specific time.
+     * @param linearDistance desired distance + forward or - rearward in inches
+     * @return time to drive in ms
+     */
+        @Override
+    public int doLinearTimedDrive(double linearDistance){
+        int timeout = super.doLinearTimedDrive(linearDistance);  // Call base class for timer handling
         double power = 1.0d;
         if (linearDistance < 0.0d){
             power = -power;
         }
 
         setPower(power,power,power,power);
+        return timeout;
+    }
+
+    @Override
+    public int doVectorTimedDrive(double xdistance, double ydistance) {
+        int timeout = super.doVectorTimedDrive(xdistance, ydistance);
+        // TODO Need to figure out how to translate the vector into the power split
+        double power = 1.0d;
+        double lfPower = power;
+        double rfPower = -power;
+        double lrPower = power;
+        double rrPower = -power;
+        setPower(lfPower,rfPower,lrPower,rrPower);
+        return timeout;
     }
 
     /**
      * Override to add mecanum specific rotation motor commands.
      */
     @Override
-    public void doRotationByTime(int cwDegrees){
-        super.doRotationByTime(cwDegrees);  // Call base class for timer handling
+    public void doTimedRotation(int cwDegrees){
+        super.doTimedRotation(cwDegrees);  // Call base class for timer handling
 
         double power = 1.0d;
         double rotpower = ROTATION_POWER;

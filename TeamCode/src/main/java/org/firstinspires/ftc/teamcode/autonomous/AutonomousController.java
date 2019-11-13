@@ -99,7 +99,7 @@ public class AutonomousController {
         if (robot.getDrivetrain().isMoving()){
             return;  // Already driving, this is an error, ignore
         }
-        robot.getDrivetrain().driveByEncoder(speed,xdist,ydist,timeoutms);
+        robot.getDrivetrain().encoderDrive(speed,xdist,ydist,timeoutms);
     }
 
     /**
@@ -111,7 +111,7 @@ public class AutonomousController {
                 startDriveByEncoder(1.0d, 36.0d,0d,3000);
                 break;
             case SkystoneAutonomousOpMode.OPEN_LOOP_TIME:
-                robot.getDrivetrain().driveByTime(12d);
+                robot.getDrivetrain().doLinearTimedDrive(12d);
                 break;
             case SkystoneAutonomousOpMode.CLOSED_LOOP_VUFORIA:
                 // TODO
@@ -127,7 +127,7 @@ public class AutonomousController {
                 startDriveByEncoder(1.0d, -36.0d,0d,3000);
                 break;
             case SkystoneAutonomousOpMode.OPEN_LOOP_TIME:
-                robot.getDrivetrain().driveByTime(-12d);
+                robot.getDrivetrain().doLinearTimedDrive(-12d);
                 break;
             case SkystoneAutonomousOpMode.CLOSED_LOOP_VUFORIA:
                 // TODO
@@ -143,7 +143,7 @@ public class AutonomousController {
                 startDriveByEncoder(1.0d, 36.0d,0d,3000);
                 break;
             case SkystoneAutonomousOpMode.OPEN_LOOP_TIME:
-                robot.getDrivetrain().driveByTime(36d);
+                robot.getDrivetrain().doLinearTimedDrive(36d);
                 break;
             case SkystoneAutonomousOpMode.CLOSED_LOOP_VUFORIA:
                 // TODO
@@ -183,11 +183,11 @@ public class AutonomousController {
     public void rotateToQuarry(){
         if (blueTeam){
             // Rotate -90
-            robot.getDrivetrain().doRotationByTime(-90);
+            robot.getDrivetrain().doTimedRotation(-90);
         }
         else{
             // Red team is +90
-            robot.getDrivetrain().doRotationByTime(90);
+            robot.getDrivetrain().doTimedRotation(90);
         }
     }
     /**

@@ -66,7 +66,7 @@ public class TestDriveByEncoder extends LinearOpMode {
         telemetry.addData("Say","Robot Initialized");
         waitForStart();
 
-        drivetrain.driveByEncoder(0.5,5,0,5);
+        drivetrain.encoderDrive(0.5,5,0,5);
         drivetrain.stop();
     }
 
