@@ -11,111 +11,102 @@
     */
     Idle
     {
-        evStart DriveForward {}
+        evStart DriveToStones {}
     }
 
 
     /*
-    * drives forward toward foundation and (hopefully) stops at foundation.
+    * drives forward up to the stones
     */
-    DriveForward
+    DriveToStones
         Entry {
-            setLogMessage("DriveForward");
+            setLogMessage("DriveToStones");
             openHook();
             // start drive forward
-            driveToFoundation();
+            linearDrive(30d);
         }
     {
-        evDriveComplete DriveForwardSuccess {}
-        evDriveFail DriveForwardFail {}
+        evDriveComplete DriveToStoneSuccess {}
+ //       evDriveFail DriveToStoneFailure {}
     }
 
 
     /*
     * Stop after drive forward and check to see if we are at foundation.
     */
-    DriveForwardSuccess
+    DriveToStoneSuccess
         Entry{
-            setLogMessage("DriveForwardSuccess");
+            setLogMessage("DriveToStoneSuccess");
             // close the hook and wait for it stop
             closeHook();
+            // While we are at it retract the arm.
+            retractArm();
             startHookTimer();
         }
     {
-        evHookTimeout DragFoundation { }
+        evHookTimeout BackupToBeginDrag { }
     }
     /*
-    * Stop after drive forward and check to see if we are at foundation.
+    * Backup to begin the drag
     */
-    DriveForwardFail
+    BackupToBeginDrag
         Entry{
-            setLogMessage("DriveForwardFail");
-            // TODO Try to get location and correct
+            setLogMessage("BackupToBeginDrag");
+            linearDrive(-6);
+         }
+    {
+        evDriveComplete [ctxt.isBlueTeam() == true] BlueTeamRotateTowardBridge { }
+        evDriveComplete [ctxt.isBlueTeam() == false] RedTeamRotateTowardBridge { }
+    }
+
+    /*
+    *
+    */
+    BlueTeamRotateTowardBridge
+        Entry{
+            setLogMessage("BlueTeamRotateTowardBridge");
+            rotate(-90);
         }
     {
-
+        evRotationComplete DragStone { }
     }
-
     /*
-    * Drag the foundation back
+    *
     */
-    DragFoundation
+    RedTeamRotateTowardBridge
+        Entry{
+             setLogMessage("RedTeamRotateTowardBridge");
+            rotate(+90);
+         }
+    {
+        evRotationComplete DragStone { }
+    }
+    /*
+    * Drag the stone back
+    */
+    DragStone
         Entry {
-            setLogMessage("DragFoundation");
-            // pull the foundation backward
-            dragFoundation();
+            setLogMessage("DragStone");
+            strafeDrive(72);
         }
     {
         evDriveComplete nil {
             openHook();
             startHookTimer();
         }
-        evHookTimeout RotateToQuarry {}
+        evHookTimeout BackupToRelease {}
     }
 
     /*
-    * Rotate the robot to drive toward the quarry
+    * Backup to release the arm.
     */
-    RotateToQuarry
+    BackupToRelease
         Entry {
-            setLogMessage("RotateToQuarry");
-            rotateToQuarry();
+            setLogMessage("BackupToRelease");
+            linearDrive(-12);
         }
     {
-        evRotationComplete PrepareDriveToQuarry { }
-    }
-
-    PrepareDriveToQuarry
-    Entry {
-        // Retract Arm so that we can fit under the bridge before the arm and wait here until
-        // it is retracted.
-        setLogMessage("PrepareDriveToQuarry");
-        retractArm();
-    }
-    {
-        evArmRetracted DriveToQuarry {}
-    }
-
-    /*
-    * drive to quarry.
-    */
-    DriveToQuarry
-    Entry {
-        setLogMessage("DriveToQuarry");
-        driveToQuarry();
-    }
-    {
-        evDriveComplete Success {}
-    }
-
-    /*
-    * rotate toward the block at the quarry.
-    */
-    RotateToBlock
-    Entry{
-        setLogMessage("RotateToBlock");
-    }
-    {
+        evDriveComplete Success { }
     }
 
     /*

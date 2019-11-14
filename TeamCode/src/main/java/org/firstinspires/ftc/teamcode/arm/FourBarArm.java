@@ -7,6 +7,8 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.teamcode.util.OneShotTimer;
+
 public class FourBarArm extends Arm {
 
     private DcMotor mArmMotor = null;
@@ -52,8 +54,13 @@ public class FourBarArm extends Arm {
     public static final double RETRACT_START_POWER = 0.1d;
     public static final double RETRACT_POWER_SLOPE_PER_SEC = (RETRACT_MAX_POWER - RETRACT_START_POWER)/ RETRACT_RAMP_UP_TIME;
 
-    private boolean mResetToRetractInProgress = false;
-    public static final double MAX_RESET_TO_RETRACT_TIME_SEC = 5d;
+    private OneShotTimer mResetRetractTimer = new OneShotTimer(MAX_RESET_TO_RETRACT_TIME_MSEC, new OneShotTimer.IOneShotTimerCallback() {
+        @Override
+        public void timeoutComplete() {
+            stop();
+        }
+    });
+    public static final int MAX_RESET_TO_RETRACT_TIME_MSEC = 5000;
     public static final double RESET_TO_RETRACT_POWER = 0.5;
 
     /**
@@ -115,70 +122,57 @@ public class FourBarArm extends Arm {
         }
     }
 
-
-    public final static int RESET_RETRACT_IN_PROGRESS = 0;
-    public final static int RESET_RETRACT_COMPLETE = 1;
-    public final static int RESET_RETRACT_ERROR = 2;
     /**
      * This function is called from the OpMode run loop continuously to start
      * the arm to the fully retracted position using the limit switch to detect when the
      * position has been reached.
-     * @return RESET_RETRACT_IN_PROGRESS means keep calling to co
-     * mplete, RESET_RETRACT_COMPLETE
-     * means start is done, RESET_RETRACT_ERROR means the start didn't complete within a maximum
-     * time and cannot finish.  Also returns RESET_RETRACT_ERROR if the motor or limit switch did
-     * not initialize properly.
+     * @return true if still in progress, false otherwise or init error
      */
-    public int resetToRetractPosition(){
+    public boolean resetToRetractPosition(){
         if ((mArmMotor == null) || (mLimitSwitch == null))
-            return RESET_RETRACT_ERROR;
+            return false;
 
-        // Lock this object with a mutex in this method
+        // Lock this object with a mutex in this method to prevent conflict with the control
         synchronized (this) {
-            if (!mResetToRetractInProgress) {
-                // This is the first call.  Stop all motors, initialize the max limit timer, and
+            if (!mResetRetractTimer.isRunning()) {
+                // This is the first call.  Check if limit switch already press.
+                if (mLimitSwitch.getState()){
+                    return false;   // Already retracted.
+                }
+                // Otehrwise, stop all motors, initialize the max limit timer, and
                 // begin the start
-                mResetToRetractInProgress = true;
-                mArmMotor.setPower(0);
+                 mArmMotor.setPower(0);
                 mArmMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                // Initialize timer to current run-time
-                mRampTimer.reset();
+                // start the limit timer
+                mResetRetractTimer.start();
                 mArmMotor.setPower(RESET_TO_RETRACT_POWER);
-                return RESET_RETRACT_IN_PROGRESS;
             }
-            // Otherwise a start is in progress.
-            // Now check if limit switch has been pressed.
+            // Otherwise it is in progress.  Check if limit switch has been pressed.
+            opMode.telemetry.addData("limitsw=",mLimitSwitch.getState());
+            opMode.telemetry.update();
             if (mLimitSwitch.getState()){
                 // Switch has tripped.  Stop the motor and either return or set motors back
                 // to position mode.
                 mArmMotor.setPower(0d);
                 mFullRetractAngleValid = true;
-                mResetToRetractInProgress = false;
+                mResetRetractTimer.cancel();
                 if (mMode == ANGLE_MODE){
                     mCurrentAngle = FULL_RETRACT_ANGLE;
                 }
-                return RESET_RETRACT_COMPLETE;
             }
             else{
-                // arm still moving but no limit switch.  Check for max start time
-                if (mRampTimer.time() > MAX_RESET_TO_RETRACT_TIME_SEC){
-                    // Time exceeded but start did not complete.  stop motor. If position mode
-                    // is enabled then set error flag as we now no longer know where zero is
-                    mArmMotor.setPower(0d);
-                    mFullRetractAngleValid = false;
-                    return RESET_RETRACT_ERROR;
-                }
-                // Return that the start is still in progress
-                return RESET_RETRACT_IN_PROGRESS;
+                // Service the timeout timer
+                mResetRetractTimer.checkTimer();
             }
-        }
+         }
+         return mResetRetractTimer.isRunning();
     }
 
     /**
      * @return true if a start is in progress
      */
     public boolean isResetToRetractInProgress(){
-        return mResetToRetractInProgress;
+        return mResetRetractTimer.isRunning();
     }
     /**
      * Starts moving the arm continously.

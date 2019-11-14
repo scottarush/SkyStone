@@ -94,6 +94,7 @@ public abstract class Drivetrain {
      */
      public void encoderDrive(double speed, double xdist, double ydist, int timeoutms) {
          mDriveByEncoderFailTimer.setTimeout(timeoutms);
+         mDriveByEncoderFailTimer.start();
     }
 
     /**

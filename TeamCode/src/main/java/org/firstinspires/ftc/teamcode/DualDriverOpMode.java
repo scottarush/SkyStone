@@ -42,9 +42,9 @@ import com.qualcomm.robotcore.util.ElapsedTime;
  * Grabber on both sets of bumpers and triggers.
  * Arm up down on pad.
  */
-@TeleOp(name="SingleDriverOpMode", group="Robot")
+@TeleOp(name="DualDriverOpMode", group="Robot")
 //@Disabled
-public class SingleDriverOpMode extends OpMode{
+public class DualDriverOpMode extends OpMode{
 
     private MecanumGrabberBot robot  = null;
 
@@ -126,7 +126,7 @@ public class SingleDriverOpMode extends OpMode{
         // If a start is in progress then call teh service routine in the arm
         Gamepad armPad = gamepad2;
         if (robot.getArm().isResetToRetractInProgress()){
-            int retcode = robot.getArm().resetToRetractPosition();
+            robot.getArm().resetToRetractPosition();
         }
         else{
             if (robot.getArm().isAngleMode()) {

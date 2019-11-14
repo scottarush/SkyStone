@@ -247,20 +247,27 @@ public class MecanumDrive extends Drivetrain{
      * starts a drive by encoder session.  If robot is moving, it will be stopped.
      *
      * @param speed   speed to move
-     * @param xdist   distance in x inches to move
-     * @param ydist   distance in y inches to move
+     * @param xdist   distance in x inches to move where +x is to the robot's right.
+     * @param ydist   distance in y inches to move where +y is forward.
      * @param timeoutms timeout in msseconds to abort if move not completed.
      *
      * @return true if session started, false on error.
      */
     @Override
     public void encoderDrive(double speed, double xdist, double ydist, int timeoutms) {
+        if (isDriveByEncoderSessionActive()){
+            return;
+        }
         super.encoderDrive(speed,xdist,ydist,timeoutms);
+        // Stop and reset the encoders first
+        setMotorModes(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        setMotorModes(DcMotor.RunMode.RUN_USING_ENCODER);
+
         // Compute the number of encoder counts for each wheel to move the requested distanc
-        int lfDeltaCounts = (int) Math.round((xdist + ydist) * MecanumDrive.COUNTS_PER_INCH);
+        int lfDeltaCounts = (int) Math.round((ydist + xdist) * MecanumDrive.COUNTS_PER_INCH);
         int rfDeltaCounts = (int) Math.round((ydist - xdist) * MecanumDrive.COUNTS_PER_INCH);
         int lrDeltaCounts = (int) Math.round((ydist - xdist) * MecanumDrive.COUNTS_PER_INCH);
-        int rrDeltaCounts = (int) Math.round((xdist + ydist) * MecanumDrive.COUNTS_PER_INCH);
+        int rrDeltaCounts = (int) Math.round((ydist + ydist) * MecanumDrive.COUNTS_PER_INCH);
 
         // Set target counts for each motor to the above
         setTargetPosition(lfMotor,lfDeltaCounts+getCurrentPosition(lfMotor));
@@ -268,6 +275,8 @@ public class MecanumDrive extends Drivetrain{
         setTargetPosition(lrMotor,lrDeltaCounts+getCurrentPosition(lrMotor));
         setTargetPosition(rrMotor,rrDeltaCounts+getCurrentPosition(rrMotor));
 
+        mOpMode.telemetry.addData("counts","lf="+lfDeltaCounts+",rf="+rfDeltaCounts+",lr="+lrDeltaCounts+",rr="+rrDeltaCounts);
+        mOpMode.telemetry.update();
         // Set mode to run to position
         setMotorModes(DcMotor.RunMode.RUN_TO_POSITION);
 
@@ -371,7 +380,11 @@ public class MecanumDrive extends Drivetrain{
     public int doVectorTimedDrive(double xdistance, double ydistance) {
         int timeout = super.doVectorTimedDrive(xdistance, ydistance);
         // TODO Need to figure out how to translate the vector into the power split
+        // TODO Make it do a vector.  For now only use ydistance to know which direction
         double power = 1.0d;
+        if (xdistance > 0d){
+            power = -power;
+        }
         double lfPower = power;
         double rfPower = -power;
         double lrPower = power;
