@@ -31,6 +31,7 @@ package org.firstinspires.ftc.teamcode.TestOpModes;
 
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.drivetrain.MecanumDrive;
@@ -42,8 +43,8 @@ This OpMode tests the move by encoder utility in the drivetrain class.
   */
 
 @TeleOp(name="TestDriveByEncoder", group="Robot")
-@Disabled
-public class TestDriveByEncoder extends LinearOpMode {
+//@Disabled
+public class TestDriveByEncoder extends OpMode {
 
     /* Declare OpMode members. */
     private MecanumDrive drivetrain = null;
@@ -53,9 +54,9 @@ public class TestDriveByEncoder extends LinearOpMode {
     }
 
     @Override
-    public void runOpMode() {
+    public void init() {
         try {
-            drivetrain = new MecanumDrive(this,true);
+            drivetrain = new MecanumDrive(this,false);
             drivetrain.init(hardwareMap);
             utilities = new VuforiaMotionMethods(drivetrain);
         }
@@ -64,10 +65,15 @@ public class TestDriveByEncoder extends LinearOpMode {
             telemetry.update();
         }
         telemetry.addData("Say","Robot Initialized");
-        waitForStart();
 
-        drivetrain.encoderDrive(0.5,5,0,5);
-        drivetrain.stop();
+    }
+
+    @Override
+    public void loop() {
+        if (!drivetrain.isDriveByEncoderSessionActive()) {
+            drivetrain.encoderDrive(1.0, 10, 0, 2000);
+            telemetry.addData("Status", "Driving");
+        }
     }
 
 }

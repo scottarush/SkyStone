@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.autonomous;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
@@ -10,11 +11,11 @@ import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.util.VuforiaCommon;
 
 @Autonomous(name="AutonomousMode", group="Robot")
-//@Disabled
+@Disabled
 public class SkystoneAutonomousOpMode extends OpMode {
 
  //   private MecanumGrabberBot robot = new MecanumGrabberBot(this, Robot.DriveTrainStyle.MECANUM_HEX_BOT,true);
-    private MecanumGrabberBot robot = new MecanumGrabberBot(this, Robot.DriveTrainStyle.MECANUM_REV_DEV_BOT,true);
+    private MecanumGrabberBot robot = new MecanumGrabberBot(this, Robot.DriveTrainStyle.MECANUM_HEX_BOT,true);
 
     /** team options. **/
     private static final String[] TEAM_OPTIONS = new String[]{"BLUE","RED"};
@@ -55,7 +56,7 @@ public class SkystoneAutonomousOpMode extends OpMode {
     VuforiaCommon mVuforia = null;
 
     public SkystoneAutonomousOpMode(){
-    }
+     }
 
     @Override
     public void init() {
@@ -99,7 +100,8 @@ public class SkystoneAutonomousOpMode extends OpMode {
      */
     @Override
     public void init_loop() {
-        if ((getRuntime()-mLastInitLoopTime) < MIN_INIT_LOOP_TIME){
+ /**
+       if ((getRuntime()-mLastInitLoopTime) < MIN_INIT_LOOP_TIME){
             return;
         }
         mLastInitLoopTime = getRuntime();
@@ -134,7 +136,7 @@ public class SkystoneAutonomousOpMode extends OpMode {
                 currentMenu = 0;
             }
         }
-
+**/
     }
 
     /**

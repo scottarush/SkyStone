@@ -52,7 +52,7 @@ public class AutonomousController {
 
             @Override
             public void driveByEncoderTimeoutFailure() {
-                mAsm.evDriveFail();
+                // mAsm.evDriveFail()
             }
         });
         robot.getDrivetrain().addRotationStatusListener(new IRotationStatusListener() {
@@ -78,10 +78,9 @@ public class AutonomousController {
          robot.getDrivetrain().doService();
         // If a reset of the arm is active, then service it by calling it from here.
          if (robot.getArm().isResetToRetractInProgress()){
-             int status = robot.getArm().resetToRetractPosition();
-             if (status != FourBarArm.RESET_RETRACT_IN_PROGRESS){
+             if (!robot.getArm().resetToRetractPosition()){
                  // Assume same event even if we fail to retract.
-                 mAsm.evArmRetracted();
+      //           mAsm.evArmRetracted();
              }
          }
     }
@@ -103,20 +102,28 @@ public class AutonomousController {
     }
 
     /**
-     * Called from state machine to drive toward the foundation
+     *
      */
-    public void driveToFoundation(){
+    public void linearDrive(double distance){
         switch(mControlMode){
             case SkystoneAutonomousOpMode.ENCODER_CONTROL:
-                startDriveByEncoder(1.0d, 36.0d,0d,3000);
+                startDriveByEncoder(1.0d, distance,0d,3000);
                 break;
             case SkystoneAutonomousOpMode.OPEN_LOOP_TIME:
-                robot.getDrivetrain().doLinearTimedDrive(12d);
+                robot.getDrivetrain().doLinearTimedDrive(distance);
                 break;
             case SkystoneAutonomousOpMode.CLOSED_LOOP_VUFORIA:
                 // TODO
                 break;
         }
+
+    }
+
+    /**
+     * strafe drive
+     */
+    public void strafeDrive(double distance){
+        robot.getDrivetrain().doVectorTimedDrive(distance,0d);
     }
     /**
      * Called from state machine to drive toward the foundation
@@ -124,26 +131,10 @@ public class AutonomousController {
     public void dragFoundation(){
         switch(mControlMode){
             case SkystoneAutonomousOpMode.ENCODER_CONTROL:
-                startDriveByEncoder(1.0d, -36.0d,0d,3000);
+                startDriveByEncoder(1.0d, -12.0d,0d,3000);
                 break;
             case SkystoneAutonomousOpMode.OPEN_LOOP_TIME:
                 robot.getDrivetrain().doLinearTimedDrive(-12d);
-                break;
-            case SkystoneAutonomousOpMode.CLOSED_LOOP_VUFORIA:
-                // TODO
-                break;
-        }
-    }
-    /**
-     * Called from state machine to drive toward quarry
-     */
-    public void driveToQuarry(){
-        switch(mControlMode){
-            case SkystoneAutonomousOpMode.ENCODER_CONTROL:
-                startDriveByEncoder(1.0d, 36.0d,0d,3000);
-                break;
-            case SkystoneAutonomousOpMode.OPEN_LOOP_TIME:
-                robot.getDrivetrain().doLinearTimedDrive(36d);
                 break;
             case SkystoneAutonomousOpMode.CLOSED_LOOP_VUFORIA:
                 // TODO
@@ -178,17 +169,17 @@ public class AutonomousController {
         robot.getHook().setPosition(Hook.CLOSED);
     }
     /**
-     * Rotates the robot toward the quarry.
+     * rotation by degrees.  + is cw
      */
-    public void rotateToQuarry(){
-        if (blueTeam){
-            // Rotate -90
-            robot.getDrivetrain().doTimedRotation(-90);
-        }
-        else{
-            // Red team is +90
-            robot.getDrivetrain().doTimedRotation(90);
-        }
+    public void rotate(int degrees){
+        robot.getDrivetrain().doTimedRotation(degrees);
+    }
+
+    /**
+     * returns true for blue, false for red.
+     */
+    public boolean isBlueTeam(){
+        return blueTeam;
     }
     /**
      * Called from state machine to stop the robot

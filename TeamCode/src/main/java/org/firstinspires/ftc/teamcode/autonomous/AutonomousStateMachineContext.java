@@ -34,26 +34,10 @@ public class AutonomousStateMachineContext
         return;
     }
 
-    public void evArmRetracted()
-    {
-        _transition = "evArmRetracted";
-        getState().evArmRetracted(this);
-        _transition = "";
-        return;
-    }
-
     public void evDriveComplete()
     {
         _transition = "evDriveComplete";
         getState().evDriveComplete(this);
-        _transition = "";
-        return;
-    }
-
-    public void evDriveFail()
-    {
-        _transition = "evDriveFail";
-        getState().evDriveFail(this);
         _transition = "";
         return;
     }
@@ -146,17 +130,7 @@ public class AutonomousStateMachineContext
         protected void entry(AutonomousStateMachineContext context) {}
         protected void exit(AutonomousStateMachineContext context) {}
 
-        protected void evArmRetracted(AutonomousStateMachineContext context)
-        {
-            Default(context);
-        }
-
         protected void evDriveComplete(AutonomousStateMachineContext context)
-        {
-            Default(context);
-        }
-
-        protected void evDriveFail(AutonomousStateMachineContext context)
         {
             Default(context);
         }
@@ -213,24 +187,22 @@ public class AutonomousStateMachineContext
 
         public static final AutonomousStateMachine_Idle Idle =
             new AutonomousStateMachine_Idle("AutonomousStateMachine.Idle", 0);
-        public static final AutonomousStateMachine_DriveForward DriveForward =
-            new AutonomousStateMachine_DriveForward("AutonomousStateMachine.DriveForward", 1);
-        public static final AutonomousStateMachine_DriveForwardSuccess DriveForwardSuccess =
-            new AutonomousStateMachine_DriveForwardSuccess("AutonomousStateMachine.DriveForwardSuccess", 2);
-        public static final AutonomousStateMachine_DriveForwardFail DriveForwardFail =
-            new AutonomousStateMachine_DriveForwardFail("AutonomousStateMachine.DriveForwardFail", 3);
-        public static final AutonomousStateMachine_DragFoundation DragFoundation =
-            new AutonomousStateMachine_DragFoundation("AutonomousStateMachine.DragFoundation", 4);
-        public static final AutonomousStateMachine_RotateToQuarry RotateToQuarry =
-            new AutonomousStateMachine_RotateToQuarry("AutonomousStateMachine.RotateToQuarry", 5);
-        public static final AutonomousStateMachine_PrepareDriveToQuarry PrepareDriveToQuarry =
-            new AutonomousStateMachine_PrepareDriveToQuarry("AutonomousStateMachine.PrepareDriveToQuarry", 6);
-        public static final AutonomousStateMachine_DriveToQuarry DriveToQuarry =
-            new AutonomousStateMachine_DriveToQuarry("AutonomousStateMachine.DriveToQuarry", 7);
-        public static final AutonomousStateMachine_RotateToBlock RotateToBlock =
-            new AutonomousStateMachine_RotateToBlock("AutonomousStateMachine.RotateToBlock", 8);
+        public static final AutonomousStateMachine_DriveToStones DriveToStones =
+            new AutonomousStateMachine_DriveToStones("AutonomousStateMachine.DriveToStones", 1);
+        public static final AutonomousStateMachine_DriveToStoneSuccess DriveToStoneSuccess =
+            new AutonomousStateMachine_DriveToStoneSuccess("AutonomousStateMachine.DriveToStoneSuccess", 2);
+        public static final AutonomousStateMachine_BackupToBeginDrag BackupToBeginDrag =
+            new AutonomousStateMachine_BackupToBeginDrag("AutonomousStateMachine.BackupToBeginDrag", 3);
+        public static final AutonomousStateMachine_BlueTeamRotateTowardBridge BlueTeamRotateTowardBridge =
+            new AutonomousStateMachine_BlueTeamRotateTowardBridge("AutonomousStateMachine.BlueTeamRotateTowardBridge", 4);
+        public static final AutonomousStateMachine_RedTeamRotateTowardBridge RedTeamRotateTowardBridge =
+            new AutonomousStateMachine_RedTeamRotateTowardBridge("AutonomousStateMachine.RedTeamRotateTowardBridge", 5);
+        public static final AutonomousStateMachine_DragStone DragStone =
+            new AutonomousStateMachine_DragStone("AutonomousStateMachine.DragStone", 6);
+        public static final AutonomousStateMachine_BackupToRelease BackupToRelease =
+            new AutonomousStateMachine_BackupToRelease("AutonomousStateMachine.BackupToRelease", 7);
         public static final AutonomousStateMachine_Success Success =
-            new AutonomousStateMachine_Success("AutonomousStateMachine.Success", 9);
+            new AutonomousStateMachine_Success("AutonomousStateMachine.Success", 8);
     }
 
     protected static class AutonomousStateMachine_Default
@@ -273,7 +245,7 @@ public class AutonomousStateMachineContext
         {
 
             (context.getState()).exit(context);
-            context.setState(AutonomousStateMachine.DriveForward);
+            context.setState(AutonomousStateMachine.DriveToStones);
             (context.getState()).entry(context);
             return;
         }
@@ -289,14 +261,14 @@ public class AutonomousStateMachineContext
         private static final long serialVersionUID = 1L;
     }
 
-    private static final class AutonomousStateMachine_DriveForward
+    private static final class AutonomousStateMachine_DriveToStones
         extends AutonomousStateMachine_Default
     {
     //-------------------------------------------------------
     // Member methods.
     //
 
-        private AutonomousStateMachine_DriveForward(String name, int id)
+        private AutonomousStateMachine_DriveToStones(String name, int id)
         {
             super (name, id);
         }
@@ -306,9 +278,9 @@ public class AutonomousStateMachineContext
             {
                 AutonomousController ctxt = context.getOwner();
 
-            ctxt.setLogMessage("DriveForward");
+            ctxt.setLogMessage("DriveToStones");
             ctxt.openHook();
-            ctxt.driveToFoundation();
+            ctxt.linearDrive(30d);
             return;
         }
 
@@ -317,17 +289,7 @@ public class AutonomousStateMachineContext
         {
 
             (context.getState()).exit(context);
-            context.setState(AutonomousStateMachine.DriveForwardSuccess);
-            (context.getState()).entry(context);
-            return;
-        }
-
-        @Override
-        protected void evDriveFail(AutonomousStateMachineContext context)
-        {
-
-            (context.getState()).exit(context);
-            context.setState(AutonomousStateMachine.DriveForwardFail);
+            context.setState(AutonomousStateMachine.DriveToStoneSuccess);
             (context.getState()).entry(context);
             return;
         }
@@ -343,14 +305,14 @@ public class AutonomousStateMachineContext
         private static final long serialVersionUID = 1L;
     }
 
-    private static final class AutonomousStateMachine_DriveForwardSuccess
+    private static final class AutonomousStateMachine_DriveToStoneSuccess
         extends AutonomousStateMachine_Default
     {
     //-------------------------------------------------------
     // Member methods.
     //
 
-        private AutonomousStateMachine_DriveForwardSuccess(String name, int id)
+        private AutonomousStateMachine_DriveToStoneSuccess(String name, int id)
         {
             super (name, id);
         }
@@ -360,8 +322,9 @@ public class AutonomousStateMachineContext
             {
                 AutonomousController ctxt = context.getOwner();
 
-            ctxt.setLogMessage("DriveForwardSuccess");
+            ctxt.setLogMessage("DriveToStoneSuccess");
             ctxt.closeHook();
+            ctxt.retractArm();
             ctxt.startHookTimer();
             return;
         }
@@ -371,7 +334,7 @@ public class AutonomousStateMachineContext
         {
 
             (context.getState()).exit(context);
-            context.setState(AutonomousStateMachine.DragFoundation);
+            context.setState(AutonomousStateMachine.BackupToBeginDrag);
             (context.getState()).entry(context);
             return;
         }
@@ -387,14 +350,14 @@ public class AutonomousStateMachineContext
         private static final long serialVersionUID = 1L;
     }
 
-    private static final class AutonomousStateMachine_DriveForwardFail
+    private static final class AutonomousStateMachine_BackupToBeginDrag
         extends AutonomousStateMachine_Default
     {
     //-------------------------------------------------------
     // Member methods.
     //
 
-        private AutonomousStateMachine_DriveForwardFail(String name, int id)
+        private AutonomousStateMachine_BackupToBeginDrag(String name, int id)
         {
             super (name, id);
         }
@@ -404,7 +367,34 @@ public class AutonomousStateMachineContext
             {
                 AutonomousController ctxt = context.getOwner();
 
-            ctxt.setLogMessage("DriveForwardFail");
+            ctxt.setLogMessage("BackupToBeginDrag");
+            ctxt.linearDrive(-6);
+            return;
+        }
+
+        @Override
+        protected void evDriveComplete(AutonomousStateMachineContext context)
+        {
+            AutonomousController ctxt = context.getOwner();
+
+            if (ctxt.isBlueTeam() == true)
+            {
+                (context.getState()).exit(context);
+                // No actions.
+                context.setState(AutonomousStateMachine.BlueTeamRotateTowardBridge);
+                (context.getState()).entry(context);
+            }
+            else if (ctxt.isBlueTeam() == false)
+            {
+                (context.getState()).exit(context);
+                // No actions.
+                context.setState(AutonomousStateMachine.RedTeamRotateTowardBridge);
+                (context.getState()).entry(context);
+            }            else
+            {
+                super.evDriveComplete(context);
+            }
+
             return;
         }
 
@@ -419,14 +409,14 @@ public class AutonomousStateMachineContext
         private static final long serialVersionUID = 1L;
     }
 
-    private static final class AutonomousStateMachine_DragFoundation
+    private static final class AutonomousStateMachine_BlueTeamRotateTowardBridge
         extends AutonomousStateMachine_Default
     {
     //-------------------------------------------------------
     // Member methods.
     //
 
-        private AutonomousStateMachine_DragFoundation(String name, int id)
+        private AutonomousStateMachine_BlueTeamRotateTowardBridge(String name, int id)
         {
             super (name, id);
         }
@@ -436,8 +426,94 @@ public class AutonomousStateMachineContext
             {
                 AutonomousController ctxt = context.getOwner();
 
-            ctxt.setLogMessage("DragFoundation");
-            ctxt.dragFoundation();
+            ctxt.setLogMessage("BlueTeamRotateTowardBridge");
+            ctxt.rotate(-90);
+            return;
+        }
+
+        @Override
+        protected void evRotationComplete(AutonomousStateMachineContext context)
+        {
+
+            (context.getState()).exit(context);
+            context.setState(AutonomousStateMachine.DragStone);
+            (context.getState()).entry(context);
+            return;
+        }
+
+    //-------------------------------------------------------
+    // Member data.
+    //
+
+        //---------------------------------------------------
+        // Constants.
+        //
+
+        private static final long serialVersionUID = 1L;
+    }
+
+    private static final class AutonomousStateMachine_RedTeamRotateTowardBridge
+        extends AutonomousStateMachine_Default
+    {
+    //-------------------------------------------------------
+    // Member methods.
+    //
+
+        private AutonomousStateMachine_RedTeamRotateTowardBridge(String name, int id)
+        {
+            super (name, id);
+        }
+
+        @Override
+        protected void entry(AutonomousStateMachineContext context)
+            {
+                AutonomousController ctxt = context.getOwner();
+
+            ctxt.setLogMessage("RedTeamRotateTowardBridge");
+            ctxt.rotate(+90);
+            return;
+        }
+
+        @Override
+        protected void evRotationComplete(AutonomousStateMachineContext context)
+        {
+
+            (context.getState()).exit(context);
+            context.setState(AutonomousStateMachine.DragStone);
+            (context.getState()).entry(context);
+            return;
+        }
+
+    //-------------------------------------------------------
+    // Member data.
+    //
+
+        //---------------------------------------------------
+        // Constants.
+        //
+
+        private static final long serialVersionUID = 1L;
+    }
+
+    private static final class AutonomousStateMachine_DragStone
+        extends AutonomousStateMachine_Default
+    {
+    //-------------------------------------------------------
+    // Member methods.
+    //
+
+        private AutonomousStateMachine_DragStone(String name, int id)
+        {
+            super (name, id);
+        }
+
+        @Override
+        protected void entry(AutonomousStateMachineContext context)
+            {
+                AutonomousController ctxt = context.getOwner();
+
+            ctxt.setLogMessage("DragStone");
+            ctxt.strafeDrive(72);
             return;
         }
 
@@ -466,7 +542,7 @@ public class AutonomousStateMachineContext
         {
 
             (context.getState()).exit(context);
-            context.setState(AutonomousStateMachine.RotateToQuarry);
+            context.setState(AutonomousStateMachine.BackupToRelease);
             (context.getState()).entry(context);
             return;
         }
@@ -482,14 +558,14 @@ public class AutonomousStateMachineContext
         private static final long serialVersionUID = 1L;
     }
 
-    private static final class AutonomousStateMachine_RotateToQuarry
+    private static final class AutonomousStateMachine_BackupToRelease
         extends AutonomousStateMachine_Default
     {
     //-------------------------------------------------------
     // Member methods.
     //
 
-        private AutonomousStateMachine_RotateToQuarry(String name, int id)
+        private AutonomousStateMachine_BackupToRelease(String name, int id)
         {
             super (name, id);
         }
@@ -499,94 +575,8 @@ public class AutonomousStateMachineContext
             {
                 AutonomousController ctxt = context.getOwner();
 
-            ctxt.setLogMessage("RotateToQuarry");
-            ctxt.rotateToQuarry();
-            return;
-        }
-
-        @Override
-        protected void evRotationComplete(AutonomousStateMachineContext context)
-        {
-
-            (context.getState()).exit(context);
-            context.setState(AutonomousStateMachine.PrepareDriveToQuarry);
-            (context.getState()).entry(context);
-            return;
-        }
-
-    //-------------------------------------------------------
-    // Member data.
-    //
-
-        //---------------------------------------------------
-        // Constants.
-        //
-
-        private static final long serialVersionUID = 1L;
-    }
-
-    private static final class AutonomousStateMachine_PrepareDriveToQuarry
-        extends AutonomousStateMachine_Default
-    {
-    //-------------------------------------------------------
-    // Member methods.
-    //
-
-        private AutonomousStateMachine_PrepareDriveToQuarry(String name, int id)
-        {
-            super (name, id);
-        }
-
-        @Override
-        protected void entry(AutonomousStateMachineContext context)
-            {
-                AutonomousController ctxt = context.getOwner();
-
-            ctxt.setLogMessage("PrepareDriveToQuarry");
-            ctxt.retractArm();
-            return;
-        }
-
-        @Override
-        protected void evArmRetracted(AutonomousStateMachineContext context)
-        {
-
-            (context.getState()).exit(context);
-            context.setState(AutonomousStateMachine.DriveToQuarry);
-            (context.getState()).entry(context);
-            return;
-        }
-
-    //-------------------------------------------------------
-    // Member data.
-    //
-
-        //---------------------------------------------------
-        // Constants.
-        //
-
-        private static final long serialVersionUID = 1L;
-    }
-
-    private static final class AutonomousStateMachine_DriveToQuarry
-        extends AutonomousStateMachine_Default
-    {
-    //-------------------------------------------------------
-    // Member methods.
-    //
-
-        private AutonomousStateMachine_DriveToQuarry(String name, int id)
-        {
-            super (name, id);
-        }
-
-        @Override
-        protected void entry(AutonomousStateMachineContext context)
-            {
-                AutonomousController ctxt = context.getOwner();
-
-            ctxt.setLogMessage("DriveToQuarry");
-            ctxt.driveToQuarry();
+            ctxt.setLogMessage("BackupToRelease");
+            ctxt.linearDrive(-12);
             return;
         }
 
@@ -597,38 +587,6 @@ public class AutonomousStateMachineContext
             (context.getState()).exit(context);
             context.setState(AutonomousStateMachine.Success);
             (context.getState()).entry(context);
-            return;
-        }
-
-    //-------------------------------------------------------
-    // Member data.
-    //
-
-        //---------------------------------------------------
-        // Constants.
-        //
-
-        private static final long serialVersionUID = 1L;
-    }
-
-    private static final class AutonomousStateMachine_RotateToBlock
-        extends AutonomousStateMachine_Default
-    {
-    //-------------------------------------------------------
-    // Member methods.
-    //
-
-        private AutonomousStateMachine_RotateToBlock(String name, int id)
-        {
-            super (name, id);
-        }
-
-        @Override
-        protected void entry(AutonomousStateMachineContext context)
-            {
-                AutonomousController ctxt = context.getOwner();
-
-            ctxt.setLogMessage("RotateToBlock");
             return;
         }
 

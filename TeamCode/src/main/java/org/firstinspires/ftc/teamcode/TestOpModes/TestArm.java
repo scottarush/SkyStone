@@ -10,7 +10,7 @@ import org.firstinspires.ftc.teamcode.arm.FourBarArm;
  * OpMode to test the arm using the gamepad.  The left stick up and down raises and lowers the arm.
  */
 @TeleOp(name="TestArm", group="Robot")
-@Disabled
+//@Disabled
 public class TestArm extends OpMode {
 
     private FourBarArm arm;
@@ -38,18 +38,28 @@ public class TestArm extends OpMode {
         telemetry.addData("current degree position",arm.getCurrentAngle());
         telemetry.addData("counts per degree",FourBarArm.COUNTS_PER_DEGREE);
 */
-        if (Math.abs(power) > 0.1) {
-            boolean up = true;
-            if (Math.signum(power) < 0) {
-                up = false;
+        if (!arm.isResetToRetractInProgress()) {
+            if (Math.abs(power) > 0.1) {
+                boolean up = true;
+                if (Math.signum(power) < 0) {
+                    up = false;
+                }
+                arm.moveArm(up);
+//                telemetry.addData("Commanded power", power);
+//                telemetry.update();
+            } else {
+                arm.stop();
             }
-            arm.moveArm(up);
-            telemetry.addData("Commanded power", power);
-            telemetry.update();
         }
-        else{
-            arm.stop();
+        boolean status = false;
+        if (gamepad1.a) {
+             status = arm.resetToRetractPosition();
         }
+        else if (arm.isResetToRetractInProgress()) {
+            status = arm.resetToRetractPosition();
+        }
+        telemetry.addData("Arm status",status);
+        telemetry.update();
     }
 
     @Override
