@@ -1,27 +1,24 @@
 package org.firstinspires.ftc.teamcode.autonomous;
 
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
-import org.firstinspires.ftc.robotcore.internal.opmode.TelemetryImpl;
 import org.firstinspires.ftc.teamcode.MecanumGrabberBot;
 import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.util.VuforiaCommon;
 
-@Autonomous(name="AutonomousMode", group="Robot")
-@Disabled
-public class SkystoneAutonomousOpMode extends OpMode {
+//@Autonomous(name="AutonomousMode", group="Robot")
+//@Disabled
+public class SkystoneAutonomousOpMode {
 
  //   private MecanumGrabberBot robot = new MecanumGrabberBot(this, Robot.DriveTrainStyle.MECANUM_HEX_BOT,true);
-    private MecanumGrabberBot robot = new MecanumGrabberBot(this, Robot.DriveTrainStyle.MECANUM_HEX_BOT,true);
+    private MecanumGrabberBot robot = null;
 
     /** team options. **/
     private static final String[] TEAM_OPTIONS = new String[]{"BLUE","RED"};
     public static final int BLUE_TEAM = 0;
     public static final int RED_TEAM = 1;
-    private int team = BLUE_TEAM;
+    private boolean mBlueTeam = true;
 
     /** control mode. **/
     private static final String[] CONTROL_MODE_OPTIONS = new String[]{"CLOSED-LOOP ENCODER","OPEN-LOOP TIME","CLOSE-LOOP VUFORIA"};
@@ -43,38 +40,41 @@ public class SkystoneAutonomousOpMode extends OpMode {
 
     public static final double DRIVE_BY_ENCODER_POWER = 1.0d;
 
-    private AutonomousController dfController = null;
+    private AutonomousController autoController = null;
 
     private Gamepad mSetupGamepad = null;
 
     private double mLastInitLoopTime = 0d;
     private static final double MIN_INIT_LOOP_TIME = 0.150d;
 
+    private OpMode mOpmode = null;
     /**
      * Reference to VuforiaCommon utilities
      */
     VuforiaCommon mVuforia = null;
 
-    public SkystoneAutonomousOpMode(){
+    public SkystoneAutonomousOpMode(OpMode opMode, boolean isBlueTeam){
+        mOpmode = opMode;
+        mBlueTeam = isBlueTeam;
      }
 
-    @Override
     public void init() {
-        mSetupGamepad = gamepad1;
+/**        mSetupGamepad = gamepad1;
         menus = new GamepadMenu[SETUP_COMPLETE_MENU_INDEX+1];
         menus[TEAM_MENU_INDEX] = new GamepadMenu(this,mSetupGamepad,"Select Team:",TEAM_OPTIONS);
         menus[CONTROL_MODE_MENU_INDEX] = new GamepadMenu(this,mSetupGamepad,"Select Control Mode:", CONTROL_MODE_OPTIONS);
         menus[SETUP_COMPLETE_MENU_INDEX] = new GamepadMenu(this,mSetupGamepad,"Setup Complete? ",SETUP_COMPLETE_OPTIONS);
-
+**/
         String initErrs = "";
         try {
+            new MecanumGrabberBot(mOpmode, Robot.DriveTrainStyle.MECANUM_HEX_BOT,true);
             robot.init();
         }
         catch(Exception e){
             initErrs += e.getMessage();
         }
         // Initialize Vuforia
-        mVuforia = new VuforiaCommon(hardwareMap);
+        mVuforia = new VuforiaCommon(mOpmode.hardwareMap);
         try{
             mVuforia.initVuforiaNavigation();
             // No exception so start Vuforia navigation
@@ -83,102 +83,86 @@ public class SkystoneAutonomousOpMode extends OpMode {
         catch(Exception e){
             initErrs += e.getMessage();
         }
+        // Initialize the controller
+        autoController = new AutonomousController(mOpmode,robot,mVuforia,mBlueTeam,mControlMode);
 
         if (initErrs.length() == 0){
-            telemetry.addData("Status:","Robot init complete");
-            telemetry.update();
+            mOpmode.telemetry.addData("Status:","Robot init complete");
+            mOpmode.telemetry.update();
         }
         else{
-            telemetry.addData("Init errors:",initErrs);
-            telemetry.update();
+            mOpmode.telemetry.addData("Init errors:",initErrs);
+            mOpmode.telemetry.update();
         }
 
 
     }
-    /*
-     * Code to run REPEATEDLY after the driver hits INIT, but before they hit PLAY
-     */
-    @Override
-    public void init_loop() {
- /**
-       if ((getRuntime()-mLastInitLoopTime) < MIN_INIT_LOOP_TIME){
-            return;
-        }
-        mLastInitLoopTime = getRuntime();
-        if (setupComplete){
-            return;
-        }
-        if (mSetupGamepad.dpad_right){
-            currentMenu++;
-            if (currentMenu >= menus.length){
-                currentMenu = 0;
-            }
-        }
-        if (menus[currentMenu].doOptionMenu()){
-            int option = menus[currentMenu].getSelectedOption();
-            // This is a confirm.  Update the setting
-            switch(currentMenu){
-                case TEAM_MENU_INDEX:
-                    team = option;
-                    break;
-                case CONTROL_MODE_MENU_INDEX:
-                    mControlMode = option;
-                    break;
-                case SETUP_COMPLETE_MENU_INDEX:
-                    setupComplete = true;
-                    String s = doSetupCompleteInit();
-                    telemetry.addData("Ready to Start:",s);
-                    break;
 
-            }
-            currentMenu++;
-            if (currentMenu >= menus.length){
-                currentMenu = 0;
-            }
-        }
-**/
-    }
-
-    /**
-     * called once after setup is complete to initalize with the selected parameters
-     */
-    private String doSetupCompleteInit(){
-        if (team == BLUE_TEAM){
-            dfController = new AutonomousController(this,robot,mVuforia,true,mControlMode);
-        }
-        else {
-            dfController = new AutonomousController(this,robot,mVuforia,false,mControlMode);
-        }
-        return "Team="+TEAM_OPTIONS[team]+" Mode="+CONTROL_MODE_OPTIONS[mControlMode];
-    }
+//    /*
+//     * Code to run REPEATEDLY after the driver hits INIT, but before they hit PLAY
+//     */
+//    public void init_loop() {
+//
+//       if ((getRuntime()-mLastInitLoopTime) < MIN_INIT_LOOP_TIME){
+//            return;
+//        }
+//        mLastInitLoopTime = getRuntime();
+//        if (setupComplete){
+//            return;
+//        }
+//        if (mSetupGamepad.dpad_right){
+//            currentMenu++;
+//            if (currentMenu >= menus.length){
+//                currentMenu = 0;
+//            }
+//        }
+//        if (menus[currentMenu].doOptionMenu()){
+//            int option = menus[currentMenu].getSelectedOption();
+//            // This is a confirm.  Update the setting
+//            switch(currentMenu){
+//                case TEAM_MENU_INDEX:
+//                    team = option;
+//                    break;
+//                case CONTROL_MODE_MENU_INDEX:
+//                    mControlMode = option;
+//                    break;
+//                case SETUP_COMPLETE_MENU_INDEX:
+//                    setupComplete = true;
+//                    String s = doSetupCompleteInit();
+//                    telemetry.addData("Ready to Start:",s);
+//                    break;
+//
+//            }
+//            currentMenu++;
+//            if (currentMenu >= menus.length){
+//                currentMenu = 0;
+//            }
+//        }
+//
+//    }
 
 
-    @Override
     public void loop() {
-        if (dfController == null){
-            // This is a restart
-            doSetupCompleteInit();
-        }
-        if (!dfController.isDragFoundationComplete()){
-            dfController.doOpmode();
+         if (!autoController.isDragFoundationComplete()){
+            autoController.doOpmode();
         }
 
 
         // Update our location
         VuforiaCommon.VuforiaLocation location = mVuforia.getVuforiaNavLocation();
         if (location.valid){
-            telemetry.addData("Found location","x="+location.x+",y="+location.y+", heading="+location.heading);
+            mOpmode.telemetry.addData("Found location","x="+location.x+",y="+location.y+", heading="+location.heading);
         }
 
     }
 
-
+/**
     public static void main(String[] args) {
         SkystoneAutonomousOpMode mode = new SkystoneAutonomousOpMode();
-        mode.gamepad1 = new Gamepad();
-        mode.telemetry = new TelemetryImpl(mode);
+        mOpmode.mode.gamepad1 = new Gamepad();
+        mOpmode.mode.telemetry = new TelemetryImpl(mode);
         mode.init_loop();
     }
-
+**/
 
 }
