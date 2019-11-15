@@ -17,7 +17,7 @@ public class FourBarArm extends Arm {
     public static final String CLAW_SERVO_NAME = "claw";
     public static final String LIMIT_SENSOR_NAME = "armlimitsw";
 
-    public static final double CLAW_CLOSED_POSITION = 0.3d;
+    public static final double CLAW_CLOSED_POSITION = 0.0d;
     public static final double CLAW_OPEN_POSITION = 1.0d;
 
 

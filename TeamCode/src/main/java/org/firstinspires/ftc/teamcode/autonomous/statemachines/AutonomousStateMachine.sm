@@ -23,7 +23,7 @@
             setLogMessage("DriveToStones");
             openHook();
             // start drive forward
-            linearDrive(30d);
+            linearDrive(33d);
         }
     {
         evDriveComplete DriveToStoneSuccess {}
@@ -37,10 +37,9 @@
     DriveToStoneSuccess
         Entry{
             setLogMessage("DriveToStoneSuccess");
-            // close the hook and wait for it stop
+            // close the hook and wait for it to stop so that we grab the block
             closeHook();
-            // While we are at it retract the arm.
-            retractArm();
+
             startHookTimer();
         }
     {
@@ -52,19 +51,19 @@
     BackupToBeginDrag
         Entry{
             setLogMessage("BackupToBeginDrag");
-            linearDrive(-6);
+            linearDrive(-18d);
          }
     {
-        evDriveComplete [ctxt.isBlueTeam() == true] BlueTeamRotateTowardBridge { }
-        evDriveComplete [ctxt.isBlueTeam() == false] RedTeamRotateTowardBridge { }
+        evDriveComplete [ctxt.isBlueAlliance() == true] BlueAllianceRotateTowardBridge { }
+        evDriveComplete [ctxt.isBlueAlliance() == false] RedAllianceRotateTowardBridge { }
     }
 
     /*
     *
     */
-    BlueTeamRotateTowardBridge
+    BlueAllianceRotateTowardBridge
         Entry{
-            setLogMessage("BlueTeamRotateTowardBridge");
+            setLogMessage("BlueAllianceRotateTowardBridge");
             rotate(-90);
         }
     {
@@ -73,9 +72,9 @@
     /*
     *
     */
-    RedTeamRotateTowardBridge
+    RedAllianceRotateTowardBridge
         Entry{
-             setLogMessage("RedTeamRotateTowardBridge");
+             setLogMessage("RedAllianceRotateTowardBridge");
             rotate(+90);
          }
     {
@@ -87,34 +86,33 @@
     DragStone
         Entry {
             setLogMessage("DragStone");
-            strafeDrive(72);
+            linearDrive(72d);
         }
     {
-        evDriveComplete nil {
-            openHook();
-            startHookTimer();
-        }
-        evHookTimeout BackupToRelease {}
+        evDriveComplete ReleaseStone {}
     }
 
     /*
-    * Backup to release the arm.
+    *
     */
-    BackupToRelease
+    ReleaseStone
         Entry {
-            setLogMessage("BackupToRelease");
-            linearDrive(-12);
+            setLogMessage("ReleaseStone");
+            openHook();
+            activateGrabber(false,3000);
+            linearDrive(-37d);
         }
     {
-        evDriveComplete Success { }
-    }
 
+        evDriveComplete Complete { }
+    }
     /*
     * Final success state
     */
-    Success
+    Complete
         Entry{
-            setLogMessage("Success");
+            setLogMessage("Complete");
+            stopGrabber();
         }
     {
 

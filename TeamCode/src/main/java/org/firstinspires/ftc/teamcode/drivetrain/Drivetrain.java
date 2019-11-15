@@ -26,16 +26,16 @@ public abstract class Drivetrain {
 
     private OneShotTimer mTimedRotationTimer = null;
 
-    private int mRotationMicrosecondsPerDegree = 7000;
+    private int mRotationDegreesPerSecond = 90;
 
     private int mLinearMillisecondsPerInch = 10;
 
     private ArrayList<IDriveSessionStatusListener> mDriveSessionStatusListeners = new ArrayList<>();
     private ArrayList<IRotationStatusListener> mRotationStatusListeners = new ArrayList<>();
 
-    public Drivetrain(OpMode opMode,int rotationMicrosecondsPerDegree, int linearMillisecondsPerInch){
+    public Drivetrain(OpMode opMode,int rotationDegreesPerSecond, int linearMillisecondsPerInch){
         this.mOpMode = opMode;
-        mRotationMicrosecondsPerDegree = rotationMicrosecondsPerDegree;
+        mRotationDegreesPerSecond = rotationDegreesPerSecond;
         mLinearMillisecondsPerInch = linearMillisecondsPerInch;
         mTimedDriveTimer = new OneShotTimer(1000, new OneShotTimer.IOneShotTimerCallback() {
             @Override
@@ -191,7 +191,10 @@ public abstract class Drivetrain {
      * open loop rotate function.
      */
     public void doTimedRotation(int cwDegrees) {
-        int timeoutms = Math.abs(cwDegrees * mRotationMicrosecondsPerDegree / 1000);
+        double dd = (double)cwDegrees;
+        double rate = (double)mRotationDegreesPerSecond;
+        double dt = dd/rate * 1000d;
+        int timeoutms = (int)Math.round(Math.abs(dt));
         mTimedRotationTimer.setTimeout(timeoutms);
         mTimedRotationTimer.start();
     }

@@ -4,13 +4,14 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
-@Autonomous(name="BlueTeamAutonomousMode", group="Robot")
-//@Disabled
-public class BlueTeamAutonomousOpMode extends OpMode{
+import org.firstinspires.ftc.teamcode.autonomous.SkystoneAutonomousOpMode;
 
+@Autonomous(name="RedAllianceAutonomousMode", group="Robot")
+//@Disabled
+public class RedAllianceAutonomousOpMode extends OpMode {
     private SkystoneAutonomousOpMode mRealOpmode = null;
-    public BlueTeamAutonomousOpMode(){
-        mRealOpmode = new SkystoneAutonomousOpMode(this, true);
+    public RedAllianceAutonomousOpMode(){
+        mRealOpmode = new SkystoneAutonomousOpMode(this, false);
     }
 
     @Override
@@ -21,7 +22,6 @@ public class BlueTeamAutonomousOpMode extends OpMode{
     @Override
     public void loop() {
         mRealOpmode.loop();
-    }
-}
+    }}
 
 

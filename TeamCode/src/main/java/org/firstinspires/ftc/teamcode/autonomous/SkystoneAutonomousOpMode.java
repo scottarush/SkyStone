@@ -18,7 +18,7 @@ public class SkystoneAutonomousOpMode {
     private static final String[] TEAM_OPTIONS = new String[]{"BLUE","RED"};
     public static final int BLUE_TEAM = 0;
     public static final int RED_TEAM = 1;
-    private boolean mBlueTeam = true;
+    private boolean mBlueAlliance = true;
 
     /** control mode. **/
     private static final String[] CONTROL_MODE_OPTIONS = new String[]{"CLOSED-LOOP ENCODER","OPEN-LOOP TIME","CLOSE-LOOP VUFORIA"};
@@ -55,7 +55,7 @@ public class SkystoneAutonomousOpMode {
 
     public SkystoneAutonomousOpMode(OpMode opMode, boolean isBlueTeam){
         mOpmode = opMode;
-        mBlueTeam = isBlueTeam;
+        mBlueAlliance = isBlueTeam;
      }
 
     public void init() {
@@ -67,7 +67,7 @@ public class SkystoneAutonomousOpMode {
 **/
         String initErrs = "";
         try {
-            new MecanumGrabberBot(mOpmode, Robot.DriveTrainStyle.MECANUM_HEX_BOT,true);
+            robot = new MecanumGrabberBot(mOpmode, Robot.DriveTrainStyle.MECANUM_HEX_BOT,true);
             robot.init();
         }
         catch(Exception e){
@@ -84,7 +84,7 @@ public class SkystoneAutonomousOpMode {
             initErrs += e.getMessage();
         }
         // Initialize the controller
-        autoController = new AutonomousController(mOpmode,robot,mVuforia,mBlueTeam,mControlMode);
+        autoController = new AutonomousController(mOpmode,robot,mVuforia, mBlueAlliance,mControlMode);
 
         if (initErrs.length() == 0){
             mOpmode.telemetry.addData("Status:","Robot init complete");
@@ -143,7 +143,7 @@ public class SkystoneAutonomousOpMode {
 
 
     public void loop() {
-         if (!autoController.isDragFoundationComplete()){
+         if (!autoController.isAutonomousComplete()){
             autoController.doOpmode();
         }
 
