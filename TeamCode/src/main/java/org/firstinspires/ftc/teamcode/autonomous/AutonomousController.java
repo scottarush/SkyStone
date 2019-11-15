@@ -4,7 +4,6 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.firstinspires.ftc.teamcode.Hook;
 import org.firstinspires.ftc.teamcode.MecanumGrabberBot;
-import org.firstinspires.ftc.teamcode.arm.FourBarArm;
 import org.firstinspires.ftc.teamcode.drivetrain.IDriveSessionStatusListener;
 import org.firstinspires.ftc.teamcode.drivetrain.IRotationStatusListener;
 import org.firstinspires.ftc.teamcode.util.VuforiaCommon;
@@ -21,27 +20,40 @@ public class AutonomousController {
 
     private OpMode opMode = null;
 
-    private boolean blueTeam = false;
+    private boolean mBlueAlliance = false;
 
     private MecanumGrabberBot robot = null;
 
     private ArrayList<OneShotTimer> mStateTimers = new ArrayList<>();
 
-    private OneShotTimer mHookTimer = new OneShotTimer(1000,new HookTimeout());
+    private OneShotTimer mHookTimer = new OneShotTimer(1000, new OneShotTimer.IOneShotTimerCallback() {
+        @Override
+        public void timeoutComplete() {
+            mAsm.evHookTimeout();
+        }
+    });
+
+    private OneShotTimer mGrabberTimer = new OneShotTimer(5000, new OneShotTimer.IOneShotTimerCallback() {
+        @Override
+        public void timeoutComplete() {
+            robot.getGrabber().stop();
+        }
+    });
 
     private int mControlMode = 0;
 
     private VuforiaCommon mVuforia = null;
 
-    public AutonomousController(final OpMode opMode, MecanumGrabberBot robot, VuforiaCommon vuforia, boolean blueTeam, int controlMode){
+    public AutonomousController(final OpMode opMode, MecanumGrabberBot robot, VuforiaCommon vuforia, boolean blueAlliance, int controlMode){
         mAsm = new AutonomousStateMachineContext(this);
         this.opMode = opMode;
-        this.blueTeam = blueTeam;
+        this.mBlueAlliance = blueAlliance;
         this.robot = robot;
         mControlMode = controlMode;
         mVuforia = vuforia;
-        // Add all the timers to the state timers
+        // Add all the timers to the state timers so that they get service each loop
         mStateTimers.add(mHookTimer);
+        mStateTimers.add(mGrabberTimer);
 
         // Add listeners to drivetrain for callbacks in order to translate into state machine events
         robot.getDrivetrain().addDriveSessionStatusListener(new IDriveSessionStatusListener() {
@@ -85,8 +97,8 @@ public class AutonomousController {
          }
     }
 
-    public boolean isDragFoundationComplete(){
-        return (mAsm.getState() == AutonomousStateMachineContext.AutonomousStateMachine.Success);
+    public boolean isAutonomousComplete(){
+        return (mAsm.getState() == AutonomousStateMachineContext.AutonomousStateMachine.Complete);
     }
 
     /**
@@ -101,6 +113,25 @@ public class AutonomousController {
         robot.getDrivetrain().encoderDrive(speed,xdist,ydist,timeoutms);
     }
 
+    /**
+     * activateGrabber turns the grab on forward or reverse
+     */
+    public void activateGrabber(boolean intake,int timeoutms){
+        if (intake){
+            robot.getGrabber().moveGrabber(false,false, 1.0,1.0);
+        }
+        else{
+            // Spit it out
+            robot.getGrabber().moveGrabber(true,true, 0.0,0.0);
+
+        }
+        mGrabberTimer.setTimeout(timeoutms);
+        mGrabberTimer.start();
+    }
+
+    public void stopGrabber(){
+        robot.getGrabber().stop();
+    }
     /**
      *
      */
@@ -178,8 +209,8 @@ public class AutonomousController {
     /**
      * returns true for blue, false for red.
      */
-    public boolean isBlueTeam(){
-        return blueTeam;
+    public boolean isBlueAlliance(){
+        return mBlueAlliance;
     }
     /**
      * Called from state machine to stop the robot
@@ -190,13 +221,6 @@ public class AutonomousController {
 
     public void startHookTimer(){
        mHookTimer.start();
-    }
-
-    private class HookTimeout implements OneShotTimer.IOneShotTimerCallback {
-        @Override
-        public void timeoutComplete() {
-            mAsm.evHookTimeout();
-        }
     }
 
     private void checkTimers(){

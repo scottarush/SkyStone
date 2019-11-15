@@ -72,9 +72,9 @@ public class MecanumDrive extends Drivetrain{
     public static final int COUNTS_PER_INCH = (int) Math.round(ENCODER_COUNTS_PER_ROTATION / MECANUM_WHEEL_CIRCUMFERENCE);
 
     /**
-     * Approximate number of mseconds per degree to rotate.
+     * Approximate number of degrees per second to rotate
      */
-    public static final int ROTATION_MICROSECONDS_PER_DEGREE = (int)(Math.round(0.850d/90d * 1000000));
+    public static final int ROTATION_DEGREE_PER_SEC = 69;
 
     /**
      * Approximate number of milliseconds per inch forward and rearward at full power.
@@ -99,7 +99,7 @@ public class MecanumDrive extends Drivetrain{
      * @param demoFrameBot true if using demo, false for grabber bot
      **/
     public MecanumDrive(OpMode opMode,boolean demoFrameBot) {
-        super(opMode,ROTATION_MICROSECONDS_PER_DEGREE,LINEAR_MILLISECONDS_PER_INCH);
+        super(opMode,ROTATION_DEGREE_PER_SEC,LINEAR_MILLISECONDS_PER_INCH);
         mDemoFrameBot = demoFrameBot;
     }
 

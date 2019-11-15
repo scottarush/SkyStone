@@ -18,14 +18,12 @@ public class Hook {
 
     public static final String HOOK_SERVER_NAME = "hookservo";
 
-    private static final double CLOSED_POSITION = 0.0d;
-    private static final double OPEN_POSITION = 0.5d;
-    private static final double RETRACT_POSITION = 1.0d;
+    private static final double OPEN_POSITION = 0.0d;
+    private static final double CLOSED_POSITION = 1.0d;
 
     public static final int OPEN = 0;
     public static final int CLOSED = 1;
-    public static final int RETRACTED = 2;
-    private int mPosition = OPEN;
+    private int mPosition = CLOSED;
 
     public Hook(OpMode opMode){
         opMode = mOpMode;
@@ -66,10 +64,6 @@ public class Hook {
             case CLOSED:
                 mServo.setPosition(CLOSED_POSITION);
                 mPosition = CLOSED;
-                return true;
-            case RETRACTED:
-                mServo.setPosition(RETRACT_POSITION);
-                mPosition = RETRACTED;
                 return true;
         }
         return false;

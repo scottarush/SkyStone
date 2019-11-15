@@ -157,11 +157,11 @@ public class DualDriverOpMode extends OpMode{
         // Do the hook
         processHookPosition();
          // Do the claw
-        if (gamepad1.x){
+        if (armPad.x){
             // Open the clase
             robot.getArm().setClaw(true);
         }
-        else if (gamepad1.b){
+        else if (armPad.b){
             robot.getArm().setClaw(false);
         }
 
@@ -172,49 +172,14 @@ public class DualDriverOpMode extends OpMode{
      */
     private void processHookPosition(){
         boolean yButtonState = (gamepad2.y || gamepad1.y);
-        if (yButtonState){
-            // If the robot isn't retracted then check for a push and hold
-            if (robot.getHook().getPosition() == Hook.OPEN){
-                if (!mRetractButtonPressed) {
-                    // This is an initial press of the y button so start the timer
-                    mRetractButtonHoldTimer.reset();
-                    mRetractButtonPressed = true;
-                }
-                else if (mRetractButtonHoldTimer.time() > RETRACT_BUTTON_HOLD_TIME){
-                    robot.getHook().setPosition(Hook.RETRACTED);
-                }
-            }
-            else if (robot.getHook().getPosition() == Hook.CLOSED){
-                robot.getHook().setPosition(Hook.OPEN);
-            }
-        }
-        else{
-            // y button released.  Just clear the press flag
-            mRetractButtonPressed = false;
-        }
-        // Now do a button
+         // Now do a button
         boolean aButtonState = (gamepad1.a || gamepad2.a);
-        if (aButtonState){
-             if (robot.getHook().getPosition() == Hook.RETRACTED){
-                 if (!mAButtonPressed) {
-                     // This is an initial press of the a button so go to Open
-                     robot.getHook().setPosition(Hook.OPEN);
-                     // And set the flag to debounce
-                     mAButtonPressed = true;
-                 }
-            }
-            else if (robot.getHook().getPosition() == Hook.OPEN){
-                if (!mAButtonPressed) {
-                    robot.getHook().setPosition(Hook.CLOSED);
-                    mAButtonPressed = true;
-                }
-            }
+        if (aButtonState) {
+            robot.getHook().setPosition(Hook.CLOSED);
         }
-        else{
-            // Clear the flag for the next press
-            mAButtonPressed = false;
+        else if (yButtonState){
+            robot.getHook().setPosition(Hook.OPEN);
         }
-
     }
     /*
      * Code to run ONCE after the driver hits STOP

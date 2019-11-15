@@ -45,9 +45,6 @@ public class TestHook extends OpMode {
         else if (gamepad1.a){
             mHook.setPosition(Hook.CLOSED);
         }
-        else if (gamepad1.y){
-            mHook.setPosition(Hook.RETRACTED);
-        }
     }
 
 }
