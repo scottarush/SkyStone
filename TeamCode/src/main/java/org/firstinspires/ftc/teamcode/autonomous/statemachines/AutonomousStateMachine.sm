@@ -39,8 +39,8 @@
             checkForStones();
         }
     {
-        evSkystoneFound StrafeToStone { strafeDriveToSkystone(); }
-        evStoneFound StrafeToStone { strafeDriveToStone(); }
+ //       evSkystoneFound StrafeToStone { strafeDriveToSkystone(); }
+//        evStoneFound StrafeToStone { strafeDriveToStone(); }
         evNoStoneFound DriveForwardToIntake {}
     }
 
