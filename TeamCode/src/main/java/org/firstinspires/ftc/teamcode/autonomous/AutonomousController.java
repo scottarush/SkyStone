@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.autonomous;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
+import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.teamcode.Hook;
 import org.firstinspires.ftc.teamcode.MecanumGrabberBot;
 import org.firstinspires.ftc.teamcode.drivetrain.IDriveSessionStatusListener;
@@ -11,6 +12,7 @@ import org.firstinspires.ftc.teamcode.util.OneShotTimer;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 public class AutonomousController {
 
@@ -23,6 +25,10 @@ public class AutonomousController {
     private boolean mBlueAlliance = false;
 
     private MecanumGrabberBot robot = null;
+
+    private Recognition mSkystoneRecognition = null;
+
+    private Recognition mStoneRecognition = null;
 
     private ArrayList<OneShotTimer> mStateTimers = new ArrayList<>();
 
@@ -84,8 +90,8 @@ public class AutonomousController {
             mAsm.evStart();
         }
 
-        // Check all the timers to trigger any timeout events
-        checkTimers();
+        // Service all the timers in order to trigger any timeout callbacks/events
+        serviceTimers();
         // Call doService method on drivetrain to support drive and rotation controls
          robot.getDrivetrain().doService();
         // If a reset of the arm is active, then service it by calling it from here.
@@ -114,9 +120,9 @@ public class AutonomousController {
     }
 
     /**
-     * activateGrabber turns the grab on forward or reverse
+     * start grabber turns the grab on forward or reverse
      */
-    public void activateGrabber(boolean intake,int timeoutms){
+    public void startGrabber(boolean intake, int timeoutms){
         if (intake){
             robot.getGrabber().moveGrabber(false,false, 1.0,1.0);
         }
@@ -149,12 +155,75 @@ public class AutonomousController {
         }
 
     }
-
     /**
-     * strafe drive
+     * strafe drives to a skystone.   A skystone must be in view or immediately triggers the
+     * evDriveComplete event.
      */
+    public void strafeDriveToSkystone() {
+        if (mSkystoneRecognition == null){
+            mAsm.evDriveComplete();
+        }
+        strafeDrive(getLateralDistanceToStone());
+    }
+    /**
+     * strafe drives to a stone.   A stone must be in view or immediately triggers the
+     * evDriveComplete event.
+     */
+    public void strafeDriveToStone() {
+        if (mStoneRecognition == null){
+            mAsm.evDriveComplete();
+        }
+        strafeDrive(getLateralDistanceToStone());
+    }
+
+        /**
+         * strafe drive
+         */
     public void strafeDrive(double distance){
         robot.getDrivetrain().doVectorTimedDrive(distance,0d);
+    }
+
+    /**
+     * Reads the camera and looks for a skystone.
+     * Triggers evStoneFound if a stone is found.
+     *          evSkystoneFound if a Skystone is found.
+     *          evNoStone if no stone currently in view
+     */
+    public void checkForStones(){
+        List<Recognition> list = mVuforia.getRecognitions();
+        if (list == null){
+            mAsm.evNoStoneFound();
+            return;
+        }
+           for (Iterator<Recognition> riter = list.iterator(); riter.hasNext(); ) {
+                Recognition rec = riter.next();
+                if (rec.getLabel().equalsIgnoreCase(VuforiaCommon.RECOGNITION_OBJECT_LABEL_SKYSTONE)) {
+                    mSkystoneRecognition = rec;
+                    mAsm.evSkystoneFound();
+                    return;
+                } else if (rec.getLabel().equalsIgnoreCase(VuforiaCommon.RECOGNITION_OBJECT_LABEL_STONE)) {
+                    mStoneRecognition = rec;
+                    mAsm.evStoneFound();
+                    return;
+                }
+            }
+        mSkystoneRecognition = null;
+        mStoneRecognition = null;
+        mAsm.evNoStoneFound();
+    }
+
+    /**
+     * @return the lateral distance to move to align to a stone in front of the robt.  + is to robots left, - to right
+     * or 0 if no stone or skystone in view.
+      */
+    public double getLateralDistanceToStone(){
+        if (mSkystoneRecognition == null){
+            return 0d;
+        }
+        // Otherwise use the navigation mode to find the location
+        VuforiaCommon.VuforiaLocation location = mVuforia.getStoneLocation();
+        return location.x;
+
     }
     /**
      * Called from state machine to drive toward the foundation
@@ -223,7 +292,7 @@ public class AutonomousController {
        mHookTimer.start();
     }
 
-    private void checkTimers(){
+    private void serviceTimers(){
         for(Iterator<OneShotTimer> iter = mStateTimers.iterator(); iter.hasNext();){
             OneShotTimer timer = iter.next();
             timer.checkTimer();

@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 
 import org.firstinspires.ftc.teamcode.MecanumGrabberBot;
 import org.firstinspires.ftc.teamcode.Robot;
+import org.firstinspires.ftc.teamcode.util.GamepadMenu;
 import org.firstinspires.ftc.teamcode.util.VuforiaCommon;
 
 //@Autonomous(name="AutonomousMode", group="Robot")
@@ -13,6 +14,8 @@ public class SkystoneAutonomousOpMode {
 
  //   private MecanumGrabberBot robot = new MecanumGrabberBot(this, Robot.DriveTrainStyle.MECANUM_HEX_BOT,true);
     private MecanumGrabberBot robot = null;
+
+    private static final boolean RUN_VUFORIA_NAVIGATION = false;
 
     /** team options. **/
     private static final String[] TEAM_OPTIONS = new String[]{"BLUE","RED"};
@@ -69,16 +72,20 @@ public class SkystoneAutonomousOpMode {
         try {
             robot = new MecanumGrabberBot(mOpmode, Robot.DriveTrainStyle.MECANUM_HEX_BOT,true);
             robot.init();
+            robot.getArm().setClaw(false);
         }
         catch(Exception e){
             initErrs += e.getMessage();
         }
         // Initialize Vuforia
-        mVuforia = new VuforiaCommon(mOpmode.hardwareMap);
+        mVuforia = new VuforiaCommon(mOpmode);
         try{
-            mVuforia.initVuforiaNavigation();
-            // No exception so start Vuforia navigation
-            mVuforia.startVuforiaNavigation();
+            mVuforia.initVuforia();
+            // Init the vuforia navigation if enabled
+            if (RUN_VUFORIA_NAVIGATION) {
+                 // No exception so start Vuforia navigation
+                mVuforia.startVuforiaNavigation();
+            }
         }
         catch(Exception e){
             initErrs += e.getMessage();
