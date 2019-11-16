@@ -23,54 +23,24 @@
             setLogMessage("DriveToStones");
             openHook();
             // start drive forward
-            linearDrive(30d);
+            linearDrive(33d);
         }
     {
-        evDriveComplete LocateSkystone {}
+        evDriveComplete DriveToStoneSuccess {}
  //       evDriveFail DriveToStoneFailure {}
     }
 
-    /*
-    * Locates a skystone by side strafe
-    */
-    LocateSkystone
-        Entry{
-            setLogMessage("LocateSkystone");
-            checkForStones();
-        }
-    {
-        evSkystoneFound StrafeToStone { strafeDriveToSkystone(); }
-        evStoneFound StrafeToStone { strafeDriveToStone(); }
-        evNoStoneFound DriveForwardToIntake {}
-    }
 
-    StrafeToStone
-        Entry{
-            setLogMessage("SrafeToStone");
-        }
-    {
-        evDriveComplete DriveForwardToIntake {}
-    }
-
-    DriveForwardToIntake
-        Entry{
-            setLogMessage("DriveForwardToIntake");
-            linearDrive(6d);
-        }
-    {
-        evDriveComplete IntakeStone {}
-    }
     /*
     * Stop after drive forward and check to see if we are at foundation.
     */
-    IntakeStone
+    DriveToStoneSuccess
         Entry{
-            setLogMessage("IntakeStone");
+            setLogMessage("DriveToStoneSuccess");
             // close the hook and wait for it to stop so that we grab the block
             closeHook();
+
             startHookTimer();
-            // Also start the grabber to suck the block in for a short time
-            startGrabber(true,1000);
         }
     {
         evHookTimeout BackupToBeginDrag { }
@@ -104,7 +74,7 @@
     */
     RedAllianceRotateTowardBridge
         Entry{
-            setLogMessage("RedAllianceRotateTowardBridge");
+             setLogMessage("RedAllianceRotateTowardBridge");
             rotate(+90);
          }
     {

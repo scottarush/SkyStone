@@ -151,6 +151,7 @@ public class VuforiaMotionMethods {
                    opmode.telemetry.addData(String.format("label (%d)", i), recognition.getLabel());
                    opmode.telemetry.update();
                    if (recognition.getLabel().compareToIgnoreCase("Stone") == 0) {
+                       recognition.
                        retcode = FOUND_STONE;
                        // Check if we have to keep searching for a Skystone.
                        if (onlySkystone == false){

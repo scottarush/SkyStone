@@ -29,6 +29,7 @@
 
 package org.firstinspires.ftc.teamcode.util;
 
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcontroller.external.samples.ConceptVuforiaNavigationWebcam;
@@ -41,6 +42,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackable;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackableDefaultListener;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackables;
+import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
 
 import java.util.ArrayList;
@@ -117,7 +119,16 @@ public class VuforiaCommon {
     final float CAMERA_VERTICAL_DISPLACEMENT = 8.0f * mmPerInch;   // eg: Camera is 8 Inches above ground
     final float CAMERA_LEFT_DISPLACEMENT     = 0;     // eg: Camera is ON the robot's center line
 
-      /**
+    /**
+     * Label for a recognized Stone from the getRecognitionObjects function.
+     */
+    public static final String RECOGNITION_OBJECT_LABEL_STONE = "Stone";
+    /**
+     * Label for a recognized Skystone from the getRecognitionObjects function.
+     */
+    public static final String RECOGNITION_OBJECT_LABEL_SKYSTONE = "Skystone";
+
+    /**
      * {@link #vuforia} is the variable we will use to store our instance of the Vuforia
      * localization engine.
      */
@@ -175,10 +186,13 @@ public class VuforiaCommon {
     public VuforiaTrackable stoneTarget = null;
     // TODO pull out the local targets from initVuforia and put them here.
 
+    private OpMode mOpmode;
+
     /* Constructor
     * @param hardwareMap needed so this class can find the webcam*/
-    public VuforiaCommon(HardwareMap hardwareMap) {
-        hwMap = hardwareMap;
+    public VuforiaCommon(OpMode opMode) {
+        mOpmode = opMode;
+        hwMap = opMode.hardwareMap;
     }
 
 
@@ -186,7 +200,7 @@ public class VuforiaCommon {
      * Initializes the Vuforia engine. Returns immediately if already inited.
      * @throws Exception if camera can't be found.
      **/
-    private void initVuforia() throws Exception {
+    public void initVuforia() throws Exception {
         if (vuforiaInitialized)
             return;
 
@@ -213,19 +227,20 @@ public class VuforiaCommon {
         parameters.cameraName = webcamName;
         this.vuforia = ClassFactory.getInstance().createVuforia(parameters);
 
+        initVuforiaNavigation();
+        initTensorFlowObjectDetection();
+
         vuforiaInitialized = true;
         // If we got this far without error then clear the error flag
         initializationError = false;
     }
 
+
     /**
      *
      * @throws Exception if webcam can't be found
      */
-    public void initVuforiaNavigation() throws Exception{
-        if (vuforiaTargetsInitialized)
-            return;
-        initVuforia();
+    private void initVuforiaNavigation() throws Exception{
         // Load the data sets for the trackable objects. These particular data
         // sets are stored in the 'assets' part of our application.
         targetsSkyStone = this.vuforia.loadTrackablesFromAsset("Skystone");
@@ -369,7 +384,7 @@ public class VuforiaCommon {
         targetsSkyStone.deactivate();
     }
     /**
-     * Returns location info for VuforiaNavigation.
+     * Returns robot location info for VuforiaNavigation.
      */
     public VuforiaLocation getVuforiaNavLocation(){
         if (initializationError){
@@ -414,13 +429,56 @@ public class VuforiaCommon {
         }
     }
     /**
+     * Returns location of a stone, assuming one has previously been found by the robot and it is
+     * sitting in front of it.
+     */
+    public VuforiaLocation getStoneLocation(){
+        if (initializationError){
+            return new VuforiaLocation();
+        }
+        // check all the trackable targets to see which one (if any) is visible.
+        boolean targetVisible = false;
+        for (VuforiaTrackable trackable : allTrackables) {
+            if (((VuforiaTrackableDefaultListener)trackable.getListener()).isVisible()) {
+                targetVisible = true;
+
+                // getUpdatedRobotLocation() will return null if no new information is available since
+                // the last time that call was made, or if the trackable is not currently visible.
+                OpenGLMatrix robotLocationTransform = ((VuforiaTrackableDefaultListener)trackable.getListener()).getUpdatedRobotLocation();
+                if (robotLocationTransform != null) {
+                    lastLocation = robotLocationTransform;
+                }
+                break;
+            }
+        }
+
+        // Provide feedback as to where the robot is located (if we know).
+        if (targetVisible) {
+            // express position (translation) of robot in inches.
+            VectorF translation = lastLocation.getTranslation();
+            mOpmode.telemetry.addData("Pos (in)", "{X, Y, Z} = %.1f, %.1f, %.1f",
+            translation.get(0) / mmPerInch, translation.get(1) / mmPerInch, translation.get(2) / mmPerInch);
+
+            // express the rotation of the robot in degrees.
+            Orientation rotation = Orientation.getOrientation(lastLocation, EXTRINSIC, XYZ, DEGREES);
+            mOpmode.telemetry.addData("Rot (deg)", "{Roll, Pitch, Heading} = %.0f, %.0f, %.0f", rotation.firstAngle, rotation.secondAngle, rotation.thirdAngle);
+            mOpmode.telemetry.update();
+            // Return the valid location data
+            VuforiaLocation loc = new VuforiaLocation(translation.get(0),
+                    translation.get(1),translation.get(2),rotation.thirdAngle);
+            return loc;
+        }
+        else {
+            // return a dummy location.
+            VuforiaLocation loc = new VuforiaLocation();
+            return loc;
+        }
+    }
+    /**
      * Initialize the TensorFlow Object Detection engine. returns immediately if already inited
      */
-    public void initTensorFlowObjectDetection() throws Exception {
-        if (tensorFlowInitialized)
-            return;
-        initVuforia();
-        int tfodMonitorViewId = hwMap.appContext.getResources().getIdentifier(
+    private void initTensorFlowObjectDetection() throws Exception {
+         int tfodMonitorViewId = hwMap.appContext.getResources().getIdentifier(
                 "tfodMonitorViewId", "id", hwMap.appContext.getPackageName());
         TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId);
         tfodParameters.minimumConfidence = 0.8;
@@ -428,6 +486,15 @@ public class VuforiaCommon {
         tensorFlowObjDetector.loadModelFromAsset(TFOD_MODEL_ASSET, LABEL_FIRST_ELEMENT, LABEL_SECOND_ELEMENT);
 
         tensorFlowInitialized = true;
+    }
+
+    /**
+     * Called to check for a recognition.  Object labels are defined in RECOGNITION_OBJECT_XXX string constansts
+     * @return list of Recognition objects detected or null if no objects detected or error in initialization
+     */
+    public List<Recognition> getRecognitions(){
+         // Return latest recognitions
+        return tensorFlowObjDetector.getRecognitions();
     }
 
     /** try method to get the webcam. **/
