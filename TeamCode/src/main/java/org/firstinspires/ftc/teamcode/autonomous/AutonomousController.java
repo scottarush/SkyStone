@@ -199,11 +199,11 @@ public class AutonomousController {
                 Recognition rec = riter.next();
                 if (rec.getLabel().equalsIgnoreCase(VuforiaCommon.RECOGNITION_OBJECT_LABEL_SKYSTONE)) {
                     mSkystoneRecognition = rec;
-                    mAsm.evSkystoneFound();
+ //                   mAsm.evSkystoneFound();
                     return;
                 } else if (rec.getLabel().equalsIgnoreCase(VuforiaCommon.RECOGNITION_OBJECT_LABEL_STONE)) {
                     mStoneRecognition = rec;
-                    mAsm.evStoneFound();
+ //                   mAsm.evStoneFound();
                     return;
                 }
             }

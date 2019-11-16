@@ -66,26 +66,10 @@ public class AutonomousStateMachineContext
         return;
     }
 
-    public void evSkystoneFound()
-    {
-        _transition = "evSkystoneFound";
-        getState().evSkystoneFound(this);
-        _transition = "";
-        return;
-    }
-
     public void evStart()
     {
         _transition = "evStart";
         getState().evStart(this);
-        _transition = "";
-        return;
-    }
-
-    public void evStoneFound()
-    {
-        _transition = "evStoneFound";
-        getState().evStoneFound(this);
         _transition = "";
         return;
     }
@@ -174,17 +158,7 @@ public class AutonomousStateMachineContext
             Default(context);
         }
 
-        protected void evSkystoneFound(AutonomousStateMachineContext context)
-        {
-            Default(context);
-        }
-
         protected void evStart(AutonomousStateMachineContext context)
-        {
-            Default(context);
-        }
-
-        protected void evStoneFound(AutonomousStateMachineContext context)
         {
             Default(context);
         }
@@ -379,46 +353,6 @@ public class AutonomousStateMachineContext
             (context.getState()).exit(context);
             context.setState(AutonomousStateMachine.DriveForwardToIntake);
             (context.getState()).entry(context);
-            return;
-        }
-
-        @Override
-        protected void evSkystoneFound(AutonomousStateMachineContext context)
-        {
-            AutonomousController ctxt = context.getOwner();
-
-            (context.getState()).exit(context);
-            context.clearState();
-            try
-            {
-                ctxt.strafeDriveToSkystone();
-            }
-            finally
-            {
-                context.setState(AutonomousStateMachine.StrafeToStone);
-                (context.getState()).entry(context);
-            }
-
-            return;
-        }
-
-        @Override
-        protected void evStoneFound(AutonomousStateMachineContext context)
-        {
-            AutonomousController ctxt = context.getOwner();
-
-            (context.getState()).exit(context);
-            context.clearState();
-            try
-            {
-                ctxt.strafeDriveToStone();
-            }
-            finally
-            {
-                context.setState(AutonomousStateMachine.StrafeToStone);
-                (context.getState()).entry(context);
-            }
-
             return;
         }
 
