@@ -20,7 +20,6 @@
     */
     DriveToStones
         Entry {
-            setLogMessage("DriveToStones");
             openHook();
             // start drive forward
             linearDrive(30d);
@@ -35,26 +34,23 @@
     */
     LocateSkystone
         Entry{
-            setLogMessage("LocateSkystone");
             checkForStones();
         }
     {
- //       evSkystoneFound StrafeToStone { strafeDriveToSkystone(); }
-//        evStoneFound StrafeToStone { strafeDriveToStone(); }
+        evSkystoneFound StrafeToStone { strafeDriveToSkystone(); }
+        evStoneFound StrafeToStone { strafeDriveToStone(); }
         evNoStoneFound DriveForwardToIntake {}
     }
 
     StrafeToStone
         Entry{
-            setLogMessage("SrafeToStone");
-        }
+         }
     {
         evDriveComplete DriveForwardToIntake {}
     }
 
     DriveForwardToIntake
         Entry{
-            setLogMessage("DriveForwardToIntake");
             linearDrive(6d);
         }
     {
@@ -65,7 +61,6 @@
     */
     IntakeStone
         Entry{
-            setLogMessage("IntakeStone");
             // close the hook and wait for it to stop so that we grab the block
             closeHook();
             startHookTimer();
@@ -80,7 +75,6 @@
     */
     BackupToBeginDrag
         Entry{
-            setLogMessage("BackupToBeginDrag");
             linearDrive(-18d);
          }
     {
@@ -93,7 +87,6 @@
     */
     BlueAllianceRotateTowardBridge
         Entry{
-            setLogMessage("BlueAllianceRotateTowardBridge");
             rotate(-90);
         }
     {
@@ -104,7 +97,6 @@
     */
     RedAllianceRotateTowardBridge
         Entry{
-            setLogMessage("RedAllianceRotateTowardBridge");
             rotate(+90);
          }
     {
@@ -115,7 +107,6 @@
     */
     DragStone
         Entry {
-            setLogMessage("DragStone");
             linearDrive(72d);
         }
     {
@@ -127,7 +118,6 @@
     */
     ReleaseStone
         Entry {
-            setLogMessage("ReleaseStone");
             openHook();
             startGrabber(false,3000);
             linearDrive(-37d);
@@ -141,7 +131,6 @@
     */
     Complete
         Entry{
-            setLogMessage("Complete");
             stopGrabber();
         }
     {

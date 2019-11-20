@@ -29,10 +29,16 @@
 
 package org.firstinspires.ftc.teamcode.drivetrain;
 
+import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
 /**
  * This is NOT an opmode.
@@ -93,6 +99,19 @@ public class MecanumDrive extends Drivetrain{
      */
     public static final double ROTATION_POWER = 1.0d;
 
+    /**
+     * last angle for the imu measurement
+     */
+    private Orientation mLastIMUOrientation = new Orientation();
+    private double mIMUGlobalAngle = 0d;
+    private double mIMUCorrection = 0d;
+    private int mIMURotationTargetAngle = 0;
+    private boolean mIMURotationActive = false;
+    /**
+     * IMU inside REV hub
+     */
+    private BNO055IMU mIMU = null;
+
     private boolean mDemoFrameBot = false;
     /**
      * @param
@@ -148,6 +167,33 @@ public class MecanumDrive extends Drivetrain{
         catch(Exception e){
             motorInitError += "rr,";
         }
+        try{
+            // Initialize the IMU
+            BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
+
+            parameters.mode                = BNO055IMU.SensorMode.IMU;
+            parameters.angleUnit           = BNO055IMU.AngleUnit.DEGREES;
+            parameters.accelUnit           = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
+            parameters.loggingEnabled      = false;
+
+            // Retrieve and initialize the IMU. We expect the IMU to be attached to an I2C port
+            // on a Core Device Interface Module, configured to be a sensor of type "AdaFruit IMU",
+            // and named "imu".
+            mIMU = ahwMap.get(BNO055IMU.class, "imu");
+            mIMU.initialize(parameters);
+            // make sure the imu gyro is calibrated before continuing.
+            while (!mIMU.isGyroCalibrated())
+            {
+                Thread.sleep(50);
+            }
+
+            mOpMode.telemetry.addData("imu calib status", mIMU.getCalibrationStatus().toString());
+            mOpMode.telemetry.update();
+        }
+        catch(Exception e){
+            motorInitError += ", IMU";
+        }
+
 
 
         // Set all motors to zero power
@@ -237,6 +283,7 @@ public class MecanumDrive extends Drivetrain{
     public void stop() {
 
         setPower(0.0, 0.0, 0.0, 0.0);
+        mIMURotationActive = false;
         // Return motors to manual control
         setMotorModes(DcMotor.RunMode.RUN_USING_ENCODER);
 
@@ -411,4 +458,122 @@ public class MecanumDrive extends Drivetrain{
         double rrPower = -rotpower;
         setPower(lfPower,rfPower,lrPower,rrPower);
     }
+
+    /**
+     * See if we are moving in a straight line and if not return a power correction value.
+     * @return Power adjustment, + is adjust left - is adjust right.
+     */
+    private double checkDirection()
+    {
+        // The gain value determines how sensitive the correction is to direction changes.
+        // You will have to experiment with your robot to get small smooth direction changes
+        // to stay on a straight line.
+        double correction, angle, gain = .10;
+
+        angle = getAngle();
+
+        if (angle == 0)
+            correction = 0;             // no adjustment.
+        else
+            correction = -angle;        // reverse sign of angle for correction.
+
+        correction = correction * gain;
+
+        return correction;
+    }
+    /**
+     * Starts IMU rotation.
+     * Rotate left or right the number of degrees. Does not support turning more than 180 degrees.
+     * @param ccwDegrees Degrees to turn, - is right + is left
+     */
+    public void doIMURotation(int ccwDegrees,double power) {
+
+        // restart imu movement tracking.
+        resetAngle();
+        mIMURotationTargetAngle = ccwDegrees;
+        // TODO Fix this hack
+        mIMURotationTargetAngle = (int)Math.round((double)mIMURotationTargetAngle * 0.9d);
+        mIMURotationActive = true;
+
+        double rotpower = power;
+        if (mIMURotationTargetAngle > 0){
+            rotpower = -rotpower;
+        }
+        double lfPower = rotpower;
+        double rfPower = -rotpower;
+        double lrPower = rotpower;
+        double rrPower = -rotpower;
+        setPower(lfPower,rfPower,lrPower,rrPower);
+
+    }
+    /**
+     * Called to service an IMURotation if one is in progress
+     * @return state of rotation still in progress
+     */
+    public boolean serviceIMURotation()
+    {
+        if (!mIMURotationActive) {
+            return false;
+        }
+        mOpMode.telemetry.addData("IMU heading", mLastIMUOrientation.firstAngle);
+        mOpMode.telemetry.update();
+
+        // On a right turn we have to get off zero first so return
+        // to keep turning.
+        if (getAngle() == 0) {
+            return true;
+        }
+        // if on a left turn, then we are waiting for the angle to go
+        // positive up to the rotation target angle
+        if (getAngle() < mIMURotationTargetAngle) {
+            return true;
+        }
+        // if on a right turn, then we are waiting for the angle to become
+        // more negative than the target angle
+        if (getAngle() < mIMURotationTargetAngle) {
+            return true;
+        }
+        // Otherwise we are done so stop the rotation and reset the angle
+        stop();
+        resetAngle();
+        mIMURotationActive = false;
+        return false;
+    }
+    /**
+     * Resets the cumulative angle tracking to zero.
+     */
+    private void resetAngle()
+    {
+        mLastIMUOrientation = mIMU.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+
+        mIMUGlobalAngle = 0;
+    }
+
+    /**
+     * Get current cumulative angle rotation from last reset.
+     * @return Angle in degrees. + = left, - = right.
+     */
+    private double getAngle()
+    {
+        // We experimentally determined the Z axis is the axis we want to use for heading angle.
+        // We have to process the angle because the imu works in euler angles so the Z axis is
+        // returned as 0 to +180 or 0 to -180 rolling back to -179 or +179 when rotation passes
+        // 180 degrees. We detect this transition and track the total cumulative angle of rotation.
+
+        Orientation angles = mIMU.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+
+        double deltaAngle = angles.firstAngle - mLastIMUOrientation.firstAngle;
+
+        if (deltaAngle < -180)
+            deltaAngle += 360;
+        else if (deltaAngle > 180)
+            deltaAngle -= 360;
+
+        mIMUGlobalAngle += deltaAngle;
+
+        mLastIMUOrientation = angles;
+
+        return mIMUGlobalAngle;
+    }
+
 }
