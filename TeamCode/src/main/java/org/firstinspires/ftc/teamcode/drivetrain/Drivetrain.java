@@ -1,9 +1,14 @@
 package org.firstinspires.ftc.teamcode.drivetrain;
 
+import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.teamcode.util.OneShotTimer;
 
 import java.util.ArrayList;
@@ -15,7 +20,6 @@ public abstract class Drivetrain {
 
     public abstract void init(HardwareMap ahwMap) throws Exception;
     public abstract void setPower(double lf, double rf, double lr, double rr);
-    public abstract void stop();
     public abstract void setMotorModes(DcMotor.RunMode mode);
 
      /** OpMode in order to access telemetry from subclasses. **/
@@ -24,18 +28,32 @@ public abstract class Drivetrain {
 
     private OneShotTimer mTimedDriveTimer = null;
 
-    private OneShotTimer mTimedRotationTimer = null;
+    private long mLastCheckRotationTime = 0l;
+    /**
+     * proportional constant for rotation angle.
+     */
+    public static final double ROTATION_KP = 0.3d;
 
-    private int mRotationDegreesPerSecond = 90;
+    /**
+     * last angle for the imu measurement
+     */
+    protected Orientation mLastIMUOrientation = new Orientation();
+    protected double mIMUGlobalAngle = 0d;
+    protected double mIMUCorrection = 0d;
+    protected int mIMURotationTargetAngle = 0;
+    protected boolean mIMURotationActive = false;
+    /**
+     * IMU inside REV hub
+     */
+    private BNO055IMU mIMU = null;
 
     private int mLinearMillisecondsPerInch = 10;
 
     private ArrayList<IDriveSessionStatusListener> mDriveSessionStatusListeners = new ArrayList<>();
     private ArrayList<IRotationStatusListener> mRotationStatusListeners = new ArrayList<>();
 
-    public Drivetrain(OpMode opMode,int rotationDegreesPerSecond, int linearMillisecondsPerInch){
+    public Drivetrain(OpMode opMode,int linearMillisecondsPerInch){
         this.mOpMode = opMode;
-        mRotationDegreesPerSecond = rotationDegreesPerSecond;
         mLinearMillisecondsPerInch = linearMillisecondsPerInch;
         mTimedDriveTimer = new OneShotTimer(1000, new OneShotTimer.IOneShotTimerCallback() {
             @Override
@@ -48,17 +66,7 @@ public abstract class Drivetrain {
             }
         });
 
-        mTimedRotationTimer = new OneShotTimer(1000, new OneShotTimer.IOneShotTimerCallback() {
-            @Override
-            public void timeoutComplete() {
-                stop();
-                for (Iterator<IRotationStatusListener> iter = mRotationStatusListeners.iterator(); iter.hasNext(); ) {
-                    IRotationStatusListener listener = iter.next();
-                    listener.rotationComplete();
-                }
-            }
-        });
-        mDriveByEncoderFailTimer = new OneShotTimer(1000, new OneShotTimer.IOneShotTimerCallback() {
+         mDriveByEncoderFailTimer = new OneShotTimer(1000, new OneShotTimer.IOneShotTimerCallback() {
             @Override
             public void timeoutComplete() {
                 stop();
@@ -71,13 +79,37 @@ public abstract class Drivetrain {
     }
 
     /**
+     *
+     * @return
+     */
+    public void init() throws Exception {
+        try{
+            // Initialize the IMU
+            BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
+
+            parameters.mode                = BNO055IMU.SensorMode.IMU;
+            parameters.angleUnit           = BNO055IMU.AngleUnit.DEGREES;
+            parameters.accelUnit           = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
+            parameters.loggingEnabled      = false;
+
+            // Retrieve and initialize the IMU. We expect the IMU to be attached to an I2C port
+            // on a Core Device Interface Module, configured to be a sensor of type "AdaFruit IMU",
+            // and named "imu".
+            mIMU = hwMap.get(BNO055IMU.class, "imu");
+            mIMU.initialize(parameters);
+
+        }
+        catch(Exception e){
+            throw new Exception("error initializing IMYU");
+        }
+    }
+    /**
      * Must be called from the OpMode service loop to service timers for drive and rotation handling.
      */
     public void doService(){
         mDriveByEncoderFailTimer.checkTimer();
         serviceEncoderDrive();
-        mTimedRotationTimer.checkTimer();
-        mTimedDriveTimer.checkTimer();
+         mTimedDriveTimer.checkTimer();
     }
 
     /**
@@ -124,6 +156,126 @@ public abstract class Drivetrain {
             mTimedDriveTimer.start();
         }
         return timeoutms;
+    }
+    /**
+     * Starts IMU rotation.
+     * Rotate left or right the number of degrees. Does not support turning more than 180 degrees.
+     * base class function does everything except set motor power.
+     * @param ccwDegrees Degrees to turn, - is right + is left
+     */
+    public void startRotation(int ccwDegrees) {
+        // restart imu movement tracking.
+        resetAngle();
+        mIMURotationTargetAngle = ccwDegrees;
+        mIMURotationActive = true;
+        checkRotation();
+    }
+    public boolean isRotationActive(){
+        return mIMURotationActive;
+    }
+    /**
+     * Resets the cumulative angle tracking in the IMU to zero
+     */
+    protected void resetAngle()
+    {
+        mLastIMUOrientation = mIMU.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+
+        mIMUGlobalAngle = 0;
+    }
+    /**
+     * Get current cumulative angle rotation from last reset.
+     * @return Angle in degrees. + = left, - = right.
+     */
+    protected double getAngle()
+    {
+        // We experimentally determined the Z axis is the axis we want to use for heading angle.
+        // We have to process the angle because the imu works in euler angles so the Z axis is
+        // returned as 0 to +180 or 0 to -180 rolling back to -179 or +179 when rotation passes
+        // 180 degrees. We detect this transition and track the total cumulative angle of rotation.
+
+        Orientation angles = mIMU.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+
+        double deltaAngle = angles.firstAngle - mLastIMUOrientation.firstAngle;
+
+        if (deltaAngle < -180)
+            deltaAngle += 360;
+        else if (deltaAngle > 180)
+            deltaAngle -= 360;
+
+        mIMUGlobalAngle += deltaAngle;
+
+        mLastIMUOrientation = angles;
+
+        return mIMUGlobalAngle;
+    }
+    /**
+     * Called to check a rotation and compute the correction value use to set the
+     * motor power in subclasses.
+     * @return correction value from +/- 1.0 depending upon the error for +/- 180.
+     */
+    public double checkRotation() {
+        if (!mIMURotationActive) {
+            return 1.0;
+        }
+        mOpMode.telemetry.addData("IMU heading", mLastIMUOrientation.firstAngle);
+        mOpMode.telemetry.update();
+
+        boolean continueTurning = false;
+
+        double angle = getAngle();
+        // On a right turn we have to get off zero first so return
+        // to keep turning.
+        if (angle == 0d) {
+            continueTurning = true;
+        }
+        // if on a left turn, then we are waiting for the angle to go
+        // positive up to the rotation target angle
+        if (angle < mIMURotationTargetAngle) {
+            continueTurning =true;
+        }
+        // if on a right turn, then we are waiting for the angle to become
+        // more negative than the target angle
+        if (angle < mIMURotationTargetAngle) {
+            continueTurning =true;
+        }
+        if (!continueTurning){
+            // Otherwise we are done so stop the rotation and reset the angle
+            stop();
+            resetAngle();
+            mIMURotationActive = false;
+            return 0.0d;
+        }
+        // Otherwise, update the power to the motors
+        double correction = mIMURotationTargetAngle - angle;
+        // Normalize correction to +/- 1.0 is +/- 180 degrees;
+        correction = correction / 180d;
+
+        // And multiple by the gain
+        correction = correction * ROTATION_KP;
+        return correction;
+     }
+
+    /**
+     * See if we are moving in a straight line and if not return a power correction value.
+     * @return Power adjustment, + is adjust left - is adjust right.
+     */
+    private double checkLinearDirection()
+    {
+        // The gain value determines how sensitive the correction is to direction changes.
+        // You will have to experiment with your robot to get small smooth direction changes
+        // to stay on a straight line.
+        double correction, angle, gain = .10;
+
+        angle = getAngle();
+
+        if (angle == 0)
+            correction = 0;             // no adjustment.
+        else
+            correction = -angle;        // reverse sign of angle for correction.
+
+        correction = correction * gain;
+
+        return correction;
     }
 
     /**
@@ -172,6 +324,13 @@ public abstract class Drivetrain {
     }
 
     /**
+     * base class function must be called by subclasses
+     */
+    public void stop(){
+        mIMURotationActive = false;
+    }
+
+    /**
      * continues a drive by encoder session.
      */
     private void serviceEncoderDrive() {
@@ -187,18 +346,6 @@ public abstract class Drivetrain {
         }
     }
 
-    /**
-     * open loop rotate function.
-     */
-    public void doTimedRotation(int cwDegrees) {
-        double dd = (double)cwDegrees;
-        double rate = (double)mRotationDegreesPerSecond;
-        double dt = dd/rate * 1000d;
-        int timeoutms = (int)Math.round(Math.abs(dt));
-        mTimedRotationTimer.setTimeout(timeoutms);
-        mTimedRotationTimer.start();
-    }
-
 
     /**
      * adds listeners for rotation complete event.
@@ -209,13 +356,6 @@ public abstract class Drivetrain {
         mRotationStatusListeners.add(listener);
     }
 
-    /**
-     * called to cancel a rotation by time
-     */
-    public void cancelRotationByTime(){
-        mTimedDriveTimer.cancel();
-        stop();
-    }
 
     /**
          * @return the amount of time that an encoder session has been active or 0 if no session active.

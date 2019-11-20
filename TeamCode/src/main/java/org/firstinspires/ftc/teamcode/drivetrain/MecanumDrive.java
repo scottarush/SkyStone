@@ -78,11 +78,6 @@ public class MecanumDrive extends Drivetrain{
     public static final int COUNTS_PER_INCH = (int) Math.round(ENCODER_COUNTS_PER_ROTATION / MECANUM_WHEEL_CIRCUMFERENCE);
 
     /**
-     * Approximate number of degrees per second to rotate
-     */
-    public static final int ROTATION_DEGREE_PER_SEC = 69;
-
-    /**
      * Approximate number of milliseconds per inch forward and rearward at full power.
      */
     public static final int LINEAR_MILLISECONDS_PER_INCH = 50;
@@ -94,23 +89,7 @@ public class MecanumDrive extends Drivetrain{
      * Approximate number of milliseconds per inch in Y direction for vector drive
      */
     public static final int VECTOR_YMILLISECONDS_PER_INCH = 50;
-    /**
-     * Power to use when rotating.
-     */
-    public static final double ROTATION_POWER = 1.0d;
 
-    /**
-     * last angle for the imu measurement
-     */
-    private Orientation mLastIMUOrientation = new Orientation();
-    private double mIMUGlobalAngle = 0d;
-    private double mIMUCorrection = 0d;
-    private int mIMURotationTargetAngle = 0;
-    private boolean mIMURotationActive = false;
-    /**
-     * IMU inside REV hub
-     */
-    private BNO055IMU mIMU = null;
 
     private boolean mDemoFrameBot = false;
     /**
@@ -118,7 +97,7 @@ public class MecanumDrive extends Drivetrain{
      * @param demoFrameBot true if using demo, false for grabber bot
      **/
     public MecanumDrive(OpMode opMode,boolean demoFrameBot) {
-        super(opMode,ROTATION_DEGREE_PER_SEC,LINEAR_MILLISECONDS_PER_INCH);
+        super(opMode,LINEAR_MILLISECONDS_PER_INCH);
         mDemoFrameBot = demoFrameBot;
     }
 
@@ -167,33 +146,6 @@ public class MecanumDrive extends Drivetrain{
         catch(Exception e){
             motorInitError += "rr,";
         }
-        try{
-            // Initialize the IMU
-            BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
-
-            parameters.mode                = BNO055IMU.SensorMode.IMU;
-            parameters.angleUnit           = BNO055IMU.AngleUnit.DEGREES;
-            parameters.accelUnit           = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
-            parameters.loggingEnabled      = false;
-
-            // Retrieve and initialize the IMU. We expect the IMU to be attached to an I2C port
-            // on a Core Device Interface Module, configured to be a sensor of type "AdaFruit IMU",
-            // and named "imu".
-            mIMU = ahwMap.get(BNO055IMU.class, "imu");
-            mIMU.initialize(parameters);
-            // make sure the imu gyro is calibrated before continuing.
-            while (!mIMU.isGyroCalibrated())
-            {
-                Thread.sleep(50);
-            }
-
-            mOpMode.telemetry.addData("imu calib status", mIMU.getCalibrationStatus().toString());
-            mOpMode.telemetry.update();
-        }
-        catch(Exception e){
-            motorInitError += ", IMU";
-        }
-
 
 
         // Set all motors to zero power
@@ -207,6 +159,7 @@ public class MecanumDrive extends Drivetrain{
         }
 
     }
+
 
     /**
      * Helper function to set power to the wheel drive motors
@@ -281,9 +234,8 @@ public class MecanumDrive extends Drivetrain{
      */
     @Override
     public void stop() {
-
+        super.stop();
         setPower(0.0, 0.0, 0.0, 0.0);
-        mIMURotationActive = false;
         // Return motors to manual control
         setMotorModes(DcMotor.RunMode.RUN_USING_ENCODER);
 
@@ -332,7 +284,7 @@ public class MecanumDrive extends Drivetrain{
         if (aspeed > 1.0)
             aspeed = 1.0;
         setPower(aspeed, aspeed, aspeed, aspeed);
-     }
+    }
 
     @Override
     public boolean isMoving() {
@@ -394,7 +346,7 @@ public class MecanumDrive extends Drivetrain{
     @Override
     public boolean isVectorTimedDriveSupported() {
         return true;
-     }
+    }
 
     @Override
     public int getVectorTimedXMSPerInch() {
@@ -411,7 +363,7 @@ public class MecanumDrive extends Drivetrain{
      * @param linearDistance desired distance + forward or - rearward in inches
      * @return time to drive in ms
      */
-        @Override
+    @Override
     public int doLinearTimedDrive(double linearDistance){
         int timeout = super.doLinearTimedDrive(linearDistance);  // Call base class for timer handling
         double power = 1.0d;
@@ -441,139 +393,20 @@ public class MecanumDrive extends Drivetrain{
     }
 
     /**
-     * Override to add mecanum specific rotation motor commands.
+     * Overridden function calls base class to pass correction value into motors.
      */
     @Override
-    public void doTimedRotation(int cwDegrees){
-        super.doTimedRotation(cwDegrees);  // Call base class for timer handling
-
-        double power = 1.0d;
-        double rotpower = ROTATION_POWER;
-        if (cwDegrees < 0){
-            rotpower = -rotpower;
+    public double checkRotation() {
+        double rotpower = super.checkRotation();
+        if (Math.abs(rotpower) > 1.0d) {
+            rotpower = Math.signum(rotpower);
         }
+
         double lfPower = rotpower;
         double rfPower = -rotpower;
         double lrPower = rotpower;
         double rrPower = -rotpower;
         setPower(lfPower,rfPower,lrPower,rrPower);
+        return rotpower;
     }
-
-    /**
-     * See if we are moving in a straight line and if not return a power correction value.
-     * @return Power adjustment, + is adjust left - is adjust right.
-     */
-    private double checkDirection()
-    {
-        // The gain value determines how sensitive the correction is to direction changes.
-        // You will have to experiment with your robot to get small smooth direction changes
-        // to stay on a straight line.
-        double correction, angle, gain = .10;
-
-        angle = getAngle();
-
-        if (angle == 0)
-            correction = 0;             // no adjustment.
-        else
-            correction = -angle;        // reverse sign of angle for correction.
-
-        correction = correction * gain;
-
-        return correction;
-    }
-    /**
-     * Starts IMU rotation.
-     * Rotate left or right the number of degrees. Does not support turning more than 180 degrees.
-     * @param ccwDegrees Degrees to turn, - is right + is left
-     */
-    public void doIMURotation(int ccwDegrees,double power) {
-
-        // restart imu movement tracking.
-        resetAngle();
-        mIMURotationTargetAngle = ccwDegrees;
-        // TODO Fix this hack
-        mIMURotationTargetAngle = (int)Math.round((double)mIMURotationTargetAngle * 0.9d);
-        mIMURotationActive = true;
-
-        double rotpower = power;
-        if (mIMURotationTargetAngle > 0){
-            rotpower = -rotpower;
-        }
-        double lfPower = rotpower;
-        double rfPower = -rotpower;
-        double lrPower = rotpower;
-        double rrPower = -rotpower;
-        setPower(lfPower,rfPower,lrPower,rrPower);
-
-    }
-    /**
-     * Called to service an IMURotation if one is in progress
-     * @return state of rotation still in progress
-     */
-    public boolean serviceIMURotation()
-    {
-        if (!mIMURotationActive) {
-            return false;
-        }
-        mOpMode.telemetry.addData("IMU heading", mLastIMUOrientation.firstAngle);
-        mOpMode.telemetry.update();
-
-        // On a right turn we have to get off zero first so return
-        // to keep turning.
-        if (getAngle() == 0) {
-            return true;
-        }
-        // if on a left turn, then we are waiting for the angle to go
-        // positive up to the rotation target angle
-        if (getAngle() < mIMURotationTargetAngle) {
-            return true;
-        }
-        // if on a right turn, then we are waiting for the angle to become
-        // more negative than the target angle
-        if (getAngle() < mIMURotationTargetAngle) {
-            return true;
-        }
-        // Otherwise we are done so stop the rotation and reset the angle
-        stop();
-        resetAngle();
-        mIMURotationActive = false;
-        return false;
-    }
-    /**
-     * Resets the cumulative angle tracking to zero.
-     */
-    private void resetAngle()
-    {
-        mLastIMUOrientation = mIMU.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
-
-        mIMUGlobalAngle = 0;
-    }
-
-    /**
-     * Get current cumulative angle rotation from last reset.
-     * @return Angle in degrees. + = left, - = right.
-     */
-    private double getAngle()
-    {
-        // We experimentally determined the Z axis is the axis we want to use for heading angle.
-        // We have to process the angle because the imu works in euler angles so the Z axis is
-        // returned as 0 to +180 or 0 to -180 rolling back to -179 or +179 when rotation passes
-        // 180 degrees. We detect this transition and track the total cumulative angle of rotation.
-
-        Orientation angles = mIMU.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
-
-        double deltaAngle = angles.firstAngle - mLastIMUOrientation.firstAngle;
-
-        if (deltaAngle < -180)
-            deltaAngle += 360;
-        else if (deltaAngle > 180)
-            deltaAngle -= 360;
-
-        mIMUGlobalAngle += deltaAngle;
-
-        mLastIMUOrientation = angles;
-
-        return mIMUGlobalAngle;
-    }
-
 }
