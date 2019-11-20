@@ -105,49 +105,6 @@ public class SkystoneAutonomousOpMode {
 
     }
 
-//    /*
-//     * Code to run REPEATEDLY after the driver hits INIT, but before they hit PLAY
-//     */
-//    public void init_loop() {
-//
-//       if ((getRuntime()-mLastInitLoopTime) < MIN_INIT_LOOP_TIME){
-//            return;
-//        }
-//        mLastInitLoopTime = getRuntime();
-//        if (setupComplete){
-//            return;
-//        }
-//        if (mSetupGamepad.dpad_right){
-//            currentMenu++;
-//            if (currentMenu >= menus.length){
-//                currentMenu = 0;
-//            }
-//        }
-//        if (menus[currentMenu].doOptionMenu()){
-//            int option = menus[currentMenu].getSelectedOption();
-//            // This is a confirm.  Update the setting
-//            switch(currentMenu){
-//                case TEAM_MENU_INDEX:
-//                    team = option;
-//                    break;
-//                case CONTROL_MODE_MENU_INDEX:
-//                    mControlMode = option;
-//                    break;
-//                case SETUP_COMPLETE_MENU_INDEX:
-//                    setupComplete = true;
-//                    String s = doSetupCompleteInit();
-//                    telemetry.addData("Ready to Start:",s);
-//                    break;
-//
-//            }
-//            currentMenu++;
-//            if (currentMenu >= menus.length){
-//                currentMenu = 0;
-//            }
-//        }
-//
-//    }
-
 
     public void loop() {
          if (!autoController.isAutonomousComplete()){

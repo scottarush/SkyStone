@@ -89,16 +89,16 @@ public class TestIMURotation extends OpMode{
     @Override
     public void loop() {
 
-        if (!drivetrain.serviceIMURotation()) {
+        if (!drivetrain.isRotationActive()) {
             if (gamepad1.a) {
-                drivetrain.doIMURotation(90,0.3d);
+                drivetrain.startRotation(90);
             }
         }
         long currentTime = System.currentTimeMillis();
         long delta = currentTime-lastTime;
-        if (delta > 500) {
+        if (delta > 50) {
             lastTime = currentTime;
-            drivetrain.serviceIMURotation();
+            drivetrain.checkRotation();
         }
 
     }
