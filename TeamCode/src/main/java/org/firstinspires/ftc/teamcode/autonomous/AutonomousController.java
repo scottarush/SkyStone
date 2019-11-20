@@ -10,9 +10,14 @@ import org.firstinspires.ftc.teamcode.drivetrain.IRotationStatusListener;
 import org.firstinspires.ftc.teamcode.util.VuforiaCommon;
 import org.firstinspires.ftc.teamcode.util.OneShotTimer;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+
+import statemap.FSMContext;
+import statemap.State;
 
 public class AutonomousController {
 
@@ -77,6 +82,21 @@ public class AutonomousController {
             @Override
             public void rotationComplete() {
                 mAsm.evRotationComplete();
+            }
+        });
+
+        // And add a listener to the state machine to send the state transitions to telemtry
+        mAsm.addStateChangeListener(new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent event) {
+                FSMContext fsm = (FSMContext) event.getSource();
+                String propertyName = event.getPropertyName();
+                State previousStatus = (State) event.getOldValue();
+                State newState = (State) event.getNewValue();
+                if (opMode != null){
+                    opMode.telemetry.addData("Transition:",previousStatus+" to "+newState);
+                    opMode.telemetry.update();
+                }
             }
         });
     }
@@ -199,11 +219,11 @@ public class AutonomousController {
                 Recognition rec = riter.next();
                 if (rec.getLabel().equalsIgnoreCase(VuforiaCommon.RECOGNITION_OBJECT_LABEL_SKYSTONE)) {
                     mSkystoneRecognition = rec;
- //                   mAsm.evSkystoneFound();
+                   mAsm.evSkystoneFound();
                     return;
                 } else if (rec.getLabel().equalsIgnoreCase(VuforiaCommon.RECOGNITION_OBJECT_LABEL_STONE)) {
                     mStoneRecognition = rec;
- //                   mAsm.evStoneFound();
+                    mAsm.evStoneFound();
                     return;
                 }
             }

@@ -66,10 +66,26 @@ public class AutonomousStateMachineContext
         return;
     }
 
+    public void evSkystoneFound()
+    {
+        _transition = "evSkystoneFound";
+        getState().evSkystoneFound(this);
+        _transition = "";
+        return;
+    }
+
     public void evStart()
     {
         _transition = "evStart";
         getState().evStart(this);
+        _transition = "";
+        return;
+    }
+
+    public void evStoneFound()
+    {
+        _transition = "evStoneFound";
+        getState().evStoneFound(this);
         _transition = "";
         return;
     }
@@ -158,7 +174,17 @@ public class AutonomousStateMachineContext
             Default(context);
         }
 
+        protected void evSkystoneFound(AutonomousStateMachineContext context)
+        {
+            Default(context);
+        }
+
         protected void evStart(AutonomousStateMachineContext context)
+        {
+            Default(context);
+        }
+
+        protected void evStoneFound(AutonomousStateMachineContext context)
         {
             Default(context);
         }
@@ -297,7 +323,6 @@ public class AutonomousStateMachineContext
             {
                 AutonomousController ctxt = context.getOwner();
 
-            ctxt.setLogMessage("DriveToStones");
             ctxt.openHook();
             ctxt.linearDrive(30d);
             return;
@@ -341,7 +366,6 @@ public class AutonomousStateMachineContext
             {
                 AutonomousController ctxt = context.getOwner();
 
-            ctxt.setLogMessage("LocateSkystone");
             ctxt.checkForStones();
             return;
         }
@@ -353,6 +377,46 @@ public class AutonomousStateMachineContext
             (context.getState()).exit(context);
             context.setState(AutonomousStateMachine.DriveForwardToIntake);
             (context.getState()).entry(context);
+            return;
+        }
+
+        @Override
+        protected void evSkystoneFound(AutonomousStateMachineContext context)
+        {
+            AutonomousController ctxt = context.getOwner();
+
+            (context.getState()).exit(context);
+            context.clearState();
+            try
+            {
+                ctxt.strafeDriveToSkystone();
+            }
+            finally
+            {
+                context.setState(AutonomousStateMachine.StrafeToStone);
+                (context.getState()).entry(context);
+            }
+
+            return;
+        }
+
+        @Override
+        protected void evStoneFound(AutonomousStateMachineContext context)
+        {
+            AutonomousController ctxt = context.getOwner();
+
+            (context.getState()).exit(context);
+            context.clearState();
+            try
+            {
+                ctxt.strafeDriveToStone();
+            }
+            finally
+            {
+                context.setState(AutonomousStateMachine.StrafeToStone);
+                (context.getState()).entry(context);
+            }
+
             return;
         }
 
@@ -377,15 +441,6 @@ public class AutonomousStateMachineContext
         private AutonomousStateMachine_StrafeToStone(String name, int id)
         {
             super (name, id);
-        }
-
-        @Override
-        protected void entry(AutonomousStateMachineContext context)
-            {
-                AutonomousController ctxt = context.getOwner();
-
-            ctxt.setLogMessage("SrafeToStone");
-            return;
         }
 
         @Override
@@ -426,7 +481,6 @@ public class AutonomousStateMachineContext
             {
                 AutonomousController ctxt = context.getOwner();
 
-            ctxt.setLogMessage("DriveForwardToIntake");
             ctxt.linearDrive(6d);
             return;
         }
@@ -469,7 +523,6 @@ public class AutonomousStateMachineContext
             {
                 AutonomousController ctxt = context.getOwner();
 
-            ctxt.setLogMessage("IntakeStone");
             ctxt.closeHook();
             ctxt.startHookTimer();
             ctxt.startGrabber(true, 1000);
@@ -514,7 +567,6 @@ public class AutonomousStateMachineContext
             {
                 AutonomousController ctxt = context.getOwner();
 
-            ctxt.setLogMessage("BackupToBeginDrag");
             ctxt.linearDrive(-18d);
             return;
         }
@@ -573,7 +625,6 @@ public class AutonomousStateMachineContext
             {
                 AutonomousController ctxt = context.getOwner();
 
-            ctxt.setLogMessage("BlueAllianceRotateTowardBridge");
             ctxt.rotate(-90);
             return;
         }
@@ -616,7 +667,6 @@ public class AutonomousStateMachineContext
             {
                 AutonomousController ctxt = context.getOwner();
 
-            ctxt.setLogMessage("RedAllianceRotateTowardBridge");
             ctxt.rotate(+90);
             return;
         }
@@ -659,7 +709,6 @@ public class AutonomousStateMachineContext
             {
                 AutonomousController ctxt = context.getOwner();
 
-            ctxt.setLogMessage("DragStone");
             ctxt.linearDrive(72d);
             return;
         }
@@ -702,7 +751,6 @@ public class AutonomousStateMachineContext
             {
                 AutonomousController ctxt = context.getOwner();
 
-            ctxt.setLogMessage("ReleaseStone");
             ctxt.openHook();
             ctxt.startGrabber(false, 3000);
             ctxt.linearDrive(-37d);
@@ -747,7 +795,6 @@ public class AutonomousStateMachineContext
             {
                 AutonomousController ctxt = context.getOwner();
 
-            ctxt.setLogMessage("Complete");
             ctxt.stopGrabber();
             return;
         }
