@@ -9,7 +9,7 @@ public class TwoWheelTankDrive extends Drivetrain {
     //TODO - Hardware Here
 
     public  TwoWheelTankDrive(OpMode opMode) {
-        super(opMode,7000,50);
+        super(opMode,7000,4.0,4.0);
     }
 
     @Override
@@ -31,6 +31,12 @@ public class TwoWheelTankDrive extends Drivetrain {
     public void setMotorModes(DcMotor.RunMode mode) {
 
     }
+
+    @Override
+    public void correctHeading(double correction) {
+
+    }
+
     /**
      * @return true if the drivetrain is moving.  false if stopped.
      */

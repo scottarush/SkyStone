@@ -25,10 +25,6 @@ public class SkystoneAutonomousOpMode {
 
     /** control mode. **/
     private static final String[] CONTROL_MODE_OPTIONS = new String[]{"CLOSED-LOOP ENCODER","OPEN-LOOP TIME","CLOSE-LOOP VUFORIA"};
-    public static final int ENCODER_CONTROL = 0;
-    public static final int OPEN_LOOP_TIME = 1;
-    public static final int CLOSED_LOOP_VUFORIA = 2;
-    private int mControlMode = OPEN_LOOP_TIME;
 
     /** confirmation **/
     private static final String[] SETUP_COMPLETE_OPTIONS = new String[]{"YES"};
@@ -70,7 +66,7 @@ public class SkystoneAutonomousOpMode {
 **/
         String initErrs = "";
         try {
-            robot = new MecanumGrabberBot(mOpmode, Robot.DriveTrainStyle.MECANUM_HEX_BOT,true);
+            robot = new MecanumGrabberBot(mOpmode, Robot.DriveTrainStyle.MECANUM_REV_DEV_BOT,true);
             robot.init();
             robot.getArm().setClaw(false);
         }
@@ -91,7 +87,7 @@ public class SkystoneAutonomousOpMode {
             initErrs += e.getMessage();
         }
         // Initialize the controller
-        autoController = new AutonomousController(mOpmode,robot,mVuforia, mBlueAlliance,mControlMode);
+        autoController = new AutonomousController(mOpmode,robot,mVuforia, mBlueAlliance,AutonomousController.OPEN_LOOP_TIME);
 
         if (initErrs.length() == 0){
             mOpmode.telemetry.addData("Status:","Robot init complete");

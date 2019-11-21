@@ -7,8 +7,8 @@ import org.firstinspires.ftc.teamcode.Hook;
 import org.firstinspires.ftc.teamcode.MecanumGrabberBot;
 import org.firstinspires.ftc.teamcode.drivetrain.IDriveSessionStatusListener;
 import org.firstinspires.ftc.teamcode.drivetrain.IRotationStatusListener;
-import org.firstinspires.ftc.teamcode.util.VuforiaCommon;
 import org.firstinspires.ftc.teamcode.util.OneShotTimer;
+import org.firstinspires.ftc.teamcode.util.VuforiaCommon;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -20,6 +20,9 @@ import statemap.FSMContext;
 import statemap.State;
 
 public class AutonomousController {
+    public static final int ENCODER_CONTROL = 0;
+    public static final int OPEN_LOOP_TIME = 1;
+    public static final int CLOSED_LOOP_VUFORIA = 2;
 
     private static boolean TELEMETRY_STATE_LOGGING_ENABLED = true;
 
@@ -51,7 +54,7 @@ public class AutonomousController {
         }
     });
 
-    private int mControlMode = 0;
+    private int mControlMode;
 
     private VuforiaCommon mVuforia = null;
 
@@ -94,7 +97,7 @@ public class AutonomousController {
                 State previousStatus = (State) event.getOldValue();
                 State newState = (State) event.getNewValue();
                 if (opMode != null){
-                    opMode.telemetry.addData("Transition:",previousStatus+" to "+newState);
+                    opMode.telemetry.addData("Transition:",previousStatus.getName()+" to "+newState.getName());
                     opMode.telemetry.update();
                 }
             }
@@ -112,8 +115,8 @@ public class AutonomousController {
 
         // Service all the timers in order to trigger any timeout callbacks/events
         serviceTimers();
-        // Call doService method on drivetrain to support drive and rotation controls
-         robot.getDrivetrain().doService();
+        // Call doLoop method on drivetrain to support drive and rotation controls
+         robot.getDrivetrain().doLoop();
         // If a reset of the arm is active, then service it by calling it from here.
          if (robot.getArm().isResetToRetractInProgress()){
              if (!robot.getArm().resetToRetractPosition()){
@@ -136,7 +139,7 @@ public class AutonomousController {
         if (robot.getDrivetrain().isMoving()){
             return;  // Already driving, this is an error, ignore
         }
-        robot.getDrivetrain().encoderDrive(speed,xdist,ydist,timeoutms);
+        robot.getDrivetrain().driveEncoder(speed,xdist,ydist,timeoutms);
     }
 
     /**
@@ -163,13 +166,13 @@ public class AutonomousController {
      */
     public void linearDrive(double distance){
         switch(mControlMode){
-            case SkystoneAutonomousOpMode.ENCODER_CONTROL:
+            case ENCODER_CONTROL:
                 startDriveByEncoder(1.0d, distance,0d,3000);
                 break;
-            case SkystoneAutonomousOpMode.OPEN_LOOP_TIME:
-                robot.getDrivetrain().doLinearTimedDrive(distance);
+            case OPEN_LOOP_TIME:
+                robot.getDrivetrain().driveLinearTime(distance,1.0d);
                 break;
-            case SkystoneAutonomousOpMode.CLOSED_LOOP_VUFORIA:
+            case CLOSED_LOOP_VUFORIA:
                 // TODO
                 break;
         }
@@ -250,13 +253,13 @@ public class AutonomousController {
      */
     public void dragFoundation(){
         switch(mControlMode){
-            case SkystoneAutonomousOpMode.ENCODER_CONTROL:
+            case ENCODER_CONTROL:
                 startDriveByEncoder(1.0d, -12.0d,0d,3000);
                 break;
-            case SkystoneAutonomousOpMode.OPEN_LOOP_TIME:
-                robot.getDrivetrain().doLinearTimedDrive(-12d);
+            case OPEN_LOOP_TIME:
+                robot.getDrivetrain().driveLinearTime(-12d,1.0d);
                 break;
-            case SkystoneAutonomousOpMode.CLOSED_LOOP_VUFORIA:
+            case CLOSED_LOOP_VUFORIA:
                 // TODO
                 break;
         }
@@ -289,10 +292,10 @@ public class AutonomousController {
         robot.getHook().setPosition(Hook.CLOSED);
     }
     /**
-     * rotation by degrees.  + is cw
+     * rotation by degrees.  + is ccw
      */
     public void rotate(int degrees){
-        robot.getDrivetrain().doTimedRotation(degrees);
+        robot.getDrivetrain().rotate(degrees);
     }
 
     /**

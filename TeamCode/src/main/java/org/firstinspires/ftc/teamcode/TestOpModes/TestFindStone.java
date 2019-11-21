@@ -32,21 +32,27 @@ package org.firstinspires.ftc.teamcode.TestOpModes;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.teamcode.drivetrain.MecanumDrive;
+import org.firstinspires.ftc.teamcode.util.VuforiaCommon;
+
+import java.util.Iterator;
+import java.util.List;
 
 
 /**
 This class implements the equations that Marcus derived on October 3.
   */
 
-@TeleOp(name="TestIMURotation", group="Robot")
+@TeleOp(name="TestFindStone", group="Robot")
 //@Disabled
-public class TestIMURotation extends OpMode{
+public class TestFindStone extends OpMode{
 
     /* Declare OpMode members. */
     private MecanumDrive drivetrain = null;
 
     private long lastTime = 0;
+    VuforiaCommon mVuforia = null;
     /*
      * Code to run ONCE when the driver hits INIT
      */
@@ -55,14 +61,25 @@ public class TestIMURotation extends OpMode{
         /* Initialize the hardware variables.
          * The init() method of the hardware class does all the work here
          */
+        String initErrs = "";
         try {
             drivetrain = new MecanumDrive(this,true);
             drivetrain.init(hardwareMap);
         }
         catch(Exception e){
-            telemetry.addData("Robot Init Error","%s",e.getMessage());
+            initErrs += e.getMessage();
+         }
+        // Initialize Vuforia
+        mVuforia = new VuforiaCommon(this);
+        try{
+            mVuforia.initVuforia();
+         }
+        catch(Exception e){
+            initErrs += e.getMessage();
+        }
+        if (initErrs.length() > 0){
+            telemetry.addData("Robot Init Error",initErrs);
             telemetry.update();
-            return;
         }
         lastTime = System.currentTimeMillis();
         // Send telemetry message to signify drivetrain waiting;
@@ -89,16 +106,27 @@ public class TestIMURotation extends OpMode{
     @Override
     public void loop() {
 
-        if (gamepad1.a) {
-            stop();
-            drivetrain.rotate(90);
+        if (!drivetrain.isRotationActive()) {
+            if (gamepad1.a) {
+                drivetrain.rotate(90);
+            }
         }
-        if (gamepad1.b){
-            stop();
-           drivetrain.driveLinearTime(36d,1.0d);
+        long currentTime = System.currentTimeMillis();
+        long delta = currentTime-lastTime;
+        drivetrain.doLoop();
+
+        List<Recognition> recogList = mVuforia.getRecognitions();
+        Recognition stoneRecog = null;
+        for(Iterator<Recognition>iter=recogList.iterator();iter.hasNext();){
+            Recognition recog = iter.next();
+            if (recog.getLabel().equalsIgnoreCase(VuforiaCommon.RECOGNITION_OBJECT_LABEL_SKYSTONE)){
+                stoneRecog = recog;
+                break;
+            }
+        }
+        if (stoneRecog != null){
 
         }
-        drivetrain.doLoop();
     }
 
     /*

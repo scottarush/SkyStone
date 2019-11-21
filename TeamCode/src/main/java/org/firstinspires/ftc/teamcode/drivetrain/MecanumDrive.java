@@ -29,16 +29,10 @@
 
 package org.firstinspires.ftc.teamcode.drivetrain;
 
-import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
-import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
 /**
  * This is NOT an opmode.
@@ -90,14 +84,24 @@ public class MecanumDrive extends Drivetrain{
      */
     public static final int VECTOR_YMILLISECONDS_PER_INCH = 50;
 
+    /**
+     * constant for drivetrain rotation proportional control constant.
+     */
+    public static final double ROTATION_KP = 3.0d;
+    /**
+     * constant for linear correction proportional constant
+     */
+    public static final double LINEAR_KP = 0.25d;
+
 
     private boolean mDemoFrameBot = false;
+
     /**
      * @param
      * @param demoFrameBot true if using demo, false for grabber bot
      **/
     public MecanumDrive(OpMode opMode,boolean demoFrameBot) {
-        super(opMode,LINEAR_MILLISECONDS_PER_INCH);
+        super(opMode,LINEAR_MILLISECONDS_PER_INCH,ROTATION_KP,LINEAR_KP);
         mDemoFrameBot = demoFrameBot;
     }
 
@@ -108,7 +112,7 @@ public class MecanumDrive extends Drivetrain{
     @Override
     public void init(HardwareMap ahwMap) throws Exception {
         // Save reference to Hardware map
-        hwMap = ahwMap;
+        mHWMap = ahwMap;
 
         // Define and Initialize Motors
         String motorInitError = "";
@@ -146,7 +150,12 @@ public class MecanumDrive extends Drivetrain{
         catch(Exception e){
             motorInitError += "rr,";
         }
-
+        try{
+            super.init(ahwMap);
+        }
+        catch(Exception e){
+            motorInitError += e.getMessage();
+        }
 
         // Set all motors to zero power
         setPower(0, 0, 0, 0);
@@ -231,6 +240,7 @@ public class MecanumDrive extends Drivetrain{
     /**
      * helper function to stop all motors on the robot and return motor modes to
      * manual mode if they had been changed to run to position.
+     * Make sure to call base class.
      */
     @Override
     public void stop() {
@@ -253,11 +263,11 @@ public class MecanumDrive extends Drivetrain{
      * @return true if session started, false on error.
      */
     @Override
-    public void encoderDrive(double speed, double xdist, double ydist, int timeoutms) {
+    public void driveEncoder(double speed, double xdist, double ydist, int timeoutms) {
         if (isDriveByEncoderSessionActive()){
             return;
         }
-        super.encoderDrive(speed,xdist,ydist,timeoutms);
+        super.driveEncoder(speed,xdist,ydist,timeoutms);
         // Stop and reset the encoders first
         setMotorModes(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         setMotorModes(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -274,8 +284,8 @@ public class MecanumDrive extends Drivetrain{
         setTargetPosition(lrMotor,lrDeltaCounts+getCurrentPosition(lrMotor));
         setTargetPosition(rrMotor,rrDeltaCounts+getCurrentPosition(rrMotor));
 
-        mOpMode.telemetry.addData("counts","lf="+lfDeltaCounts+",rf="+rfDeltaCounts+",lr="+lrDeltaCounts+",rr="+rrDeltaCounts);
-        mOpMode.telemetry.update();
+ //       mOpMode.telemetry.addData("counts","lf="+lfDeltaCounts+",rf="+rfDeltaCounts+",lr="+lrDeltaCounts+",rr="+rrDeltaCounts);
+   //     mOpMode.telemetry.update();
         // Set mode to run to position
         setMotorModes(DcMotor.RunMode.RUN_TO_POSITION);
 
@@ -364,15 +374,22 @@ public class MecanumDrive extends Drivetrain{
      * @return time to drive in ms
      */
     @Override
-    public int doLinearTimedDrive(double linearDistance){
-        int timeout = super.doLinearTimedDrive(linearDistance);  // Call base class for timer handling
-        double power = 1.0d;
-        if (linearDistance < 0.0d){
-            power = -power;
-        }
+    public int driveLinearTime(double linearDistance, double power){
+       int timeout = super.driveLinearTime(linearDistance,power);  // Call base class for timer handling
 
         setPower(power,power,power,power);
         return timeout;
+    }
+
+    @Override
+    public void correctHeading(double correction) {
+        double power = mLinearDrivePower;
+
+        double lfPower = power - correction;
+        double lrPower = power + correction;
+        double rfPower = power + correction;
+        double rrPower = power - correction;
+        setPower(lfPower,rfPower,lrPower,rrPower);
     }
 
     @Override
@@ -396,16 +413,20 @@ public class MecanumDrive extends Drivetrain{
      * Overridden function calls base class to pass correction value into motors.
      */
     @Override
-    public double checkRotation() {
+    protected double checkRotation() {
+        // Check if a rotation is active and return if not
+        if (!isRotationActive()){
+            return 0d;
+        }
         double rotpower = super.checkRotation();
         if (Math.abs(rotpower) > 1.0d) {
             rotpower = Math.signum(rotpower);
         }
 
-        double lfPower = rotpower;
-        double rfPower = -rotpower;
-        double lrPower = rotpower;
-        double rrPower = -rotpower;
+        double lfPower = -rotpower;
+        double rfPower = +rotpower;
+        double lrPower = -rotpower;
+        double rrPower = +rotpower;
         setPower(lfPower,rfPower,lrPower,rrPower);
         return rotpower;
     }
