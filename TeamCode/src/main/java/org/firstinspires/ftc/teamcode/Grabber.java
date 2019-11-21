@@ -93,7 +93,7 @@ public class Grabber {
 
     /**
      *  Utility function to handle motor initialization.  init must have been called
-     *  with a non-null hwMap or exception will be thrown.
+     *  with a non-null mHWMap or exception will be thrown.
      *
      */
     private DcMotor tryMapMotor (String motorName) throws Exception {

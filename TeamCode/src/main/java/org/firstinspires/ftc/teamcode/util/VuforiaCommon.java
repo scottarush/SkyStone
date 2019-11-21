@@ -135,15 +135,7 @@ public class VuforiaCommon {
     VuforiaLocalizer vuforia;
 
     /** Initializer flag for vuforia. **/
-    private boolean vuforiaInitialized = false;
-
-    /**
-     * Error flag is cleared on success
-     */
-    private boolean initializationError = true;
-
-    /** initializer flag for vuforia targets. **/
-    private boolean vuforiaTargetsInitialized = false;
+    private boolean mVuforiaInitialized = false;
 
     private boolean mVuforiaNavigationActive = false;
 
@@ -201,10 +193,14 @@ public class VuforiaCommon {
      * @throws Exception if camera can't be found.
      **/
     public void initVuforia() throws Exception {
-        if (vuforiaInitialized)
+        if (mVuforiaInitialized)
             return;
-
-        webcamName = tryWebcam();
+        try {
+            webcamName = tryWebcam();
+        }
+        catch(Exception e){
+            throw e;
+        }
 
         /*
          * To start up Vuforia, tell it the view that we wish to use for camera monitor (on the RC phone);
@@ -227,12 +223,10 @@ public class VuforiaCommon {
         parameters.cameraName = webcamName;
         this.vuforia = ClassFactory.getInstance().createVuforia(parameters);
 
-        initVuforiaNavigation();
+        initVuforianNavigationTargets();
         initTensorFlowObjectDetection();
 
-        vuforiaInitialized = true;
-        // If we got this far without error then clear the error flag
-        initializationError = false;
+        mVuforiaInitialized = true;
     }
 
 
@@ -240,7 +234,7 @@ public class VuforiaCommon {
      *
      * @throws Exception if webcam can't be found
      */
-    private void initVuforiaNavigation() throws Exception{
+    private void initVuforianNavigationTargets() {
         // Load the data sets for the trackable objects. These particular data
         // sets are stored in the 'assets' part of our application.
         targetsSkyStone = this.vuforia.loadTrackablesFromAsset("Skystone");
@@ -359,15 +353,14 @@ public class VuforiaCommon {
         for (VuforiaTrackable trackable : allTrackables) {
             ((VuforiaTrackableDefaultListener) trackable.getListener()).setCameraLocationOnRobot(webcamName,robotFromCamera);
         }
-        vuforiaTargetsInitialized = true;
     }
     /**
      * Starts  vuforia navigation.
      */
     public void startVuforiaNavigation(){
-        if (mVuforiaNavigationActive)
+        if (!mVuforiaInitialized)
             return;
-        if (initializationError)
+        if (mVuforiaNavigationActive)
             return;
         targetsSkyStone.activate();
     }
@@ -376,9 +369,9 @@ public class VuforiaCommon {
      * Stops vuforia navigation
      */
     public void stopVuforiaNavigation(){
-        if (!mVuforiaNavigationActive)
+        if (!mVuforiaInitialized)
             return;
-        if (initializationError)
+        if (!mVuforiaNavigationActive)
             return;
         mVuforiaNavigationActive = false;
         targetsSkyStone.deactivate();
@@ -387,7 +380,7 @@ public class VuforiaCommon {
      * Returns robot location info for VuforiaNavigation.
      */
     public VuforiaLocation getVuforiaNavLocation(){
-        if (initializationError){
+        if (!mVuforiaInitialized){
             return new VuforiaLocation();
         }
         // check all the trackable targets to see which one (if any) is visible.
@@ -433,7 +426,7 @@ public class VuforiaCommon {
      * sitting in front of it.
      */
     public VuforiaLocation getStoneLocation(){
-        if (initializationError){
+        if (!mVuforiaInitialized){
             return new VuforiaLocation();
         }
         // check all the trackable targets to see which one (if any) is visible.
@@ -493,6 +486,10 @@ public class VuforiaCommon {
      * @return list of Recognition objects detected or null if no objects detected or error in initialization
      */
     public List<Recognition> getRecognitions(){
+        if (!mVuforiaInitialized){
+            // Return empty list due to initialization error
+            return new ArrayList<>();
+        }
          // Return latest recognitions
         return tensorFlowObjDetector.getRecognitions();
     }

@@ -16,11 +16,17 @@ import java.util.Iterator;
 
 public abstract class Drivetrain {
     /* local OpMode members. */
-    public HardwareMap hwMap = null;
+    public HardwareMap mHWMap = null;
 
-    public abstract void init(HardwareMap ahwMap) throws Exception;
     public abstract void setPower(double lf, double rf, double lr, double rr);
     public abstract void setMotorModes(DcMotor.RunMode mode);
+
+    /**
+     * Called when linear heading correction is non-zero. Subclasses must correct with
+     * an adjustement to the left if correction > 0, adjustment to the right if < 0.
+     *
+     */
+    public abstract void correctHeading(double correction);
 
      /** OpMode in order to access telemetry from subclasses. **/
     protected OpMode mOpMode;
@@ -28,20 +34,30 @@ public abstract class Drivetrain {
 
     private OneShotTimer mTimedDriveTimer = null;
 
-    private long mLastCheckRotationTime = 0l;
+    private long mLastIMUCheckTime = 0l;
     /**
      * proportional constant for rotation angle.
      */
-    public static final double ROTATION_KP = 0.3d;
-
+    private double mRotationKp = 4.0d;
     /**
      * last angle for the imu measurement
      */
     protected Orientation mLastIMUOrientation = new Orientation();
-    protected double mIMUGlobalAngle = 0d;
-    protected double mIMUCorrection = 0d;
-    protected int mIMURotationTargetAngle = 0;
-    protected boolean mIMURotationActive = false;
+    protected double mHeadingAngle = 0d;
+    protected int mRotationTargetAngle = 0;
+
+    private boolean mRotationActive = false;
+
+    private boolean mLinearDriveActive = false;
+    /**
+     * Current linear drive session power.
+     */
+    protected double mLinearDrivePower = 1.0d;
+
+    /**
+     * proportional constant for linear direction correction.
+     */
+    private double mLinearKp = 1.0d;
     /**
      * IMU inside REV hub
      */
@@ -52,9 +68,12 @@ public abstract class Drivetrain {
     private ArrayList<IDriveSessionStatusListener> mDriveSessionStatusListeners = new ArrayList<>();
     private ArrayList<IRotationStatusListener> mRotationStatusListeners = new ArrayList<>();
 
-    public Drivetrain(OpMode opMode,int linearMillisecondsPerInch){
+    public Drivetrain(OpMode opMode,int linearMillisecondsPerInch,double rotationKp,double linearKp){
         this.mOpMode = opMode;
         mLinearMillisecondsPerInch = linearMillisecondsPerInch;
+        mRotationKp = rotationKp;
+        mLinearKp = linearKp;
+
         mTimedDriveTimer = new OneShotTimer(1000, new OneShotTimer.IOneShotTimerCallback() {
             @Override
             public void timeoutComplete() {
@@ -79,10 +98,11 @@ public abstract class Drivetrain {
     }
 
     /**
-     *
+     * subclasses must call base class function to initialize IMU
      * @return
      */
-    public void init() throws Exception {
+    public void init(HardwareMap hwMap) throws Exception{
+        this.mHWMap = hwMap;
         try{
             // Initialize the IMU
             BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
@@ -106,10 +126,25 @@ public abstract class Drivetrain {
     /**
      * Must be called from the OpMode service loop to service timers for drive and rotation handling.
      */
-    public void doService(){
+    public void doLoop(){
+
+        // Service rotation and heading corrections
+        long currentTime = System.currentTimeMillis();
+        long delta = currentTime- mLastIMUCheckTime;
+        if (delta > 50) {
+            mLastIMUCheckTime = currentTime;
+            checkRotation();
+            // if a linear drive is active then get a correction and call the correct power function in the
+            // subclass if non-zero
+            if (mLinearDriveActive){
+                double correction = getHeadingCorrection();
+                correctHeading(correction);
+            }
+        }
+        // And service all the timers
         mDriveByEncoderFailTimer.checkTimer();
         serviceEncoderDrive();
-         mTimedDriveTimer.checkTimer();
+        mTimedDriveTimer.checkTimer();
     }
 
     /**
@@ -124,20 +159,34 @@ public abstract class Drivetrain {
      *
      * @return true if session started, false on error.
      */
-     public void encoderDrive(double speed, double xdist, double ydist, int timeoutms) {
+     public void driveEncoder(double speed, double xdist, double ydist, int timeoutms) {
          mDriveByEncoderFailTimer.setTimeout(timeoutms);
          mDriveByEncoderFailTimer.start();
     }
 
     /**
-     * Drives for a set distance using open-loop, robot-specific time.
+     * Drives for a set distance using open-loop, robot-specific time.  Power is assumed to be linear
+     * in the computation of the time.
      * @param linearDistance desired distance + forward or - rearward in inches
      * @return time to drive in ms
      */
-    public int doLinearTimedDrive(double linearDistance){
-        int timeoutms = (int) Math.abs(Math.round(linearDistance * mLinearMillisecondsPerInch));
+    public int driveLinearTime(double linearDistance, double power){
+        stop();  // case we were moving
+        // Reset the angle in the IMU logic
+        resetAngle();
+
+        mLinearDrivePower = power;
+        if (mLinearDrivePower > 1.0d){
+            mLinearDrivePower = 1.0d;
+        }
+        if (linearDistance < 0.0d){
+            mLinearDrivePower *= -1.0d;
+        }
+
+        int timeoutms = (int) Math.abs(Math.round(linearDistance * mLinearMillisecondsPerInch * mLinearDrivePower));
         mTimedDriveTimer.setTimeout(timeoutms);
         mTimedDriveTimer.start();
+        mLinearDriveActive = true;
         return timeoutms;
     }
 
@@ -163,15 +212,18 @@ public abstract class Drivetrain {
      * base class function does everything except set motor power.
      * @param ccwDegrees Degrees to turn, - is right + is left
      */
-    public void startRotation(int ccwDegrees) {
+    public void rotate(int ccwDegrees) {
+        stop();  // case we were moving
+
         // restart imu movement tracking.
         resetAngle();
-        mIMURotationTargetAngle = ccwDegrees;
-        mIMURotationActive = true;
+        mRotationTargetAngle = ccwDegrees;
+        mRotationActive = true;
+        // Call checkRotation to check imu
         checkRotation();
     }
     public boolean isRotationActive(){
-        return mIMURotationActive;
+        return mRotationActive;
     }
     /**
      * Resets the cumulative angle tracking in the IMU to zero
@@ -180,7 +232,7 @@ public abstract class Drivetrain {
     {
         mLastIMUOrientation = mIMU.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
 
-        mIMUGlobalAngle = 0;
+        mHeadingAngle = 0;
     }
     /**
      * Get current cumulative angle rotation from last reset.
@@ -202,25 +254,22 @@ public abstract class Drivetrain {
         else if (deltaAngle > 180)
             deltaAngle -= 360;
 
-        mIMUGlobalAngle += deltaAngle;
+        mHeadingAngle += deltaAngle;
 
         mLastIMUOrientation = angles;
 
-        return mIMUGlobalAngle;
+        return mHeadingAngle;
     }
     /**
      * Called to check a rotation and compute the correction value use to set the
      * motor power in subclasses.
      * @return correction value from +/- 1.0 depending upon the error for +/- 180.
      */
-    public double checkRotation() {
-        if (!mIMURotationActive) {
-            return 1.0;
+    protected double checkRotation() {
+        if (!mRotationActive) {
+            return 0.0;
         }
-        mOpMode.telemetry.addData("IMU heading", mLastIMUOrientation.firstAngle);
-        mOpMode.telemetry.update();
-
-        boolean continueTurning = false;
+         boolean continueTurning = false;
 
         double angle = getAngle();
         // On a right turn we have to get off zero first so return
@@ -230,50 +279,55 @@ public abstract class Drivetrain {
         }
         // if on a left turn, then we are waiting for the angle to go
         // positive up to the rotation target angle
-        if (angle < mIMURotationTargetAngle) {
+        if (angle < mRotationTargetAngle) {
             continueTurning =true;
         }
         // if on a right turn, then we are waiting for the angle to become
         // more negative than the target angle
-        if (angle < mIMURotationTargetAngle) {
+        if (angle < mRotationTargetAngle) {
             continueTurning =true;
         }
         if (!continueTurning){
-            // Otherwise we are done so stop the rotation and reset the angle
+            // Otherwise we are done so stop the rotation, reset the angle, and notify listeners
+            // that the rotation is complete
             stop();
+            mRotationActive = false;
             resetAngle();
-            mIMURotationActive = false;
-            return 0.0d;
+            for(Iterator<IRotationStatusListener>iter=mRotationStatusListeners.iterator();iter.hasNext();){
+                IRotationStatusListener listener = iter.next();
+                listener.rotationComplete();
+            }
+           return 0.0d;
         }
         // Otherwise, update the power to the motors
-        double correction = mIMURotationTargetAngle - angle;
-        // Normalize correction to +/- 1.0 is +/- 180 degrees;
-        correction = correction / 180d;
+        double error = mRotationTargetAngle - angle;
+        // Normalize error to +/- 1.0 is +/- 180 degrees;
+        error = error / 180d;
 
-        // And multiple by the gain
-        correction = correction * ROTATION_KP;
-        return correction;
+        // And multiply by the gain
+        error = error * mRotationKp;
+        return error;
      }
 
     /**
      * See if we are moving in a straight line and if not return a power correction value.
-     * @return Power adjustment, + is adjust left - is adjust right.
+     * @return Power adjustment, + is adjust left - is adjust right limited to +1.0 and -1.0
      */
-    private double checkLinearDirection()
+    private double getHeadingCorrection()
     {
         // The gain value determines how sensitive the correction is to direction changes.
         // You will have to experiment with your robot to get small smooth direction changes
         // to stay on a straight line.
-        double correction, angle, gain = .10;
+        double correction = 0.0d;
+        double currentAngle = 0.0d;
 
-        angle = getAngle();
+        correction = getAngle();
 
-        if (angle == 0)
-            correction = 0;             // no adjustment.
-        else
-            correction = -angle;        // reverse sign of angle for correction.
+        correction = correction * mLinearKp;
 
-        correction = correction * gain;
+        if (Math.abs(correction) > 1.0d){
+            correction = Math.signum(correction);
+        }
 
         return correction;
     }
@@ -327,7 +381,8 @@ public abstract class Drivetrain {
      * base class function must be called by subclasses
      */
     public void stop(){
-        mIMURotationActive = false;
+        mRotationActive = false;
+        mLinearDriveActive = false;
     }
 
     /**
@@ -382,13 +437,13 @@ public abstract class Drivetrain {
 
     /**
          *  Utility function to handle motor initialization.  init must have been called
-         *  with a non-null hwMap or exception will be thrown.
+         *  with a non-null mHWMap or exception will be thrown.
          *
          */
     protected DcMotor tryMapMotor(String motorName) throws Exception {
         DcMotor motor = null;
         try {
-            motor = hwMap.get(DcMotor.class, motorName);
+            motor = mHWMap.get(DcMotor.class, motorName);
         }
         catch(Exception e){
             // Throw an exception for the caller to catch so we can debug.

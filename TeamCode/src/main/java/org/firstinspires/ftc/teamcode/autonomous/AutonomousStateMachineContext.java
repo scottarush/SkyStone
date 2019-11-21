@@ -625,7 +625,7 @@ public class AutonomousStateMachineContext
             {
                 AutonomousController ctxt = context.getOwner();
 
-            ctxt.rotate(-90);
+            ctxt.rotate(+90);
             return;
         }
 
@@ -667,7 +667,7 @@ public class AutonomousStateMachineContext
             {
                 AutonomousController ctxt = context.getOwner();
 
-            ctxt.rotate(+90);
+            ctxt.rotate(-90);
             return;
         }
 

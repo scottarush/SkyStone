@@ -87,7 +87,8 @@
     */
     BlueAllianceRotateTowardBridge
         Entry{
-            rotate(-90);
+            // Rotate CCW toward the bridge
+            rotate(+90);
         }
     {
         evRotationComplete DragStone { }
@@ -97,7 +98,8 @@
     */
     RedAllianceRotateTowardBridge
         Entry{
-            rotate(+90);
+            // Rotate CW toward the bridege
+            rotate(-90);
          }
     {
         evRotationComplete DragStone { }
