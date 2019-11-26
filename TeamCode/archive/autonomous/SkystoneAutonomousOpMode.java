@@ -47,7 +47,7 @@ public class SkystoneAutonomousOpMode extends OpMode {
     public static final double DRIVE_BY_ENCODER_POWER = 1.0d;
 
     /**
-     * Reference to VuforiaCommon utilities
+     * Reference to VuforiaTensorFlowObjectDetector utilities
      */
     VuforiaCommon mVuforia = null;
 

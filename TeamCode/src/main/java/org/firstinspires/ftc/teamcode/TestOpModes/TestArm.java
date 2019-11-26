@@ -10,7 +10,7 @@ import org.firstinspires.ftc.teamcode.arm.FourBarArm;
  * OpMode to test the arm using the gamepad.  The left stick up and down raises and lowers the arm.
  */
 @TeleOp(name="TestArm", group="Robot")
-//@Disabled
+@Disabled
 public class TestArm extends OpMode {
 
     private FourBarArm arm;

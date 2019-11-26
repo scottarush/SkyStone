@@ -2,19 +2,21 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
+import org.firstinspires.ftc.teamcode.arm.FourBarArm;
 import org.firstinspires.ftc.teamcode.drivetrain.Drivetrain;
-import org.firstinspires.ftc.teamcode.drivetrain.MecanumDrive;
+import org.firstinspires.ftc.teamcode.drivetrain.FrameDevBotMecanumDrive;
+import org.firstinspires.ftc.teamcode.drivetrain.GrabberBotMecanumDrive;
 import org.firstinspires.ftc.teamcode.drivetrain.TwoWheelTankDrive;
 
 /**
  * Base class for a robot.
  *
  */
-public class Robot {
+public abstract class Robot {
 
-    public enum DriveTrainStyle{
-        MECANUM_HEX_BOT(0),
-        MECANUM_REV_DEV_BOT(1),
+    public enum DriveTrainStyle {
+        GRABBER_BOT_MECANUM_DRIVE(0),
+        FRAME_DEV_BOT_MECANUM_DRIVE(1),
         TWO_WHEEL_TANK(2);
 
         private final int id;
@@ -42,22 +44,40 @@ public class Robot {
         this.opMode = om;
 
         switch(activeDTS) {
-            case MECANUM_HEX_BOT:
-                drivetrain = new MecanumDrive(om,false);
+            case GRABBER_BOT_MECANUM_DRIVE:
+                drivetrain = new GrabberBotMecanumDrive(om);
                 break;
-            case MECANUM_REV_DEV_BOT:
-                drivetrain = new MecanumDrive(om,true);
+            case FRAME_DEV_BOT_MECANUM_DRIVE:
+                drivetrain = new FrameDevBotMecanumDrive(om);
                 break;
             case TWO_WHEEL_TANK:
                 drivetrain = new TwoWheelTankDrive(om);
                 break;
             default:
-                drivetrain = new MecanumDrive(om,false);
+                drivetrain = new GrabberBotMecanumDrive(om);
                 break;
         }
         // This is for the other hardware for new stuff
 
     }
+
+    /**
+     * Must be implemeented as real or dummy arm by subclasses
+     * @return
+     */
+    public abstract FourBarArm getArm();
+
+    /**
+     * Must be implemeented as real or dummy grabber by subclasses
+     * @return
+     */
+    public abstract Grabber getGrabber();
+    /**
+     * Must be implemeented as real or dummy hook by subclasses
+     * @return
+     */
+    public abstract Hook getHook();
+
 
     /**
      * returns drivetrain
@@ -71,7 +91,7 @@ public class Robot {
      */
     public void init() throws Exception {
         try {
-            drivetrain.init(opMode.hardwareMap);
+            drivetrain.initIMU(opMode.hardwareMap);
         } catch (Exception e) {
             throw new Exception("Drivetrain init err: "+e.getMessage());
         }

@@ -32,11 +32,13 @@ package org.firstinspires.ftc.teamcode.TestOpModes;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
-import org.firstinspires.ftc.teamcode.drivetrain.MecanumDrive;
-import org.firstinspires.ftc.teamcode.util.VuforiaCommon;
+import org.firstinspires.ftc.teamcode.FrameDevelopmentBot;
+import org.firstinspires.ftc.teamcode.MecanumGrabberBot;
+import org.firstinspires.ftc.teamcode.Robot;
+import org.firstinspires.ftc.teamcode.autonomous.VuforiaSkystoneLocator;
 
-import java.util.Iterator;
 import java.util.List;
 
 
@@ -48,32 +50,40 @@ This class implements the equations that Marcus derived on October 3.
 //@Disabled
 public class TestFindStone extends OpMode{
 
-    /* Declare OpMode members. */
-    private MecanumDrive drivetrain = null;
+    private Robot mRobot = null;
 
     private long lastTime = 0;
-    VuforiaCommon mVuforia = null;
+    VuforiaSkystoneLocator mVuforiaLocator = null;
+
+    public static final boolean USE_DEV_FRAME_BOT = true;
+
     /*
      * Code to run ONCE when the driver hits INIT
      */
     @Override
     public void init() {
+
         /* Initialize the hardware variables.
          * The init() method of the hardware class does all the work here
          */
         String initErrs = "";
         try {
-            drivetrain = new MecanumDrive(this,true);
-            drivetrain.init(hardwareMap);
+            if (USE_DEV_FRAME_BOT){
+                mRobot = new FrameDevelopmentBot(this);
+            }
+            else {
+                mRobot = new MecanumGrabberBot(this,true);
+            }
+            mRobot.init();
         }
         catch(Exception e){
             initErrs += e.getMessage();
          }
         // Initialize Vuforia
-        mVuforia = new VuforiaCommon(this);
+         mVuforiaLocator = new VuforiaSkystoneLocator();
         try{
-            mVuforia.initVuforia();
-         }
+            mVuforiaLocator.init(this);
+        }
         catch(Exception e){
             initErrs += e.getMessage();
         }
@@ -81,6 +91,8 @@ public class TestFindStone extends OpMode{
             telemetry.addData("Robot Init Error",initErrs);
             telemetry.update();
         }
+        mVuforiaLocator.activate();
+
         lastTime = System.currentTimeMillis();
         // Send telemetry message to signify drivetrain waiting;
         telemetry.addData("Say", "Init Complete");    //
@@ -91,13 +103,14 @@ public class TestFindStone extends OpMode{
      */
     @Override
     public void init_loop() {
-     }
+    }
 
     /*
      * Code to run ONCE when the driver hits PLAY
      */
     @Override
     public void start() {
+
     }
 
     /*
@@ -106,26 +119,33 @@ public class TestFindStone extends OpMode{
     @Override
     public void loop() {
 
-        if (!drivetrain.isRotationActive()) {
+        if (!mRobot.getDrivetrain().isRotationActive()) {
             if (gamepad1.a) {
-                drivetrain.rotate(90);
+                mRobot.getDrivetrain().rotate(90);
             }
         }
         long currentTime = System.currentTimeMillis();
         long delta = currentTime-lastTime;
-        drivetrain.doLoop();
+        mRobot.getDrivetrain().doLoop();
 
-        List<Recognition> recogList = mVuforia.getRecognitions();
-        Recognition stoneRecog = null;
-        for(Iterator<Recognition>iter=recogList.iterator();iter.hasNext();){
-            Recognition recog = iter.next();
-            if (recog.getLabel().equalsIgnoreCase(VuforiaCommon.RECOGNITION_OBJECT_LABEL_SKYSTONE)){
-                stoneRecog = recog;
-                break;
+        List<Recognition>recList = mVuforiaLocator.getRecognitions();
+        if (!recList.isEmpty()) {
+            Recognition recog = recList.get(0);
+            if (recog.getLabel().equalsIgnoreCase(VuforiaSkystoneLocator.SKYSTONE_TFOD_LABEL)){
+                VuforiaSkystoneLocator.VuforiaLocation location = mVuforiaLocator.getStoneLocation();
+                if (location != null){
+                    location.heading = recog.estimateAngleToObject(AngleUnit.DEGREES);
+                    telemetry.addData("Skystone x,y,O,H=","%.1f, %.1f, %.1f, %.0f",location.x,location.y,location.orientation,location.heading);
+                }
+                else{
+                    telemetry.addData("Recognize Skystone but no location","");
+                }
             }
         }
-        if (stoneRecog != null){
+        telemetry.update();
 
+        if (gamepad1.a){
+            mRobot.getDrivetrain().driveEncoder(1.0d,12.0d,3000);
         }
     }
 
@@ -134,7 +154,7 @@ public class TestFindStone extends OpMode{
      */
     @Override
     public void stop() {
-         drivetrain.stop();
+        mRobot.getDrivetrain().stop();
     }
 
 

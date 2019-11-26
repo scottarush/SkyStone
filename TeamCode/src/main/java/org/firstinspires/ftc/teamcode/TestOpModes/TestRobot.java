@@ -4,6 +4,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+import org.firstinspires.ftc.teamcode.FrameDevelopmentBot;
 import org.firstinspires.ftc.teamcode.Robot;
 
 @TeleOp(name="TestRobot", group="Robot")
@@ -19,7 +20,7 @@ public class TestRobot extends OpMode {
 
     @Override
     public void init() {
-        robot = new Robot(Robot.DriveTrainStyle.MECANUM_HEX_BOT, this);
+        robot = new FrameDevelopmentBot(this);
         try {
             robot.init();
         }

@@ -37,27 +37,25 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 /**
  * This is NOT an opmode.
  *
- * This class define's specific hardware for our team's Mecanum robot.  It was created starting
- * from the HardwareRobot class within the samples directory.
- *
- * See PushbotTeleopTank_Iterative and others classes starting with "Pushbot"
- * in the samples for help in creating usage.
+ * This is the base class for a Mecanum Drive robot.  Because the motor direction configurations
+ * must be different between the GrabberBot and the development frame bot, this class has
+ * been made with an abstract init method.  The rest of the behavior is the same between the
+ * subclasses.
  *
  * This hardware class assumes the following device names have been configured on the robot:
  * Note:  All names are lower case and some have single spaces between words.
  *
- * Motor channel:  Left front drive motor:        "left_front_drive"
- * Motor channel:  Right front drive motor:  "right_front_drive"
- * Motor channel:  Left rear drive motor:    "left_rear_drive"
- * Motor channel:  Right rear drive motor:   "right_rear_drive"
+ * Motor channel:  Left front drive motor:        "lf"
+ * Motor channel:  Right front drive motor:  "rf"
+ * Motor channel:  Left rear drive motor:    "lr"
+ * Motor channel:  Right rear drive motor:   "r"
  *
  */
-public class MecanumDrive extends Drivetrain{
-    /* Public OpMode members. */
-    private DcMotor lfMotor = null;
-    private DcMotor rfMotor = null;
-    private DcMotor lrMotor = null;
-    private DcMotor rrMotor = null;
+public abstract class BaseMecanumDrive extends Drivetrain{
+    protected DcMotor lfMotor = null;
+    protected DcMotor rfMotor = null;
+    protected DcMotor lrMotor = null;
+    protected DcMotor rrMotor = null;
 
     /**
      * Wheel circumference in inches
@@ -65,7 +63,7 @@ public class MecanumDrive extends Drivetrain{
     public static final double MECANUM_WHEEL_CIRCUMFERENCE = 12.1211;
 
 
-    public static final int ENCODER_COUNTS_PER_ROTATION = 1120;  // This is the Rev robotics motor.
+    public static final int ENCODER_COUNTS_PER_ROTATION = 2240;  // This is the Rev robotics motor.
     /**
      * Number of counts per inch of direct wheel movement.
      **/
@@ -94,79 +92,12 @@ public class MecanumDrive extends Drivetrain{
     public static final double LINEAR_KP = 0.25d;
 
 
-    private boolean mDemoFrameBot = false;
 
     /**
      * @param
-     * @param demoFrameBot true if using demo, false for grabber bot
      **/
-    public MecanumDrive(OpMode opMode,boolean demoFrameBot) {
+    public BaseMecanumDrive(OpMode opMode) {
         super(opMode,LINEAR_MILLISECONDS_PER_INCH,ROTATION_KP,LINEAR_KP);
-        mDemoFrameBot = demoFrameBot;
-    }
-
-
-    /* Initialize standard Hardware interfaces.
-     * NOTE:  This class throws Exception on any hardware init error so be sure to catch and
-     * report to Telemetry in your initialization. */
-    @Override
-    public void init(HardwareMap ahwMap) throws Exception {
-        // Save reference to Hardware map
-        mHWMap = ahwMap;
-
-        // Define and Initialize Motors
-        String motorInitError = "";
-        try {
-            lfMotor = tryMapMotor("lf");
-            if (mDemoFrameBot){
-                lfMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-            }
-        }
-        catch (Exception e){
-            motorInitError += "lf,";
-        }
-        try {
-            rfMotor = tryMapMotor("rf");
-        }
-        catch(Exception e){
-            motorInitError += "rf,";
-        }
-        try {
-            lrMotor = tryMapMotor("lr");
-            lrMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-        }
-        catch(Exception e){
-            motorInitError += "lr,";
-        }
-        try {
-            rrMotor = tryMapMotor("rr");
-            if (mDemoFrameBot){
-                rrMotor.setDirection(DcMotorSimple.Direction.FORWARD);
-            }
-            else{
-                rrMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-            }
-        }
-        catch(Exception e){
-            motorInitError += "rr,";
-        }
-        try{
-            super.init(ahwMap);
-        }
-        catch(Exception e){
-            motorInitError += e.getMessage();
-        }
-
-        // Set all motors to zero power
-        setPower(0, 0, 0, 0);
-
-        // Set all motors to run with encoders.
-        setMotorModes(DcMotor.RunMode.RUN_USING_ENCODER);
-
-        if (motorInitError.length() > 0){
-            throw new Exception("Motor init errs: '"+motorInitError+"'");
-        }
-
     }
 
 
@@ -256,27 +187,30 @@ public class MecanumDrive extends Drivetrain{
      * starts a drive by encoder session.  If robot is moving, it will be stopped.
      *
      * @param speed   speed to move
-     * @param xdist   distance in x inches to move where +x is to the robot's right.
-     * @param ydist   distance in y inches to move where +y is forward.
+     * @param linearDistance distance in inches
      * @param timeoutms timeout in msseconds to abort if move not completed.
      *
      * @return true if session started, false on error.
      */
     @Override
-    public void driveEncoder(double speed, double xdist, double ydist, int timeoutms) {
+    public void driveEncoder(double speed, double linearDistance, int timeoutms) {
         if (isDriveByEncoderSessionActive()){
             return;
         }
-        super.driveEncoder(speed,xdist,ydist,timeoutms);
+        super.driveEncoder(speed,linearDistance,timeoutms);
         // Stop and reset the encoders first
         setMotorModes(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         setMotorModes(DcMotor.RunMode.RUN_USING_ENCODER);
 
         // Compute the number of encoder counts for each wheel to move the requested distanc
-        int lfDeltaCounts = (int) Math.round((ydist + xdist) * MecanumDrive.COUNTS_PER_INCH);
-        int rfDeltaCounts = (int) Math.round((ydist - xdist) * MecanumDrive.COUNTS_PER_INCH);
-        int lrDeltaCounts = (int) Math.round((ydist - xdist) * MecanumDrive.COUNTS_PER_INCH);
-        int rrDeltaCounts = (int) Math.round((ydist + ydist) * MecanumDrive.COUNTS_PER_INCH);
+//        int lfDeltaCounts = (int) Math.round((ydist + xdist) * BaseMecanumDrive.COUNTS_PER_INCH);
+//        int rfDeltaCounts = (int) Math.round((ydist - xdist) * BaseMecanumDrive.COUNTS_PER_INCH);
+//        int lrDeltaCounts = (int) Math.round((ydist - xdist) * BaseMecanumDrive.COUNTS_PER_INCH);
+//        int rrDeltaCounts = (int) Math.round((ydist + ydist) * BaseMecanumDrive.COUNTS_PER_INCH);
+        int lfDeltaCounts = (int) Math.round(linearDistance * BaseMecanumDrive.COUNTS_PER_INCH);
+        int rfDeltaCounts = (int) Math.round(linearDistance * BaseMecanumDrive.COUNTS_PER_INCH);
+        int lrDeltaCounts = (int) Math.round(linearDistance * BaseMecanumDrive.COUNTS_PER_INCH);
+        int rrDeltaCounts = (int) Math.round(linearDistance * BaseMecanumDrive.COUNTS_PER_INCH);
 
         // Set target counts for each motor to the above
         setTargetPosition(lfMotor,lfDeltaCounts+getCurrentPosition(lfMotor));
