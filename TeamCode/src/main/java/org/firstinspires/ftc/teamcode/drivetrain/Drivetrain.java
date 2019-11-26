@@ -62,11 +62,12 @@ public abstract class Drivetrain {
      * IMU inside REV hub
      */
     private BNO055IMU mIMU = null;
-
+    private boolean mIMUInitialized = false;
     private int mLinearMillisecondsPerInch = 10;
 
     private ArrayList<IDriveSessionStatusListener> mDriveSessionStatusListeners = new ArrayList<>();
     private ArrayList<IRotationStatusListener> mRotationStatusListeners = new ArrayList<>();
+
 
     public Drivetrain(OpMode opMode,int linearMillisecondsPerInch,double rotationKp,double linearKp){
         this.mOpMode = opMode;
@@ -95,14 +96,29 @@ public abstract class Drivetrain {
                 }
             }
         });
-    }
+      }
 
     /**
-     * subclasses must call base class function to initialize IMU
-     * @return
+     *
+     * IMPORTANT:  IMU can take a long time to initialize so initialize from the
+     * init_loop function instead of init within the OpMode or the mode will likely
+     * crash due to "stuck in Init()" error from the long init time of the IMU
+     * @return true on success, false on error
      */
-    public void init(HardwareMap hwMap) throws Exception{
+    public void initIMU(HardwareMap hwMap) {
         this.mHWMap = hwMap;
+        Thread imuInitThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                initIMU();
+            }
+        });
+        imuInitThread.start();
+    }
+
+    private void initIMU(){
+        if (mIMUInitialized)
+        // Otherwise init
         try{
             // Initialize the IMU
             BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
@@ -115,14 +131,22 @@ public abstract class Drivetrain {
             // Retrieve and initialize the IMU. We expect the IMU to be attached to an I2C port
             // on a Core Device Interface Module, configured to be a sensor of type "AdaFruit IMU",
             // and named "imu".
-            mIMU = hwMap.get(BNO055IMU.class, "imu");
+            mIMU = mHWMap.get(BNO055IMU.class, "imu");
             mIMU.initialize(parameters);
 
+
+            mIMUInitialized = true;
         }
         catch(Exception e){
-            throw new Exception("error initializing IMYU");
+            mOpMode.telemetry.addData("Error initializing IMU","");
+            mOpMode.telemetry.update();
         }
     }
+
+    public boolean isIMUInitialized(){
+        return mIMUInitialized;
+    }
+
     /**
      * Must be called from the OpMode service loop to service timers for drive and rotation handling.
      */
@@ -153,13 +177,25 @@ public abstract class Drivetrain {
      * IDriveSessionStatusListener to receive notification of session timeout failure.
      *
      * @param speed   speed to move
-     * @param xdist   distance in x inches to move
-     * @param ydist   distance in y inches to move
+     * @param linearDistance distance in inches to move + is forward, - is backward
      * @param timeoutms timeout in ms to abort if move not completed.
      *
      * @return true if session started, false on error.
      */
-     public void driveEncoder(double speed, double xdist, double ydist, int timeoutms) {
+     public void driveEncoder(double speed, double linearDistance, int timeoutms) {
+         stop();  // case we were moving
+         // Reset the angle in the IMU logic
+         resetAngle();
+
+         mLinearDrivePower = speed;
+         if (mLinearDrivePower > 1.0d){
+             mLinearDrivePower = 1.0d;
+         }
+
+         if (linearDistance < 0.0d){
+             mLinearDrivePower *= -1.0d;
+         }
+
          mDriveByEncoderFailTimer.setTimeout(timeoutms);
          mDriveByEncoderFailTimer.start();
     }

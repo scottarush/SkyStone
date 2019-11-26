@@ -12,7 +12,7 @@ public class TwoWheelTankDrive extends Drivetrain {
         super(opMode,7000,4.0,4.0);
     }
 
-    @Override
+
     public void init(HardwareMap ahwMap) throws Exception {
 
     }

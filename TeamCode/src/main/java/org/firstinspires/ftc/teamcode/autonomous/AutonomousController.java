@@ -2,13 +2,13 @@ package org.firstinspires.ftc.teamcode.autonomous;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.teamcode.Hook;
-import org.firstinspires.ftc.teamcode.MecanumGrabberBot;
+import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.drivetrain.IDriveSessionStatusListener;
 import org.firstinspires.ftc.teamcode.drivetrain.IRotationStatusListener;
 import org.firstinspires.ftc.teamcode.util.OneShotTimer;
-import org.firstinspires.ftc.teamcode.util.VuforiaCommon;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -32,7 +32,7 @@ public class AutonomousController {
 
     private boolean mBlueAlliance = false;
 
-    private MecanumGrabberBot robot = null;
+    private Robot robot = null;
 
     private Recognition mSkystoneRecognition = null;
 
@@ -56,9 +56,9 @@ public class AutonomousController {
 
     private int mControlMode;
 
-    private VuforiaCommon mVuforia = null;
+    private VuforiaSkystoneLocator mVuforia = null;
 
-    public AutonomousController(final OpMode opMode, MecanumGrabberBot robot, VuforiaCommon vuforia, boolean blueAlliance, int controlMode){
+    public AutonomousController(final OpMode opMode, Robot robot, VuforiaSkystoneLocator vuforia, boolean blueAlliance, int controlMode){
         mAsm = new AutonomousStateMachineContext(this);
         this.opMode = opMode;
         this.mBlueAlliance = blueAlliance;
@@ -130,16 +130,12 @@ public class AutonomousController {
         return (mAsm.getState() == AutonomousStateMachineContext.AutonomousStateMachine.Complete);
     }
 
-    /**
-     *
-     * @param xdist
-     * @param ydist
-     */
-    private void startDriveByEncoder(double speed, double xdist, double ydist, int timeoutms){
+
+    private void startDriveByEncoder(double speed, double linearDistance, int timeoutms){
         if (robot.getDrivetrain().isMoving()){
             return;  // Already driving, this is an error, ignore
         }
-        robot.getDrivetrain().driveEncoder(speed,xdist,ydist,timeoutms);
+        robot.getDrivetrain().driveEncoder(speed,linearDistance,timeoutms);
     }
 
     /**
@@ -167,7 +163,7 @@ public class AutonomousController {
     public void linearDrive(double distance){
         switch(mControlMode){
             case ENCODER_CONTROL:
-                startDriveByEncoder(1.0d, distance,0d,3000);
+                startDriveByEncoder(1.0d, distance,3000);
                 break;
             case OPEN_LOOP_TIME:
                 robot.getDrivetrain().driveLinearTime(distance,1.0d);
@@ -220,11 +216,11 @@ public class AutonomousController {
         }
            for (Iterator<Recognition> riter = list.iterator(); riter.hasNext(); ) {
                 Recognition rec = riter.next();
-                if (rec.getLabel().equalsIgnoreCase(VuforiaCommon.RECOGNITION_OBJECT_LABEL_SKYSTONE)) {
+                if (rec.getLabel().equalsIgnoreCase(VuforiaSkystoneLocator.SKYSTONE_TFOD_LABEL)) {
                     mSkystoneRecognition = rec;
                    mAsm.evSkystoneFound();
                     return;
-                } else if (rec.getLabel().equalsIgnoreCase(VuforiaCommon.RECOGNITION_OBJECT_LABEL_STONE)) {
+                } else if (rec.getLabel().equalsIgnoreCase(VuforiaSkystoneLocator.STONE_TFOD_LABEL)) {
                     mStoneRecognition = rec;
                     mAsm.evStoneFound();
                     return;
@@ -243,10 +239,9 @@ public class AutonomousController {
         if (mSkystoneRecognition == null){
             return 0d;
         }
-        // Otherwise use the navigation mode to find the location
-        VuforiaCommon.VuforiaLocation location = mVuforia.getStoneLocation();
-        return location.x;
-
+        // TODO finish this
+        mSkystoneRecognition.estimateAngleToObject(AngleUnit.DEGREES);
+        return 0d;
     }
     /**
      * Called from state machine to drive toward the foundation
@@ -254,7 +249,7 @@ public class AutonomousController {
     public void dragFoundation(){
         switch(mControlMode){
             case ENCODER_CONTROL:
-                startDriveByEncoder(1.0d, -12.0d,0d,3000);
+                startDriveByEncoder(1.0d, -12.0d,3000);
                 break;
             case OPEN_LOOP_TIME:
                 robot.getDrivetrain().driveLinearTime(-12d,1.0d);

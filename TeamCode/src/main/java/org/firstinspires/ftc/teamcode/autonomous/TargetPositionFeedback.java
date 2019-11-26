@@ -1,21 +1,19 @@
 package org.firstinspires.ftc.teamcode.autonomous;
 
 
-import org.firstinspires.ftc.teamcode.util.VuforiaCommon;
-
 /**
  * Class encapsulates Vuforia continous Vuforia location checking and issues a callback when
  * location reached
  */
 public class TargetPositionFeedback {
 
-    private VuforiaCommon mVuforia;
+    private VuforiaSkystoneLocator mVuforia;
     private double mXTarget;
     private double mYTarget;
     private double mTolerance;
     private ILocationCallback mCallback;
 
-    public TargetPositionFeedback(VuforiaCommon vuforia, double xtarget, double ytarget, double tolerance, ILocationCallback callback){
+    public TargetPositionFeedback(VuforiaSkystoneLocator vuforia, double xtarget, double ytarget, double tolerance, ILocationCallback callback){
         mVuforia = vuforia;
         mXTarget = xtarget;
         mYTarget = ytarget;
@@ -24,7 +22,7 @@ public class TargetPositionFeedback {
     }
 
     public void checkTargetPosition(){
-       VuforiaCommon.VuforiaLocation location = mVuforia.getVuforiaNavLocation();
+/**       VuforiaTensorFlowObjectDetector.VuforiaLocation location = mVuforia.getVuforiaNavLocation();
        if (location.valid){
            double x = Math.abs(location.x - mXTarget);
            if (x < mTolerance){
@@ -37,6 +35,7 @@ public class TargetPositionFeedback {
 
            }
        }
+ **/
     }
 
     public interface ILocationCallback {

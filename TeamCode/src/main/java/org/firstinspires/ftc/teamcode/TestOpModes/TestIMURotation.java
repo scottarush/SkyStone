@@ -32,7 +32,8 @@ package org.firstinspires.ftc.teamcode.TestOpModes;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.firstinspires.ftc.teamcode.drivetrain.MecanumDrive;
+import org.firstinspires.ftc.teamcode.drivetrain.BaseMecanumDrive;
+import org.firstinspires.ftc.teamcode.drivetrain.FrameDevBotMecanumDrive;
 
 
 /**
@@ -44,7 +45,7 @@ This class implements the equations that Marcus derived on October 3.
 public class TestIMURotation extends OpMode{
 
     /* Declare OpMode members. */
-    private MecanumDrive drivetrain = null;
+    private BaseMecanumDrive drivetrain = null;
 
     private long lastTime = 0;
     /*
@@ -56,8 +57,8 @@ public class TestIMURotation extends OpMode{
          * The init() method of the hardware class does all the work here
          */
         try {
-            drivetrain = new MecanumDrive(this,true);
-            drivetrain.init(hardwareMap);
+            drivetrain = new FrameDevBotMecanumDrive(this);
+            drivetrain.initIMU(hardwareMap);
         }
         catch(Exception e){
             telemetry.addData("Robot Init Error","%s",e.getMessage());
