@@ -29,6 +29,7 @@
 
 package org.firstinspires.ftc.teamcode.TestOpModes;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -41,7 +42,7 @@ This class implements the equations that Marcus derived on October 3.
   */
 
 @TeleOp(name="TestIMURotation", group="Robot")
-//@Disabled
+@Disabled
 public class TestIMURotation extends OpMode{
 
     /* Declare OpMode members. */
@@ -58,7 +59,7 @@ public class TestIMURotation extends OpMode{
          */
         try {
             drivetrain = new FrameDevBotMecanumDrive(this);
-            drivetrain.initIMU(hardwareMap);
+            drivetrain.init(hardwareMap);
         }
         catch(Exception e){
             telemetry.addData("Robot Init Error","%s",e.getMessage());

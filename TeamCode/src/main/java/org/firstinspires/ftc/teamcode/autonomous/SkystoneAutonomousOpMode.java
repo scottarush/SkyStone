@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.firstinspires.ftc.teamcode.FrameDevelopmentBot;
+import org.firstinspires.ftc.teamcode.Globals;
 import org.firstinspires.ftc.teamcode.MecanumGrabberBot;
 import org.firstinspires.ftc.teamcode.Robot;
 
@@ -19,8 +20,6 @@ public class SkystoneAutonomousOpMode {
 
     private OpMode mOpmode = null;
 
-    public static final boolean USE_DEV_FRAME_BOT = true;
-
     private boolean mBlueAlliance = false;
     /**
      * Reference to VuforiaTensorFlowObjectDetector utilities
@@ -35,7 +34,7 @@ public class SkystoneAutonomousOpMode {
     public void init() {
         String initErrs = "";
         try {
-            if (USE_DEV_FRAME_BOT){
+            if (Globals.USE_DEV_FRAME_BOT){
                 robot = new FrameDevelopmentBot(mOpmode);
             }
             else {

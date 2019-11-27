@@ -155,7 +155,9 @@ public class DualDriverOpMode extends OpMode{
             }
         }
         // Do the hook
-        processHookPosition();
+        processFrontHookPosition();
+        // Do the side hook
+        processSideHookPosition();
          // Do the claw
         if (armPad.x){
             // Open the clase
@@ -168,9 +170,9 @@ public class DualDriverOpMode extends OpMode{
     }
 
     /**
-     * Processes the hook buttons y and a
+     * Processes the front hook buttons y and a
      */
-    private void processHookPosition(){
+    private void processFrontHookPosition(){
         boolean yButtonState = (gamepad2.y || gamepad1.y);
          // Now do a button
         boolean aButtonState = (gamepad1.a || gamepad2.a);
@@ -181,6 +183,21 @@ public class DualDriverOpMode extends OpMode{
             robot.getHook().setPosition(Hook.OPEN);
         }
     }
+    /**
+     * Processes the side hook buttons y and a
+     */
+    private void processSideHookPosition(){
+        boolean startButton = (gamepad2.start || gamepad1.start);
+        // Now do a button
+        boolean backButton = (gamepad1.back || gamepad2.back);
+        if (backButton) {
+            robot.getSideHook().setPosition(SideHook.UP);
+        }
+        else if (startButton){
+            robot.getSideHook().setPosition(SideHook.DOWN);
+        }
+    }
+
     /*
      * Code to run ONCE after the driver hits STOP
      */

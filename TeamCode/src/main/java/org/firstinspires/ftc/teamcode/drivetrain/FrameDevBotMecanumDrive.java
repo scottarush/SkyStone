@@ -47,6 +47,13 @@ public class FrameDevBotMecanumDrive extends BaseMecanumDrive {
         catch(Exception e){
             motorInitError += "rr,";
         }
+        try{
+            super.init(ahwMap);
+        }
+        catch(Exception e){
+            // This exception can't actually happen but change in the future to catch this somehow
+            motorInitError += "IMU init";
+        }
 
         // Set all motors to zero power
         setPower(0, 0, 0, 0);

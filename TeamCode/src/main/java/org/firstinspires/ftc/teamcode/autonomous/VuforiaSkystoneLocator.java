@@ -29,15 +29,13 @@
 
 package org.firstinspires.ftc.teamcode.autonomous;
 
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
 import org.firstinspires.ftc.robotcore.external.matrices.VectorF;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackable;
@@ -46,7 +44,6 @@ import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackables;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -63,7 +60,7 @@ public class VuforiaSkystoneLocator {
     /**
      * Class encapsulate location data returned by getVuforiaLocation
      */
-    public class VuforiaLocation {
+    public class VuforiaPosition {
         public double x = 0d;
         public double y = 0d;
         public double z = 0d;
@@ -79,11 +76,12 @@ public class VuforiaSkystoneLocator {
          * @param z
          * @param heading
          */
-        public VuforiaLocation(double x, double y, double z, double orientation, double heading) {
+        public VuforiaPosition(double x, double y, double z, double orientation, double heading) {
             valid = true;
             this.x = x;
             this.y = y;
             this.z = z;
+            this.orientation = orientation;
             this.heading = heading;
         }
     }
@@ -115,7 +113,7 @@ public class VuforiaSkystoneLocator {
     private static final float quadField = 36 * mmPerInch;
 
     // Class Members
-    private OpenGLMatrix lastLocation = null;
+    private OpenGLMatrix targetLocation = null;
     private VuforiaLocalizer vuforia = null;
 
     private VuforiaTrackables targetsSkyStone;
@@ -128,7 +126,6 @@ public class VuforiaSkystoneLocator {
     WebcamName webcamName = null;
     private TFObjectDetector tfod = null;
 
-    private boolean targetVisible = false;
     private float phoneXRotate = 0;
     private float phoneYRotate = 0;
     private float phoneZRotate = 0;
@@ -345,20 +342,33 @@ public class VuforiaSkystoneLocator {
         tfod.activate();
     }
 
-    public VuforiaLocation getStoneLocation() {
-        VuforiaLocation location = null;
+    /**
+     * Returns the position of the stone relative to the camera.  Coord system is:
+     * +y from the camera starting at 0
+     * +x to the right of the camera
+     * +z = up
+     * orientation = the face of the stone
+     * The heading has to be manually added using
+     * @return
+     */
+    public VuforiaPosition getStoneLocation() {
+        VuforiaPosition position = null;
         // check all the trackable targets to see which one (if any) is visible.
-        targetVisible = false;
+        boolean targetVisible = false;
+        VuforiaTrackable targetTrackable = null;
         for (VuforiaTrackable trackable : allTrackables) {
-            if (((VuforiaTrackableDefaultListener) trackable.getListener()).isVisible()) {
+            VuforiaTrackableDefaultListener listener = (VuforiaTrackableDefaultListener)trackable.getListener();
+
+            if (listener.isVisible()) {
                 //                  telemetry.addData("Visible Target", trackable.getName());
                 targetVisible = true;
+                targetTrackable = trackable;
 
                 // getUpdatedRobotLocation() will return null if no new information is available since
                 // the last time that call was made, or if the trackable is not currently visible.
                 OpenGLMatrix robotLocationTransform = ((VuforiaTrackableDefaultListener) trackable.getListener()).getUpdatedRobotLocation();
                 if (robotLocationTransform != null) {
-                    lastLocation = robotLocationTransform;
+                    targetLocation = robotLocationTransform;
                 }
                 break;
             }
@@ -367,10 +377,24 @@ public class VuforiaSkystoneLocator {
         // Provide feedback as to where the robot is located (if we know).
         if (targetVisible) {
             // express position (translation) of robot in inches.
-            VectorF translation = lastLocation.getTranslation();
-            Orientation rotation = Orientation.getOrientation(lastLocation, EXTRINSIC, XYZ, DEGREES);
-            location = new VuforiaLocation(translation.get(0) / mmPerInch, translation.get(1) / mmPerInch, translation.get(2) / mmPerInch, rotation.thirdAngle,0);
+            VectorF translation = targetLocation.getTranslation();
+            Orientation rotation = Orientation.getOrientation(targetLocation, EXTRINSIC, XYZ, DEGREES);
 
+            // Create the position object but swap the coordinates to align with the VuforiaPosition object coordiante system
+            double x = translation.get(0)/mmPerInch;
+            double y = translation.get(1)/mmPerInch;
+            double z = translation.get(2)/mmPerInch;
+            double heading = rotation.thirdAngle;
+            position = new VuforiaPosition(y,-x,z, rotation.thirdAngle,0);
+
+            // Check for a recognition in the tfod and use it to set the heading
+            List<Recognition>recList = getRecognitions();
+            if (recList.size() > 0){
+                Recognition recog = recList.get(0);
+                if (recog.getLabel().equalsIgnoreCase(VuforiaSkystoneLocator.SKYSTONE_TFOD_LABEL)) {
+                    position.heading = recog.estimateAngleToObject(AngleUnit.DEGREES);
+                }
+            }
 //                telemetry.addData("Pos (in)", "{X, Y, Z} = %.1f, %.1f, %.1f",
 //                        translation.get(0) / mmPerInch, translation.get(1) / mmPerInch, translation.get(2) / mmPerInch);
 
@@ -380,7 +404,7 @@ public class VuforiaSkystoneLocator {
 //                telemetry.addData("Visible Target", "none");
         }
         //           telemetry.update();
-        return location;
+        return position;
     }
 }
 
