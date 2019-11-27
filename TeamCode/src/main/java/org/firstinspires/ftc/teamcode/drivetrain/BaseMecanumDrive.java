@@ -62,12 +62,20 @@ public abstract class BaseMecanumDrive extends Drivetrain{
      **/
     public static final double MECANUM_WHEEL_CIRCUMFERENCE = 12.1211;
 
+    /**
+     * Core hex motor from the specification
+     */
+    public static final double ENCODER_COUNTS_PER_ROTATION = 288d;
 
-    public static final int ENCODER_COUNTS_PER_ROTATION = 2240;  // This is the Rev robotics motor.
+    /**
+     * scale factor for strafe lateral distance.
+     */
+    public static final double STRAFE_ENCODER_DISTANCE_COEFFICIENT = 1.08d;
+
     /**
      * Number of counts per inch of direct wheel movement.
      **/
-    public static final int COUNTS_PER_INCH = (int) Math.round(ENCODER_COUNTS_PER_ROTATION / MECANUM_WHEEL_CIRCUMFERENCE);
+    public static final double COUNTS_PER_INCH = ENCODER_COUNTS_PER_ROTATION / MECANUM_WHEEL_CIRCUMFERENCE;
 
     /**
      * Approximate number of milliseconds per inch forward and rearward at full power.
@@ -181,7 +189,91 @@ public abstract class BaseMecanumDrive extends Drivetrain{
         setMotorModes(DcMotor.RunMode.RUN_USING_ENCODER);
 
     }
+    /**
+     * strafes sideways by time
+     *
+     * @param speed   speed to move
+     * @param strafeDistance distance in inches. Right is positive, left is negative
+     * @param timeoutms timeout in msseconds to abort if move not completed.
+     *
+     * @return true if session started, false on error.
+     */
+    public void strafeByTime(double speed, double strafeDistance, int timeoutms) {
+        if (isDriveByEncoderSessionActive()){
+            return;
+        }
+        super.driveEncoder(speed,strafeDistance,timeoutms);
+        // Stop and reset the encoders first
+        setMotorModes(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        setMotorModes(DcMotor.RunMode.RUN_USING_ENCODER);
 
+        // Compute the number of encoder counts for each wheel to move the requested distance
+        double scaledDistance = strafeDistance * STRAFE_ENCODER_DISTANCE_COEFFICIENT;
+        int lfDeltaCounts = (int) Math.round(scaledDistance * BaseMecanumDrive.COUNTS_PER_INCH);
+        int lrDeltaCounts = (int) Math.round(-scaledDistance * BaseMecanumDrive.COUNTS_PER_INCH);
+        int rfDeltaCounts = (int) Math.round(-scaledDistance * BaseMecanumDrive.COUNTS_PER_INCH);
+        int rrDeltaCounts = (int) Math.round(scaledDistance * BaseMecanumDrive.COUNTS_PER_INCH);
+
+        // Set target counts for each motor to the above
+        setTargetPosition(lfMotor,lfDeltaCounts+getCurrentPosition(lfMotor));
+        setTargetPosition(rfMotor,rfDeltaCounts+getCurrentPosition(rfMotor));
+        setTargetPosition(lrMotor,lrDeltaCounts+getCurrentPosition(lrMotor));
+        setTargetPosition(rrMotor,rrDeltaCounts+getCurrentPosition(rrMotor));
+
+        //       mOpMode.telemetry.addData("counts","lf="+lfDeltaCounts+",rf="+rfDeltaCounts+",lr="+lrDeltaCounts+",rr="+rrDeltaCounts);
+        //     mOpMode.telemetry.update();
+        // Set mode to run to position
+        setMotorModes(DcMotor.RunMode.RUN_TO_POSITION);
+
+        // set motor power
+        double aspeed = Math.abs(speed);
+        if (aspeed > 1.0)
+            aspeed = 1.0;
+        setPower(aspeed, aspeed, aspeed, aspeed);
+    }
+
+    /**
+     * strafes sideways by encoder
+     *
+     * @param speed   speed to move
+     * @param strafeDistance distance in inches. Right is positive, left is negative
+     * @param timeoutms timeout in msseconds to abort if move not completed.
+     *
+     * @return true if session started, false on error.
+     */
+    public void strafeEncoder(double speed, double strafeDistance, int timeoutms) {
+        if (isDriveByEncoderSessionActive()){
+            return;
+        }
+        super.driveEncoder(speed,strafeDistance,timeoutms);
+        // Stop and reset the encoders first
+        setMotorModes(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        setMotorModes(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        // Compute the number of encoder counts for each wheel to move the requested distance
+        double scaledDistance = strafeDistance * STRAFE_ENCODER_DISTANCE_COEFFICIENT;
+        int lfDeltaCounts = (int) Math.round(scaledDistance * BaseMecanumDrive.COUNTS_PER_INCH);
+        int lrDeltaCounts = (int) Math.round(-scaledDistance * BaseMecanumDrive.COUNTS_PER_INCH);
+        int rfDeltaCounts = (int) Math.round(-scaledDistance * BaseMecanumDrive.COUNTS_PER_INCH);
+        int rrDeltaCounts = (int) Math.round(scaledDistance * BaseMecanumDrive.COUNTS_PER_INCH);
+
+        // Set target counts for each motor to the above
+        setTargetPosition(lfMotor,lfDeltaCounts+getCurrentPosition(lfMotor));
+        setTargetPosition(rfMotor,rfDeltaCounts+getCurrentPosition(rfMotor));
+        setTargetPosition(lrMotor,lrDeltaCounts+getCurrentPosition(lrMotor));
+        setTargetPosition(rrMotor,rrDeltaCounts+getCurrentPosition(rrMotor));
+
+        //       mOpMode.telemetry.addData("counts","lf="+lfDeltaCounts+",rf="+rfDeltaCounts+",lr="+lrDeltaCounts+",rr="+rrDeltaCounts);
+        //     mOpMode.telemetry.update();
+        // Set mode to run to position
+        setMotorModes(DcMotor.RunMode.RUN_TO_POSITION);
+
+        // set motor power
+        double aspeed = Math.abs(speed);
+        if (aspeed > 1.0)
+            aspeed = 1.0;
+        setPower(aspeed, aspeed, aspeed, aspeed);
+    }
 
     /**
      * starts a drive by encoder session.  If robot is moving, it will be stopped.
@@ -203,10 +295,6 @@ public abstract class BaseMecanumDrive extends Drivetrain{
         setMotorModes(DcMotor.RunMode.RUN_USING_ENCODER);
 
         // Compute the number of encoder counts for each wheel to move the requested distanc
-//        int lfDeltaCounts = (int) Math.round((ydist + xdist) * BaseMecanumDrive.COUNTS_PER_INCH);
-//        int rfDeltaCounts = (int) Math.round((ydist - xdist) * BaseMecanumDrive.COUNTS_PER_INCH);
-//        int lrDeltaCounts = (int) Math.round((ydist - xdist) * BaseMecanumDrive.COUNTS_PER_INCH);
-//        int rrDeltaCounts = (int) Math.round((ydist + ydist) * BaseMecanumDrive.COUNTS_PER_INCH);
         int lfDeltaCounts = (int) Math.round(linearDistance * BaseMecanumDrive.COUNTS_PER_INCH);
         int rfDeltaCounts = (int) Math.round(linearDistance * BaseMecanumDrive.COUNTS_PER_INCH);
         int lrDeltaCounts = (int) Math.round(linearDistance * BaseMecanumDrive.COUNTS_PER_INCH);

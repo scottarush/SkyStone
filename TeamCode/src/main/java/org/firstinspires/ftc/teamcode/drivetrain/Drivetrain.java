@@ -105,20 +105,8 @@ public abstract class Drivetrain {
      * crash due to "stuck in Init()" error from the long init time of the IMU
      * @return true on success, false on error
      */
-    public void initIMU(HardwareMap hwMap) {
+    public void init(HardwareMap hwMap) throws Exception {
         this.mHWMap = hwMap;
-        Thread imuInitThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                initIMU();
-            }
-        });
-        imuInitThread.start();
-    }
-
-    private void initIMU(){
-        if (mIMUInitialized)
-        // Otherwise init
         try{
             // Initialize the IMU
             BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
@@ -138,9 +126,9 @@ public abstract class Drivetrain {
             mIMUInitialized = true;
         }
         catch(Exception e){
-            mOpMode.telemetry.addData("Error initializing IMU","");
-            mOpMode.telemetry.update();
+            throw new Exception(e);
         }
+        mIMUInitialized = true;
     }
 
     public boolean isIMUInitialized(){
@@ -266,6 +254,8 @@ public abstract class Drivetrain {
      */
     protected void resetAngle()
     {
+        if (!mIMUInitialized)
+            return;
         mLastIMUOrientation = mIMU.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
 
         mHeadingAngle = 0;
@@ -274,8 +264,9 @@ public abstract class Drivetrain {
      * Get current cumulative angle rotation from last reset.
      * @return Angle in degrees. + = left, - = right.
      */
-    protected double getAngle()
-    {
+    protected double getAngle() {
+        if (!mIMUInitialized)
+            return 0d;
         // We experimentally determined the Z axis is the axis we want to use for heading angle.
         // We have to process the angle because the imu works in euler angles so the Z axis is
         // returned as 0 to +180 or 0 to -180 rolling back to -179 or +179 when rotation passes

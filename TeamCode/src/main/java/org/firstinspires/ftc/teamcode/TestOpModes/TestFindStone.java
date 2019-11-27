@@ -35,9 +35,11 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.teamcode.FrameDevelopmentBot;
+import org.firstinspires.ftc.teamcode.Globals;
 import org.firstinspires.ftc.teamcode.MecanumGrabberBot;
 import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.autonomous.VuforiaSkystoneLocator;
+import org.firstinspires.ftc.teamcode.drivetrain.BaseMecanumDrive;
 
 import java.util.List;
 
@@ -52,28 +54,32 @@ public class TestFindStone extends OpMode{
 
     private Robot mRobot = null;
 
+    private BaseMecanumDrive mecanumDrive = null;
+
     private long lastTime = 0;
     VuforiaSkystoneLocator mVuforiaLocator = null;
-
-    public static final boolean USE_DEV_FRAME_BOT = true;
 
     /*
      * Code to run ONCE when the driver hits INIT
      */
     @Override
     public void init() {
+        // Have to extend stuck detect because the IMU can take a long time to initialize
+        msStuckDetectInit = 30000;
 
         /* Initialize the hardware variables.
          * The init() method of the hardware class does all the work here
          */
         String initErrs = "";
         try {
-            if (USE_DEV_FRAME_BOT){
+            if (Globals.USE_DEV_FRAME_BOT){
                 mRobot = new FrameDevelopmentBot(this);
             }
             else {
                 mRobot = new MecanumGrabberBot(this,true);
             }
+            // Get utility variable
+            mecanumDrive = (BaseMecanumDrive)mRobot.getDrivetrain();
             mRobot.init();
         }
         catch(Exception e){
@@ -95,7 +101,7 @@ public class TestFindStone extends OpMode{
 
         lastTime = System.currentTimeMillis();
         // Send telemetry message to signify drivetrain waiting;
-        telemetry.addData("Say", "Init Complete");    //
+        telemetry.addData("Say", "Init Complete");
     }
 
     /*
@@ -119,33 +125,44 @@ public class TestFindStone extends OpMode{
     @Override
     public void loop() {
 
-        if (!mRobot.getDrivetrain().isRotationActive()) {
-            if (gamepad1.a) {
-                mRobot.getDrivetrain().rotate(90);
-            }
-        }
         long currentTime = System.currentTimeMillis();
         long delta = currentTime-lastTime;
         mRobot.getDrivetrain().doLoop();
 
-        List<Recognition>recList = mVuforiaLocator.getRecognitions();
-        if (!recList.isEmpty()) {
-            Recognition recog = recList.get(0);
-            if (recog.getLabel().equalsIgnoreCase(VuforiaSkystoneLocator.SKYSTONE_TFOD_LABEL)){
-                VuforiaSkystoneLocator.VuforiaLocation location = mVuforiaLocator.getStoneLocation();
-                if (location != null){
-                    location.heading = recog.estimateAngleToObject(AngleUnit.DEGREES);
-                    telemetry.addData("Skystone x,y,O,H=","%.1f, %.1f, %.1f, %.0f",location.x,location.y,location.orientation,location.heading);
-                }
-                else{
-                    telemetry.addData("Recognize Skystone but no location","");
-                }
-            }
+        double yoffset = 0d;
+        double xoffset = 0d;
+        VuforiaSkystoneLocator.VuforiaPosition position = mVuforiaLocator.getStoneLocation();
+        if (position != null){
+             telemetry.addData("Skystone x,y,O,H=","%.1f, %.1f, %.1f, %.0f",position.x,position.y,position.orientation,position.heading);
+             yoffset = position.y;
+             xoffset = position.x;
+         }
+//        List<Recognition>recList = mVuforiaLocator.getRecognitions();
+//        if (!recList.isEmpty()) {
+//            Recognition recog = recList.get(0);
+//            if (recog.getLabel().equalsIgnoreCase(VuforiaSkystoneLocator.SKYSTONE_TFOD_LABEL)){
+//                VuforiaSkystoneLocator.VuforiaPosition location = mVuforiaLocator.getStoneLocation();
+//                if (location != null){
+//                 }
+//                else{
+//                    telemetry.addData("Recognize Skystone but no location","");
+//                }
+//            }
+//        }
+//        if (gamepad1.b){
+//            mRobot.getDrivetrain().driveEncoder(1.0d,12.0d,3000);
+//        }
+//        if (gamepad1.x){
+//            ((BaseMecanumDrive)mRobot.getDrivetrain()).strafeEncoder(1.0d,12.0d,3000);
+//        }
+        if (gamepad1.x){
+            mecanumDrive.strafeEncoder(1.0d,xoffset,5000);
         }
-        telemetry.update();
-
-        if (gamepad1.a){
-            mRobot.getDrivetrain().driveEncoder(1.0d,12.0d,3000);
+        if (gamepad1.y){
+            mecanumDrive.driveEncoder(1.0d,yoffset,2000);
+        }
+        if (gamepad1.b){
+            mecanumDrive.strafeEncoder(1.0d,12d,10000);
         }
     }
 

@@ -22,7 +22,7 @@ public class TargetPositionFeedback {
     }
 
     public void checkTargetPosition(){
-/**       VuforiaTensorFlowObjectDetector.VuforiaLocation location = mVuforia.getVuforiaNavLocation();
+/**       VuforiaTensorFlowObjectDetector.VuforiaPosition location = mVuforia.getVuforiaNavLocation();
        if (location.valid){
            double x = Math.abs(location.x - mXTarget);
            if (x < mTolerance){

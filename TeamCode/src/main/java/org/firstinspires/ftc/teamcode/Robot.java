@@ -91,7 +91,7 @@ public abstract class Robot {
      */
     public void init() throws Exception {
         try {
-            drivetrain.initIMU(opMode.hardwareMap);
+            drivetrain.init(opMode.hardwareMap);
         } catch (Exception e) {
             throw new Exception("Drivetrain init err: "+e.getMessage());
         }
