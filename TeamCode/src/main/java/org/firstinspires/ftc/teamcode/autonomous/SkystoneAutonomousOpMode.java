@@ -24,7 +24,7 @@ public class SkystoneAutonomousOpMode {
     /**
      * Reference to VuforiaTensorFlowObjectDetector utilities
      */
-    VuforiaSkystoneLocator mVuforia = null;
+    VuforiaTargetLocator mVuforia = null;
 
     public SkystoneAutonomousOpMode(OpMode opMode, boolean isBlueTeam){
         mOpmode = opMode;
@@ -46,7 +46,7 @@ public class SkystoneAutonomousOpMode {
             initErrs += e.getMessage();
         }
         // Initialize Vuforia
-        mVuforia = new VuforiaSkystoneLocator();
+        mVuforia = new VuforiaTargetLocator();
         try{
             mVuforia.init(mOpmode);
         }

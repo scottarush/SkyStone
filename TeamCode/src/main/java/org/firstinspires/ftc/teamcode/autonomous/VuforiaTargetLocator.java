@@ -45,6 +45,7 @@ import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import static org.firstinspires.ftc.robotcore.external.navigation.AngleUnit.DEGREES;
@@ -56,36 +57,24 @@ import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocaliz
 /**
  * Copied from the VuforiaSkyStoneNavigationWebcam sample.
  **/
-public class VuforiaSkystoneLocator {
-    /**
-     * Class encapsulate location data returned by getVuforiaLocation
-     */
-    public class VuforiaPosition {
-        public double x = 0d;
-        public double y = 0d;
-        public double z = 0d;
-        public double heading = 0d;
-        public double orientation = 0d;
-        public boolean valid = false;
+public class VuforiaTargetLocator {
 
-        /**
-         * Constructor with a valid location
-         *
-         * @param x
-         * @param y
-         * @param z
-         * @param heading
-         */
-        public VuforiaPosition(double x, double y, double z, double orientation, double heading) {
-            valid = true;
-            this.x = x;
-            this.y = y;
-            this.z = z;
-            this.orientation = orientation;
-            this.heading = heading;
-        }
-    }
-
+    public static final String TARGET_STONE = "Stone Target";
+    // Vuforia doesn't direclty track a skystone.  Have to use the tensor flow detector in com
+    // combination to set this label.
+    public static final String TARGET_SKYSTONE = "Skystone Target";
+    public static final String TARGET_BLUE_REAR_BRIDGE = "Blue Rear Bridge";
+    public static final String TARGET_RED_REAR_BRIDGE = "Red Rear Bridge";
+    public static final String TARGET_BLUE_FRONT_BRIDGE = "Blue Front Bridge";
+    public static final String TARGET_RED_FRONT_BRIDGE = "Red Front Bridge";
+    public static final String TARGET_RED_PERIMETER_1 = "Red Perimeter 1";
+    public static final String TARGET_RED_PERIMETER_2 = "Red Perimeter 2";
+    public static final String TARGET_FRONT_PERIMETER_1 = "Front Perimeter 1";
+    public static final String TARGET_FRONT_PERIMETER_2 = "Front Perimeter 2";
+    public static final String TARGET_BLUE_PERIMETER_1 = "Blue Perimeter 1";
+    public static final String TARGET_BLUE_PERIMETER_2 = "Blue Perimeter 2";
+    public static final String TARGET_REAR_PERIMETER_1 = "Rear Perimeter 1";
+    public static final String TARGET_REAR_PERIMETER_2 = "Rear Perimeter 2";
 
     // IMPORTANT: If you are using a USB WebCam, you must select CAMERA_CHOICE = BACK; and PHONE_IS_PORTRAIT = false;
     private static final VuforiaLocalizer.CameraDirection CAMERA_CHOICE = BACK;
@@ -113,6 +102,7 @@ public class VuforiaSkystoneLocator {
     private static final float quadField = 36 * mmPerInch;
 
     // Class Members
+    
     private OpenGLMatrix targetLocation = null;
     private VuforiaLocalizer vuforia = null;
 
@@ -136,7 +126,7 @@ public class VuforiaSkystoneLocator {
 
     private OpMode mOpMode = null;
 
-    public VuforiaSkystoneLocator(){
+    public VuforiaTargetLocator(){
 
     }
     public void init(OpMode opMode) {
@@ -171,31 +161,31 @@ public class VuforiaSkystoneLocator {
         targetsSkyStone = this.vuforia.loadTrackablesFromAsset("Skystone");
 
         VuforiaTrackable stoneTarget = targetsSkyStone.get(0);
-        stoneTarget.setName("Stone Target");
+        stoneTarget.setName(TARGET_STONE);
         VuforiaTrackable blueRearBridge = targetsSkyStone.get(1);
-        blueRearBridge.setName("Blue Rear Bridge");
+        blueRearBridge.setName(TARGET_BLUE_REAR_BRIDGE);
         VuforiaTrackable redRearBridge = targetsSkyStone.get(2);
-        redRearBridge.setName("Red Rear Bridge");
+        redRearBridge.setName(TARGET_RED_REAR_BRIDGE);
         VuforiaTrackable redFrontBridge = targetsSkyStone.get(3);
-        redFrontBridge.setName("Red Front Bridge");
+        redFrontBridge.setName(TARGET_RED_FRONT_BRIDGE);
         VuforiaTrackable blueFrontBridge = targetsSkyStone.get(4);
-        blueFrontBridge.setName("Blue Front Bridge");
+        blueFrontBridge.setName(TARGET_BLUE_FRONT_BRIDGE);
         VuforiaTrackable red1 = targetsSkyStone.get(5);
-        red1.setName("Red Perimeter 1");
+        red1.setName(TARGET_RED_PERIMETER_1);
         VuforiaTrackable red2 = targetsSkyStone.get(6);
-        red2.setName("Red Perimeter 2");
+        red2.setName(TARGET_RED_PERIMETER_2);
         VuforiaTrackable front1 = targetsSkyStone.get(7);
-        front1.setName("Front Perimeter 1");
+        front1.setName(TARGET_FRONT_PERIMETER_1);
         VuforiaTrackable front2 = targetsSkyStone.get(8);
-        front2.setName("Front Perimeter 2");
+        front2.setName(TARGET_FRONT_PERIMETER_2);
         VuforiaTrackable blue1 = targetsSkyStone.get(9);
-        blue1.setName("Blue Perimeter 1");
+        blue1.setName(TARGET_BLUE_PERIMETER_1);
         VuforiaTrackable blue2 = targetsSkyStone.get(10);
-        blue2.setName("Blue Perimeter 2");
+        blue2.setName(TARGET_BLUE_PERIMETER_2);
         VuforiaTrackable rear1 = targetsSkyStone.get(11);
-        rear1.setName("Rear Perimeter 1");
+        rear1.setName(TARGET_REAR_PERIMETER_1);
         VuforiaTrackable rear2 = targetsSkyStone.get(12);
-        rear2.setName("Rear Perimeter 2");
+        rear2.setName(TARGET_REAR_PERIMETER_2);
 
         // For convenience, gather together all the trackable objects in one easily-iterable collection */
         allTrackables = new ArrayList<VuforiaTrackable>();
@@ -343,7 +333,7 @@ public class VuforiaSkystoneLocator {
     }
 
     /**
-     * Returns the position of the stone relative to the camera.  Coord system is:
+     * Returns the position of all objects in view of the camera.  Coord system is:
      * +y from the camera starting at 0
      * +x to the right of the camera
      * +z = up
@@ -351,60 +341,64 @@ public class VuforiaSkystoneLocator {
      * The heading has to be manually added using
      * @return
      */
-    public VuforiaPosition getStoneLocation() {
-        VuforiaPosition position = null;
+    public List<TargetPosition> getTargets() {
+
+        ArrayList<TargetPosition>targets = new ArrayList<>();
         // check all the trackable targets to see which one (if any) is visible.
-        boolean targetVisible = false;
         VuforiaTrackable targetTrackable = null;
+        // Get any recognitions fronm the tfod and use it to set the heading as well as determine a Skystone
+        // vs. a stone from VuforiaTrackable
+        List<Recognition>recList = getRecognitions();
+
         for (VuforiaTrackable trackable : allTrackables) {
             VuforiaTrackableDefaultListener listener = (VuforiaTrackableDefaultListener)trackable.getListener();
-
+            // Check if the trackable is visible and if so, pull its data and add to the return list.
             if (listener.isVisible()) {
                 //                  telemetry.addData("Visible Target", trackable.getName());
-                targetVisible = true;
-                targetTrackable = trackable;
-
                 // getUpdatedRobotLocation() will return null if no new information is available since
                 // the last time that call was made, or if the trackable is not currently visible.
                 OpenGLMatrix robotLocationTransform = ((VuforiaTrackableDefaultListener) trackable.getListener()).getUpdatedRobotLocation();
                 if (robotLocationTransform != null) {
                     targetLocation = robotLocationTransform;
                 }
-                break;
-            }
-        }
+                // express position (translation) of robot in inches.
+                VectorF translation = targetLocation.getTranslation();
+                Orientation rotation = Orientation.getOrientation(targetLocation, EXTRINSIC, XYZ, DEGREES);
 
-        // Provide feedback as to where the robot is located (if we know).
-        if (targetVisible) {
-            // express position (translation) of robot in inches.
-            VectorF translation = targetLocation.getTranslation();
-            Orientation rotation = Orientation.getOrientation(targetLocation, EXTRINSIC, XYZ, DEGREES);
+                // Create the position object but swap the coordinates to align with the TargetPosition object coordiante system
+                double x = translation.get(0)/mmPerInch;
+                double y = translation.get(1)/mmPerInch;
+                double z = translation.get(2)/mmPerInch;
+                double heading = rotation.thirdAngle;
+                TargetPosition position = new TargetPosition(trackable.getName(),y,-x,z, rotation.thirdAngle,0);
+                //                telemetry.addData("Rot (deg)", "{Roll, Pitch, Heading} = %.0f, %.0f, %.0f", rotation.firstAngle, rotation.secondAngle, rotation.thirdAngle);
+                targets.add(position);
 
-            // Create the position object but swap the coordinates to align with the VuforiaPosition object coordiante system
-            double x = translation.get(0)/mmPerInch;
-            double y = translation.get(1)/mmPerInch;
-            double z = translation.get(2)/mmPerInch;
-            double heading = rotation.thirdAngle;
-            position = new VuforiaPosition(y,-x,z, rotation.thirdAngle,0);
+                if (recList.size() > 0){
+                    for(Iterator<Recognition>iter=recList.iterator();iter.hasNext();){
+                        Recognition recog = iter.next();
+                        if (recog.getLabel().equalsIgnoreCase(VuforiaTargetLocator.SKYSTONE_TFOD_LABEL)) {
+                            if (position.targetLabel.equalsIgnoreCase(TARGET_STONE)){
+                                // Assume it is the same one and set it as a Skystone.
+                                position.heading = recog.estimateAngleToObject(AngleUnit.DEGREES);
+                                position.headingValid = true;
+                                position.targetLabel = TARGET_SKYSTONE;
+                            }
+                        }
+                        else if (recog.getLabel().equalsIgnoreCase(VuforiaTargetLocator.STONE_TFOD_LABEL)){
+                            if (position.targetLabel.equalsIgnoreCase(TARGET_STONE)){
+                                // Assume it is the same one and leave it as a stone
+                                position.heading = recog.estimateAngleToObject(AngleUnit.DEGREES);
+                                position.headingValid = true;
+                                position.targetLabel = TARGET_STONE;
+                            }
 
-            // Check for a recognition in the tfod and use it to set the heading
-            List<Recognition>recList = getRecognitions();
-            if (recList.size() > 0){
-                Recognition recog = recList.get(0);
-                if (recog.getLabel().equalsIgnoreCase(VuforiaSkystoneLocator.SKYSTONE_TFOD_LABEL)) {
-                    position.heading = recog.estimateAngleToObject(AngleUnit.DEGREES);
+                        }
+                    }
                 }
             }
-//                telemetry.addData("Pos (in)", "{X, Y, Z} = %.1f, %.1f, %.1f",
-//                        translation.get(0) / mmPerInch, translation.get(1) / mmPerInch, translation.get(2) / mmPerInch);
-
-            // express the rotation of the robot in degrees.
-            //                telemetry.addData("Rot (deg)", "{Roll, Pitch, Heading} = %.0f, %.0f, %.0f", rotation.firstAngle, rotation.secondAngle, rotation.thirdAngle);
-        } else {
-//                telemetry.addData("Visible Target", "none");
         }
-        //           telemetry.update();
-        return position;
-    }
+        return targets;
+     }
 }
 
