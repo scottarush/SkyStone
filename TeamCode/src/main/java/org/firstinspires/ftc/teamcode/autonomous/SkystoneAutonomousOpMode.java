@@ -56,7 +56,7 @@ public class SkystoneAutonomousOpMode {
         // Activate vuforia
         mVuforia.activate();
         // Initialize the controller
-        autoController = new AutonomousController(mOpmode,robot,mVuforia, mBlueAlliance,AutonomousController.OPEN_LOOP_TIME);
+        autoController = new AutonomousController(mOpmode,robot,mVuforia, mBlueAlliance);
 
         if (initErrs.length() == 0){
             mOpmode.telemetry.addData("Status:","Robot init complete");
