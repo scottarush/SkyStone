@@ -56,9 +56,9 @@ public class AutonomousController {
 
     private int mControlMode;
 
-    private VuforiaSkystoneLocator mVuforia = null;
+    private VuforiaTargetLocator mVuforia = null;
 
-    public AutonomousController(final OpMode opMode, Robot robot, VuforiaSkystoneLocator vuforia, boolean blueAlliance, int controlMode){
+    public AutonomousController(final OpMode opMode, Robot robot, VuforiaTargetLocator vuforia, boolean blueAlliance, int controlMode){
         mAsm = new AutonomousStateMachineContext(this);
         this.opMode = opMode;
         this.mBlueAlliance = blueAlliance;
@@ -216,11 +216,11 @@ public class AutonomousController {
         }
            for (Iterator<Recognition> riter = list.iterator(); riter.hasNext(); ) {
                 Recognition rec = riter.next();
-                if (rec.getLabel().equalsIgnoreCase(VuforiaSkystoneLocator.SKYSTONE_TFOD_LABEL)) {
+                if (rec.getLabel().equalsIgnoreCase(VuforiaTargetLocator.SKYSTONE_TFOD_LABEL)) {
                     mSkystoneRecognition = rec;
                    mAsm.evSkystoneFound();
                     return;
-                } else if (rec.getLabel().equalsIgnoreCase(VuforiaSkystoneLocator.STONE_TFOD_LABEL)) {
+                } else if (rec.getLabel().equalsIgnoreCase(VuforiaTargetLocator.STONE_TFOD_LABEL)) {
                     mStoneRecognition = rec;
                     mAsm.evStoneFound();
                     return;

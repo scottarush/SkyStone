@@ -32,15 +32,15 @@ package org.firstinspires.ftc.teamcode.TestOpModes;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.teamcode.FrameDevelopmentBot;
 import org.firstinspires.ftc.teamcode.Globals;
 import org.firstinspires.ftc.teamcode.MecanumGrabberBot;
 import org.firstinspires.ftc.teamcode.Robot;
-import org.firstinspires.ftc.teamcode.autonomous.VuforiaSkystoneLocator;
+import org.firstinspires.ftc.teamcode.autonomous.TargetPosition;
+import org.firstinspires.ftc.teamcode.autonomous.VuforiaTargetLocator;
 import org.firstinspires.ftc.teamcode.drivetrain.BaseMecanumDrive;
 
+import java.util.Iterator;
 import java.util.List;
 
 
@@ -57,7 +57,7 @@ public class TestFindStone extends OpMode{
     private BaseMecanumDrive mecanumDrive = null;
 
     private long lastTime = 0;
-    VuforiaSkystoneLocator mVuforiaLocator = null;
+    VuforiaTargetLocator mVuforiaLocator = null;
 
     /*
      * Code to run ONCE when the driver hits INIT
@@ -86,7 +86,7 @@ public class TestFindStone extends OpMode{
             initErrs += e.getMessage();
          }
         // Initialize Vuforia
-         mVuforiaLocator = new VuforiaSkystoneLocator();
+         mVuforiaLocator = new VuforiaTargetLocator();
         try{
             mVuforiaLocator.init(this);
         }
@@ -131,17 +131,25 @@ public class TestFindStone extends OpMode{
 
         double yoffset = 0d;
         double xoffset = 0d;
-        VuforiaSkystoneLocator.VuforiaPosition position = mVuforiaLocator.getStoneLocation();
-        if (position != null){
-             telemetry.addData("Skystone x,y,O,H=","%.1f, %.1f, %.1f, %.0f",position.x,position.y,position.orientation,position.heading);
-             yoffset = position.y;
-             xoffset = position.x;
-         }
+        List<TargetPosition> targets = mVuforiaLocator.getTargets();
+        if (targets.size() > 0) {
+            for (Iterator<TargetPosition> iter = targets.iterator(); iter.hasNext(); ) {
+                TargetPosition position = iter.next();
+                telemetry.addData(position.targetLabel+" x,y,O,H=", "%.1f, %.1f, %.1f, %.0f", position.x, position.y, position.orientation, position.heading);
+                if (position.targetLabel.equalsIgnoreCase(VuforiaTargetLocator.TARGET_SKYSTONE)) {
+                    if (Math.abs(position.y) > Math.abs(yoffset)) {
+                        yoffset = position.y;
+                        xoffset = position.x;
+                    }
+                }
+            }
+        }
+        telemetry.update();
 //        List<Recognition>recList = mVuforiaLocator.getRecognitions();
 //        if (!recList.isEmpty()) {
 //            Recognition recog = recList.get(0);
-//            if (recog.getLabel().equalsIgnoreCase(VuforiaSkystoneLocator.SKYSTONE_TFOD_LABEL)){
-//                VuforiaSkystoneLocator.VuforiaPosition location = mVuforiaLocator.getStoneLocation();
+//            if (recog.getLabel().equalsIgnoreCase(VuforiaTargetLocator.SKYSTONE_TFOD_LABEL)){
+//                VuforiaTargetLocator.TargetPosition location = mVuforiaLocator.getTargets();
 //                if (location != null){
 //                 }
 //                else{

@@ -7,13 +7,13 @@ package org.firstinspires.ftc.teamcode.autonomous;
  */
 public class TargetPositionFeedback {
 
-    private VuforiaSkystoneLocator mVuforia;
+    private VuforiaTargetLocator mVuforia;
     private double mXTarget;
     private double mYTarget;
     private double mTolerance;
     private ILocationCallback mCallback;
 
-    public TargetPositionFeedback(VuforiaSkystoneLocator vuforia, double xtarget, double ytarget, double tolerance, ILocationCallback callback){
+    public TargetPositionFeedback(VuforiaTargetLocator vuforia, double xtarget, double ytarget, double tolerance, ILocationCallback callback){
         mVuforia = vuforia;
         mXTarget = xtarget;
         mYTarget = ytarget;
@@ -22,7 +22,7 @@ public class TargetPositionFeedback {
     }
 
     public void checkTargetPosition(){
-/**       VuforiaTensorFlowObjectDetector.VuforiaPosition location = mVuforia.getVuforiaNavLocation();
+/**       VuforiaTensorFlowObjectDetector.TargetPosition location = mVuforia.getVuforiaNavLocation();
        if (location.valid){
            double x = Math.abs(location.x - mXTarget);
            if (x < mTolerance){
