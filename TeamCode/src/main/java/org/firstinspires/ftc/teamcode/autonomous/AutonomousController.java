@@ -1,19 +1,25 @@
 package org.firstinspires.ftc.teamcode.autonomous;
 
+import android.util.Log;
+
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.teamcode.Hook;
 import org.firstinspires.ftc.teamcode.Robot;
+import org.firstinspires.ftc.teamcode.drivetrain.BaseMecanumDrive;
 import org.firstinspires.ftc.teamcode.drivetrain.IDriveSessionStatusListener;
 import org.firstinspires.ftc.teamcode.drivetrain.IRotationStatusListener;
 import org.firstinspires.ftc.teamcode.util.OneShotTimer;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 
 import statemap.FSMContext;
@@ -22,7 +28,7 @@ import statemap.State;
 public class AutonomousController {
     public static final int ENCODER_CONTROL = 0;
     public static final int OPEN_LOOP_TIME = 1;
-    public static final int CLOSED_LOOP_VUFORIA = 2;
+    private int mDriveMode = ENCODER_CONTROL;
 
     private static boolean TELEMETRY_STATE_LOGGING_ENABLED = true;
 
@@ -33,6 +39,8 @@ public class AutonomousController {
     private boolean mBlueAlliance = false;
 
     private Robot robot = null;
+
+    private BaseMecanumDrive mecanumDrive = null;
 
     private Recognition mSkystoneRecognition = null;
 
@@ -54,39 +62,50 @@ public class AutonomousController {
         }
     });
 
-    private int mControlMode;
 
     private VuforiaTargetLocator mVuforia = null;
+    /***
+     * Needed to queue events into the state machine
+     */
+    private static HashMap<String, Method> mTransition_map;
+    private LinkedList<String> mTransition_queue;
 
-    public AutonomousController(final OpMode opMode, Robot robot, VuforiaTargetLocator vuforia, boolean blueAlliance, int controlMode){
+    public AutonomousController(final OpMode opMode, Robot robot, VuforiaTargetLocator vuforia, boolean blueAlliance){
         mAsm = new AutonomousStateMachineContext(this);
         this.opMode = opMode;
         this.mBlueAlliance = blueAlliance;
         this.robot = robot;
-        mControlMode = controlMode;
         mVuforia = vuforia;
+
+        buildTransitionTable();
+
         // Add all the timers to the state timers so that they get service each loop
         mStateTimers.add(mHookTimer);
         mStateTimers.add(mGrabberTimer);
+
+        mecanumDrive = (BaseMecanumDrive)robot.getDrivetrain();
 
         // Add listeners to drivetrain for callbacks in order to translate into state machine events
         robot.getDrivetrain().addDriveSessionStatusListener(new IDriveSessionStatusListener() {
             @Override
             public void driveComplete() {
-                mAsm.evDriveComplete();
+                opMode.telemetry.addData("driveComplete Called","");
+                opMode.telemetry.update();
+                transition("evDriveComplete");
             }
 
             @Override
             public void driveByEncoderTimeoutFailure() {
-                // mAsm.evDriveFail()
+                transition("evDriveFail");
             }
         });
         robot.getDrivetrain().addRotationStatusListener(new IRotationStatusListener() {
             @Override
             public void rotationComplete() {
-                mAsm.evRotationComplete();
+                transition("evRotationComplete");
             }
         });
+
 
         // And add a listener to the state machine to send the state transitions to telemtry
         mAsm.addStateChangeListener(new PropertyChangeListener() {
@@ -97,7 +116,7 @@ public class AutonomousController {
                 State previousStatus = (State) event.getOldValue();
                 State newState = (State) event.getNewValue();
                 if (opMode != null){
-                    opMode.telemetry.addData("Transition:",previousStatus.getName()+" to "+newState.getName());
+                    opMode.telemetry.addData("Current State: ",newState.getName());
                     opMode.telemetry.update();
                 }
             }
@@ -105,12 +124,84 @@ public class AutonomousController {
     }
 
     /**
+     * helper method to build the transition table so that we can trigger events from
+     * within state machine handlers.
+     */
+    private void buildTransitionTable(){
+        // Initialize the transition table for use in queueing events
+        mTransition_map = new HashMap<>();
+        try
+        {
+            Class context = AutonomousStateMachineContext.class;
+            Method[] transitions = context.getDeclaredMethods();
+            String name;
+            int i;
+
+            for (i = 0; i < transitions.length; ++i)
+            {
+                name = transitions[i].getName();
+
+                // Ignore the getState and getOwner methods.
+                if (name.compareTo("getState") != 0 &&
+                        name.compareTo("getOwner") != 0)
+                {
+                    mTransition_map.put(name, transitions[i]);
+                }
+            }
+        }
+        catch (Exception ex)
+        {}
+
+        mTransition_queue = new LinkedList<>();
+    }
+
+    /**
+     * Transition method needed to make transition calls within the Controller
+     * @param trans_name
+     */
+    private synchronized void transition(String trans_name)
+    {
+        // Add the transition to the queue.
+        mTransition_queue.add(trans_name);
+
+        // Only if a transition is not in progress should a
+        // transition be issued.
+        if (mAsm.isInTransition() == false)
+        {
+            String name;
+            Method transition;
+            Object[] args = new Object[0];
+
+            while (mTransition_queue.isEmpty() == false)
+            {
+                name = (String) mTransition_queue.remove(0);
+                transition = (Method) mTransition_map.get(name);
+                try
+                {
+                    transition.invoke(mAsm, args);
+                }
+                catch (Exception ex)
+                {
+                    String msg = ex.getMessage();
+                    if (msg == null)
+                        msg = "exception in state machine";
+                    Log.e(getClass().getSimpleName(),msg);
+                }
+            }
+        }
+
+        return;
+    }
+
+
+
+    /**
      * Called from the OpMode loop until the state machine reaches Success
      */
      public void doOpmode(){
         // If we haven't started then kick if off.
         if (mAsm.getState() == AutonomousStateMachineContext.AutonomousStateMachine.Idle){
-            mAsm.evStart();
+            transition("evStart");
         }
 
         // Service all the timers in order to trigger any timeout callbacks/events
@@ -161,45 +252,15 @@ public class AutonomousController {
      *
      */
     public void linearDrive(double distance){
-        switch(mControlMode){
+        switch(mDriveMode){
             case ENCODER_CONTROL:
                 startDriveByEncoder(1.0d, distance,3000);
                 break;
             case OPEN_LOOP_TIME:
                 robot.getDrivetrain().driveLinearTime(distance,1.0d);
                 break;
-            case CLOSED_LOOP_VUFORIA:
-                // TODO
-                break;
         }
 
-    }
-    /**
-     * strafe drives to a skystone.   A skystone must be in view or immediately triggers the
-     * evDriveComplete event.
-     */
-    public void strafeDriveToSkystone() {
-        if (mSkystoneRecognition == null){
-            mAsm.evDriveComplete();
-        }
-        strafeDrive(getLateralDistanceToStone());
-    }
-    /**
-     * strafe drives to a stone.   A stone must be in view or immediately triggers the
-     * evDriveComplete event.
-     */
-    public void strafeDriveToStone() {
-        if (mStoneRecognition == null){
-            mAsm.evDriveComplete();
-        }
-        strafeDrive(getLateralDistanceToStone());
-    }
-
-        /**
-         * strafe drive
-         */
-    public void strafeDrive(double distance){
-        robot.getDrivetrain().doVectorTimedDrive(distance,0d);
     }
 
     /**
@@ -208,27 +269,44 @@ public class AutonomousController {
      *          evSkystoneFound if a Skystone is found.
      *          evNoStone if no stone currently in view
      */
-    public void checkForStones(){
+    public void checkStoneRecognition(){
         List<Recognition> list = mVuforia.getRecognitions();
         if (list == null){
-            mAsm.evNoStoneFound();
+            transition("evNoStoneFound");
             return;
         }
            for (Iterator<Recognition> riter = list.iterator(); riter.hasNext(); ) {
                 Recognition rec = riter.next();
                 if (rec.getLabel().equalsIgnoreCase(VuforiaTargetLocator.SKYSTONE_TFOD_LABEL)) {
                     mSkystoneRecognition = rec;
-                   mAsm.evSkystoneFound();
+                    transition("evSkystoneFound");
                     return;
                 } else if (rec.getLabel().equalsIgnoreCase(VuforiaTargetLocator.STONE_TFOD_LABEL)) {
                     mStoneRecognition = rec;
-                    mAsm.evStoneFound();
+                    transition("evStoneFound");
                     return;
                 }
             }
         mSkystoneRecognition = null;
         mStoneRecognition = null;
-        mAsm.evNoStoneFound();
+        transition("evNoStoneFound");
+    }
+
+    /**
+     * Strafes sideways to a Skystone based only on recognition.
+     * triggers:
+     * evDriveComplete when the drive is finished.
+     * evNoStone if no stone is in view.
+     * @param linearDistance forward distance from expected skystone
+     * @param timeoutms timeout in ms
+     */
+    public void strafeToSkystone(double linearDistance,int timeoutms){
+        if (mSkystoneRecognition == null){
+            transition("evNoStoneFound");
+        }
+        double angle = mSkystoneRecognition.estimateAngleToObject(AngleUnit.RADIANS);
+        double strafeDistance = linearDistance /Math.tan(angle);
+        mecanumDrive.strafeEncoder(1.0d,strafeDistance,timeoutms);
     }
 
     /**
@@ -239,7 +317,6 @@ public class AutonomousController {
         if (mSkystoneRecognition == null){
             return 0d;
         }
-        // TODO finish this
         mSkystoneRecognition.estimateAngleToObject(AngleUnit.DEGREES);
         return 0d;
     }
@@ -247,15 +324,12 @@ public class AutonomousController {
      * Called from state machine to drive toward the foundation
      */
     public void dragFoundation(){
-        switch(mControlMode){
+        switch(mDriveMode){
             case ENCODER_CONTROL:
                 startDriveByEncoder(1.0d, -12.0d,3000);
                 break;
             case OPEN_LOOP_TIME:
                 robot.getDrivetrain().driveLinearTime(-12d,1.0d);
-                break;
-            case CLOSED_LOOP_VUFORIA:
-                // TODO
                 break;
         }
     }

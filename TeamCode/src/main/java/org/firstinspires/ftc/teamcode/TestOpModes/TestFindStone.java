@@ -32,6 +32,8 @@ package org.firstinspires.ftc.teamcode.TestOpModes;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.teamcode.FrameDevelopmentBot;
 import org.firstinspires.ftc.teamcode.Globals;
 import org.firstinspires.ftc.teamcode.MecanumGrabberBot;
@@ -39,6 +41,8 @@ import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.autonomous.TargetPosition;
 import org.firstinspires.ftc.teamcode.autonomous.VuforiaTargetLocator;
 import org.firstinspires.ftc.teamcode.drivetrain.BaseMecanumDrive;
+import org.firstinspires.ftc.teamcode.drivetrain.IDriveSessionStatusListener;
+import org.firstinspires.ftc.teamcode.drivetrain.IRotationStatusListener;
 
 import java.util.Iterator;
 import java.util.List;
@@ -59,13 +63,14 @@ public class TestFindStone extends OpMode{
     private long lastTime = 0;
     VuforiaTargetLocator mVuforiaLocator = null;
 
+    private static final boolean ENABLE_VUFORIA_TELEMETRY = false;
     /*
      * Code to run ONCE when the driver hits INIT
      */
     @Override
     public void init() {
         // Have to extend stuck detect because the IMU can take a long time to initialize
-        msStuckDetectInit = 30000;
+        msStuckDetectInit = 40000;
 
         /* Initialize the hardware variables.
          * The init() method of the hardware class does all the work here
@@ -97,7 +102,29 @@ public class TestFindStone extends OpMode{
             telemetry.addData("Robot Init Error",initErrs);
             telemetry.update();
         }
-        mVuforiaLocator.activate();
+        if (mVuforiaLocator.mInitialized){
+            mVuforiaLocator.activate();
+        }
+        mRobot.getDrivetrain().addDriveSessionStatusListener(new IDriveSessionStatusListener() {
+            @Override
+            public void driveComplete() {
+                telemetry.addData("driveComplete Called","");
+                telemetry.update();
+            }
+
+            @Override
+            public void driveByEncoderTimeoutFailure() {
+                telemetry.addData("driveComplete Called","");
+                telemetry.update();
+            }
+        });
+        mRobot.getDrivetrain().addRotationStatusListener(new IRotationStatusListener() {
+            @Override
+            public void rotationComplete() {
+                telemetry.addData("rotationComplete Called","");
+                telemetry.update();
+            }
+        });
 
         lastTime = System.currentTimeMillis();
         // Send telemetry message to signify drivetrain waiting;
@@ -132,10 +159,13 @@ public class TestFindStone extends OpMode{
         double yoffset = 0d;
         double xoffset = 0d;
         List<TargetPosition> targets = mVuforiaLocator.getTargets();
+        if (ENABLE_VUFORIA_TELEMETRY)
+            telemetry.addData("","Numtargets="+targets.size());
         if (targets.size() > 0) {
             for (Iterator<TargetPosition> iter = targets.iterator(); iter.hasNext(); ) {
                 TargetPosition position = iter.next();
-                telemetry.addData(position.targetLabel+" x,y,O,H=", "%.1f, %.1f, %.1f, %.0f", position.x, position.y, position.orientation, position.heading);
+                if (ENABLE_VUFORIA_TELEMETRY)
+                    telemetry.addData(position.targetLabel+" x,y,O,H=", "%.1f, %.1f, %.1f, %.0f", position.x, position.y, position.orientation, position.heading);
                 if (position.targetLabel.equalsIgnoreCase(VuforiaTargetLocator.TARGET_SKYSTONE)) {
                     if (Math.abs(position.y) > Math.abs(yoffset)) {
                         yoffset = position.y;
@@ -144,7 +174,18 @@ public class TestFindStone extends OpMode{
                 }
             }
         }
-        telemetry.update();
+        List<Recognition> recognitions = mVuforiaLocator.getRecognitions();
+        if (ENABLE_VUFORIA_TELEMETRY)
+            telemetry.addData("NumRecognitions="+recognitions.size(),"");
+        if (recognitions.size() > 0){
+            for(Iterator<Recognition>iter=recognitions.iterator();iter.hasNext();){
+                Recognition recog = iter.next();
+                if (ENABLE_VUFORIA_TELEMETRY)
+                    telemetry.addData("Recognition: "+recog.getLabel()+" angle=","%.0f",recog.estimateAngleToObject(AngleUnit.DEGREES));
+            }
+        }
+        if (ENABLE_VUFORIA_TELEMETRY)
+            telemetry.update();
 //        List<Recognition>recList = mVuforiaLocator.getRecognitions();
 //        if (!recList.isEmpty()) {
 //            Recognition recog = recList.get(0);
@@ -163,11 +204,15 @@ public class TestFindStone extends OpMode{
 //        if (gamepad1.x){
 //            ((BaseMecanumDrive)mRobot.getDrivetrain()).strafeEncoder(1.0d,12.0d,3000);
 //        }
+        if (gamepad1.a){
+            mecanumDrive.rotate(90);
+        }
         if (gamepad1.x){
             mecanumDrive.strafeEncoder(1.0d,xoffset,5000);
         }
         if (gamepad1.y){
-            mecanumDrive.driveEncoder(1.0d,yoffset,2000);
+ //           mecanumDrive.driveEncoder(1.0d,yoffset,2000);
+            mecanumDrive.driveEncoder(1.0d,12d,2000);
         }
         if (gamepad1.b){
             mecanumDrive.strafeEncoder(1.0d,12d,10000);

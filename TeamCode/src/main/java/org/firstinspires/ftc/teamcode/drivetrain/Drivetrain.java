@@ -100,10 +100,7 @@ public abstract class Drivetrain {
 
     /**
      *
-     * IMPORTANT:  IMU can take a long time to initialize so initialize from the
-     * init_loop function instead of init within the OpMode or the mode will likely
-     * crash due to "stuck in Init()" error from the long init time of the IMU
-     * @return true on success, false on error
+     * IMPORTANT:  IMU can take a long time to initialize
      */
     public void init(HardwareMap hwMap) throws Exception {
         this.mHWMap = hwMap;

@@ -228,26 +228,24 @@ public class AutonomousStateMachineContext
             new AutonomousStateMachine_Idle("AutonomousStateMachine.Idle", 0);
         public static final AutonomousStateMachine_DriveToStones DriveToStones =
             new AutonomousStateMachine_DriveToStones("AutonomousStateMachine.DriveToStones", 1);
-        public static final AutonomousStateMachine_LocateSkystone LocateSkystone =
-            new AutonomousStateMachine_LocateSkystone("AutonomousStateMachine.LocateSkystone", 2);
         public static final AutonomousStateMachine_StrafeToStone StrafeToStone =
-            new AutonomousStateMachine_StrafeToStone("AutonomousStateMachine.StrafeToStone", 3);
+            new AutonomousStateMachine_StrafeToStone("AutonomousStateMachine.StrafeToStone", 2);
         public static final AutonomousStateMachine_DriveForwardToIntake DriveForwardToIntake =
-            new AutonomousStateMachine_DriveForwardToIntake("AutonomousStateMachine.DriveForwardToIntake", 4);
+            new AutonomousStateMachine_DriveForwardToIntake("AutonomousStateMachine.DriveForwardToIntake", 3);
         public static final AutonomousStateMachine_IntakeStone IntakeStone =
-            new AutonomousStateMachine_IntakeStone("AutonomousStateMachine.IntakeStone", 5);
+            new AutonomousStateMachine_IntakeStone("AutonomousStateMachine.IntakeStone", 4);
         public static final AutonomousStateMachine_BackupToBeginDrag BackupToBeginDrag =
-            new AutonomousStateMachine_BackupToBeginDrag("AutonomousStateMachine.BackupToBeginDrag", 6);
+            new AutonomousStateMachine_BackupToBeginDrag("AutonomousStateMachine.BackupToBeginDrag", 5);
         public static final AutonomousStateMachine_BlueAllianceRotateTowardBridge BlueAllianceRotateTowardBridge =
-            new AutonomousStateMachine_BlueAllianceRotateTowardBridge("AutonomousStateMachine.BlueAllianceRotateTowardBridge", 7);
+            new AutonomousStateMachine_BlueAllianceRotateTowardBridge("AutonomousStateMachine.BlueAllianceRotateTowardBridge", 6);
         public static final AutonomousStateMachine_RedAllianceRotateTowardBridge RedAllianceRotateTowardBridge =
-            new AutonomousStateMachine_RedAllianceRotateTowardBridge("AutonomousStateMachine.RedAllianceRotateTowardBridge", 8);
+            new AutonomousStateMachine_RedAllianceRotateTowardBridge("AutonomousStateMachine.RedAllianceRotateTowardBridge", 7);
         public static final AutonomousStateMachine_DragStone DragStone =
-            new AutonomousStateMachine_DragStone("AutonomousStateMachine.DragStone", 9);
+            new AutonomousStateMachine_DragStone("AutonomousStateMachine.DragStone", 8);
         public static final AutonomousStateMachine_ReleaseStone ReleaseStone =
-            new AutonomousStateMachine_ReleaseStone("AutonomousStateMachine.ReleaseStone", 10);
+            new AutonomousStateMachine_ReleaseStone("AutonomousStateMachine.ReleaseStone", 9);
         public static final AutonomousStateMachine_Complete Complete =
-            new AutonomousStateMachine_Complete("AutonomousStateMachine.Complete", 11);
+            new AutonomousStateMachine_Complete("AutonomousStateMachine.Complete", 10);
     }
 
     protected static class AutonomousStateMachine_Default
@@ -324,49 +322,26 @@ public class AutonomousStateMachineContext
                 AutonomousController ctxt = context.getOwner();
 
             ctxt.openHook();
-            ctxt.linearDrive(30d);
+            ctxt.linearDrive(10d);
             return;
         }
 
         @Override
         protected void evDriveComplete(AutonomousStateMachineContext context)
         {
+            AutonomousController ctxt = context.getOwner();
 
-            (context.getState()).exit(context);
-            context.setState(AutonomousStateMachine.LocateSkystone);
-            (context.getState()).entry(context);
-            return;
-        }
-
-    //-------------------------------------------------------
-    // Member data.
-    //
-
-        //---------------------------------------------------
-        // Constants.
-        //
-
-        private static final long serialVersionUID = 1L;
-    }
-
-    private static final class AutonomousStateMachine_LocateSkystone
-        extends AutonomousStateMachine_Default
-    {
-    //-------------------------------------------------------
-    // Member methods.
-    //
-
-        private AutonomousStateMachine_LocateSkystone(String name, int id)
-        {
-            super (name, id);
-        }
-
-        @Override
-        protected void entry(AutonomousStateMachineContext context)
+            AutonomousControllerState endState = context.getState();
+            context.clearState();
+            try
             {
-                AutonomousController ctxt = context.getOwner();
+                ctxt.checkStoneRecognition();
+            }
+            finally
+            {
+                context.setState(endState);
+            }
 
-            ctxt.checkForStones();
             return;
         }
 
@@ -389,7 +364,7 @@ public class AutonomousStateMachineContext
             context.clearState();
             try
             {
-                ctxt.strafeDriveToSkystone();
+                ctxt.strafeToSkystone(10d, 5000);
             }
             finally
             {
@@ -409,7 +384,7 @@ public class AutonomousStateMachineContext
             context.clearState();
             try
             {
-                ctxt.strafeDriveToStone();
+                ctxt.strafeToSkystone(10d, 5000);
             }
             finally
             {
@@ -481,7 +456,7 @@ public class AutonomousStateMachineContext
             {
                 AutonomousController ctxt = context.getOwner();
 
-            ctxt.linearDrive(6d);
+            ctxt.linearDrive(10d);
             return;
         }
 

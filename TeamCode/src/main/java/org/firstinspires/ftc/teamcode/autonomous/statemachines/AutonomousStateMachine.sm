@@ -16,30 +16,20 @@
 
 
     /*
-    * drives forward up to the stones
+    * drives forward close enough to be able to locate a Skystone with the camera
     */
     DriveToStones
         Entry {
             openHook();
             // start drive forward
-            linearDrive(30d);
+            linearDrive(10d);
         }
     {
-        evDriveComplete LocateSkystone {}
- //       evDriveFail DriveToStoneFailure {}
-    }
-
-    /*
-    * Locates a skystone by side strafe
-    */
-    LocateSkystone
-        Entry{
-            checkForStones();
-        }
-    {
-        evSkystoneFound StrafeToStone { strafeDriveToSkystone(); }
-        evStoneFound StrafeToStone { strafeDriveToStone(); }
-        evNoStoneFound DriveForwardToIntake {}
+        evDriveComplete nil { checkStoneRecognition(); }
+        evDriveFail DriveForwardToIntake {}
+        evSkystoneFound StrafeToStone { strafeToSkystone(10d,5000); }
+        evStoneFound StrafeToStone { strafeToSkystone(10d,5000); }
+        evNoStoneFound DriveForwardToIntake {   }
     }
 
     StrafeToStone
@@ -51,7 +41,7 @@
 
     DriveForwardToIntake
         Entry{
-            linearDrive(6d);
+            linearDrive(10d);
         }
     {
         evDriveComplete IntakeStone {}

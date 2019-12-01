@@ -126,6 +126,8 @@ public class VuforiaTargetLocator {
 
     private OpMode mOpMode = null;
 
+    public boolean mInitialized = false;
+
     public VuforiaTargetLocator(){
 
     }
@@ -311,6 +313,7 @@ public class VuforiaTargetLocator {
         tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
         tfod.loadModelFromAsset(TFOD_MODEL_ASSET, STONE_TFOD_LABEL, SKYSTONE_TFOD_LABEL);
 
+        mInitialized = true;
     }
 
 
