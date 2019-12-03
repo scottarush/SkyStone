@@ -5,18 +5,15 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
-public class GrabberBotMecanumDrive extends BaseMecanumDrive {
+/**
+ * This is the speed bot with the 1-4 gear.
+ */
+public class SpeedBotMecanumDrive extends BaseMecanumDrive {
 
-    /**
-     * Core hex motor from the specification
-     */
-    public static final int ENCODER_COUNTS_PER_ROTATION = 288;
-    /**
-     * Number of counts per inch of direct wheel movement.
-     **/
-    public static final double COUNTS_PER_INCH = ENCODER_COUNTS_PER_ROTATION / MECANUM_WHEEL_CIRCUMFERENCE;
+
     public static final double PIMOTOR_KP = 1.0;
     public static final double PIMOTOR_KI = 1.0;
+
     public static final double ROTATION_KP = 4.0d;
     public static final double ROTATION_KI  = 1.0d;
     /**
@@ -44,13 +41,23 @@ public class GrabberBotMecanumDrive extends BaseMecanumDrive {
         return 1.0d;
     }
 
+    /**
+     * Core hex motor from the specification
+     */
+    public static final int ENCODER_COUNTS_PER_ROTATION = 288;
+    /**
+     * Number of counts per inch of direct wheel movement.
+     **/
+    public static final double COUNTS_PER_INCH = ENCODER_COUNTS_PER_ROTATION / (4 * MECANUM_WHEEL_CIRCUMFERENCE);
+
+
+    public SpeedBotMecanumDrive(OpMode opMode){
+        super(opMode);
+    }
+
     @Override
     protected double getEncoderCountsPerInchRotation() {
         return COUNTS_PER_INCH;
-    }
-
-    public GrabberBotMecanumDrive(OpMode opMode){
-        super(opMode);
     }
 
     /* Initialize standard Hardware interfaces.
@@ -66,6 +73,7 @@ public class GrabberBotMecanumDrive extends BaseMecanumDrive {
         try {
             motor = tryMapMotor("lf");
             lfMotor = new ProportionalIntegralMotor(motor,ENCODER_COUNTS_PER_ROTATION, PIMOTOR_KP, PIMOTOR_KI);
+            lfMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         }
         catch (Exception e){
             motorInitError += "lf,";
@@ -88,12 +96,10 @@ public class GrabberBotMecanumDrive extends BaseMecanumDrive {
         try {
             motor = tryMapMotor("rr");
             rrMotor = new ProportionalIntegralMotor(motor,ENCODER_COUNTS_PER_ROTATION, PIMOTOR_KP, PIMOTOR_KI);
-            rrMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         }
         catch(Exception e){
             motorInitError += "rr,";
         }
-        // Initialize the IMU with the superclass initialization
         try{
             super.init(ahwMap);
         }

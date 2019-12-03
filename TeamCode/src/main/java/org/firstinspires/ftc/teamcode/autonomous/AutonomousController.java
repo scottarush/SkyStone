@@ -206,8 +206,8 @@ public class AutonomousController {
 
         // Service all the timers in order to trigger any timeout callbacks/events
         serviceTimers();
-        // Call doLoop method on drivetrain to support drive and rotation controls
-         robot.getDrivetrain().doLoop();
+        // Call loop method on drivetrain to support drive and rotation controls
+         robot.getDrivetrain().loop();
         // If a reset of the arm is active, then service it by calling it from here.
          if (robot.getArm().isResetToRetractInProgress()){
              if (!robot.getArm().resetToRetractPosition()){

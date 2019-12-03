@@ -34,7 +34,7 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.drivetrain.BaseMecanumDrive;
-import org.firstinspires.ftc.teamcode.drivetrain.FrameDevBotMecanumDrive;
+import org.firstinspires.ftc.teamcode.drivetrain.SpeedBotMecanumDrive;
 
 
 /**
@@ -42,7 +42,7 @@ This class implements the equations that Marcus derived on October 3.
   */
 
 @TeleOp(name="TestTankDrive", group="Robot")
-@Disabled
+//@Disabled
 public class TestTankOpMode extends OpMode{
 
     /* Declare OpMode members. */
@@ -57,7 +57,7 @@ public class TestTankOpMode extends OpMode{
          * The init() method of the hardware class does all the work here
          */
         try {
-            drivetrain = new FrameDevBotMecanumDrive(this);
+            drivetrain = new SpeedBotMecanumDrive(this);
             drivetrain.init(hardwareMap);
         }
         catch(Exception e){

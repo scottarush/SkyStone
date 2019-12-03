@@ -34,7 +34,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
-import org.firstinspires.ftc.teamcode.FrameDevelopmentBot;
+import org.firstinspires.ftc.teamcode.SpeedBot;
 import org.firstinspires.ftc.teamcode.Globals;
 import org.firstinspires.ftc.teamcode.MecanumGrabberBot;
 import org.firstinspires.ftc.teamcode.Robot;
@@ -78,7 +78,7 @@ public class TestFindStone extends OpMode{
         String initErrs = "";
         try {
             if (Globals.USE_DEV_FRAME_BOT){
-                mRobot = new FrameDevelopmentBot(this);
+                mRobot = new SpeedBot(this);
             }
             else {
                 mRobot = new MecanumGrabberBot(this,true);
@@ -154,7 +154,7 @@ public class TestFindStone extends OpMode{
 
         long currentTime = System.currentTimeMillis();
         long delta = currentTime-lastTime;
-        mRobot.getDrivetrain().doLoop();
+        mRobot.getDrivetrain().loop();
 
         double yoffset = 0d;
         double xoffset = 0d;

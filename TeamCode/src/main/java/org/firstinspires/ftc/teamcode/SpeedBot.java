@@ -3,7 +3,6 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.firstinspires.ftc.teamcode.arm.FourBarArm;
-import org.firstinspires.ftc.teamcode.drivetrain.BaseMecanumDrive;
 
 /**
  * This is the Mecanum Frame Development Bot
@@ -17,14 +16,14 @@ import org.firstinspires.ftc.teamcode.drivetrain.BaseMecanumDrive;
  *
  * Camera is "webcam"
  */
-public class FrameDevelopmentBot extends Robot {
+public class SpeedBot extends Robot {
 
     private final FourBarArm mDummyArm = new FourBarArm(null,false);
     private final Grabber mDummyGrabber = new Grabber(null);
     private final Hook mDummyHook = new Hook(null);
 
-    public FrameDevelopmentBot(OpMode opMode){
-        super(DriveTrainStyle.FRAME_DEV_BOT_MECANUM_DRIVE,opMode);
+    public SpeedBot(OpMode opMode){
+        super(DriveTrainStyle.SPEED_BOT_MECANUM_DRIVE,opMode);
     }
 
 

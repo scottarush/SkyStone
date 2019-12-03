@@ -55,25 +55,18 @@ public abstract class Drivetrain {
     protected double mLinearDrivePower = 1.0d;
 
     /**
-     * proportional constant for linear direction correction.
-     */
-    private double mLinearKp = 1.0d;
-    /**
      * IMU inside REV hub
      */
     private BNO055IMU mIMU = null;
     private boolean mIMUInitialized = false;
-    private int mLinearMillisecondsPerInch = 10;
+
 
     private ArrayList<IDriveSessionStatusListener> mDriveSessionStatusListeners = new ArrayList<>();
     private ArrayList<IRotationStatusListener> mRotationStatusListeners = new ArrayList<>();
 
 
-    public Drivetrain(OpMode opMode,int linearMillisecondsPerInch,double rotationKp,double linearKp){
+    public Drivetrain(OpMode opMode){
         this.mOpMode = opMode;
-        mLinearMillisecondsPerInch = linearMillisecondsPerInch;
-        mRotationKp = rotationKp;
-        mLinearKp = linearKp;
 
         mTimedDriveTimer = new OneShotTimer(1000, new OneShotTimer.IOneShotTimerCallback() {
             @Override
@@ -97,6 +90,25 @@ public abstract class Drivetrain {
             }
         });
       }
+
+    /**
+     * Must be overridden by subclasses to return the linearMillisecondsPerInch rate.
+      */
+    public abstract int getLinearMillisecondsPerInch();
+
+    /**
+     * Must be overridden by subclasses to return the linear Kproportional constant.
+     */
+    public abstract double getLinearKp();
+    /**
+     * Must be implemented by subclasses to return the rotation Kproportional constant
+     */
+    public abstract double getRotationKp();
+
+    /**
+     * Must be implemented by subclasses to return the rotation Kintegral constant
+     */
+    public abstract double getRotationKi();
 
     /**
      *
@@ -135,7 +147,7 @@ public abstract class Drivetrain {
     /**
      * Must be called from the OpMode service loop to service timers for drive and rotation handling.
      */
-    public void doLoop(){
+    public void loop(){
 
         // Service rotation and heading corrections
         long currentTime = System.currentTimeMillis();
@@ -204,29 +216,14 @@ public abstract class Drivetrain {
             mLinearDrivePower *= -1.0d;
         }
 
-        int timeoutms = (int) Math.abs(Math.round(linearDistance * mLinearMillisecondsPerInch * mLinearDrivePower));
+        int timeoutms = (int) Math.abs(Math.round(linearDistance * getLinearMillisecondsPerInch() * mLinearDrivePower));
         mTimedDriveTimer.setTimeout(timeoutms);
         mTimedDriveTimer.start();
         mLinearDriveActive = true;
         return timeoutms;
     }
 
-    /**
-     * Drives in an arbitrary vector using the linear
-     * @param xdistance  x coord of movement vector in in
-     * @param ydistance y coord of movement vector in in
-     * @return time in ms for the drive or -1 if not supported for this drivetrain.
-     */
-    public int doVectorTimedDrive(double xdistance,double ydistance){
-        int timeoutms = -1;
-        if (isVectorTimedDriveSupported()){
-            double angleRate = Math.sqrt(Math.pow(getVectorTimedXMSPerInch(),2.0d) + Math.pow(getVectorTimedYMSPerInch(),2.0d));
-            timeoutms = (int) Math.abs(angleRate);
-            mTimedDriveTimer.setTimeout(timeoutms);
-            mTimedDriveTimer.start();
-        }
-        return timeoutms;
-    }
+
     /**
      * Starts IMU rotation.
      * Rotate left or right the number of degrees. Does not support turning more than 180 degrees.
@@ -347,7 +344,7 @@ public abstract class Drivetrain {
 
         correction = getAngle();
 
-        correction = correction * mLinearKp;
+        correction = correction * getLinearKp();
 
         if (Math.abs(correction) > 1.0d){
             correction = Math.signum(correction);
@@ -364,22 +361,6 @@ public abstract class Drivetrain {
      */
     public boolean isVectorTimedDriveSupported(){
         return false;
-    }
-
-    /**
-     * must be implemented by subclasses to return the x timed rates if isVectorTimedDriveSupported
-     * base class just returns 0
-     */
-    public int getVectorTimedXMSPerInch(){
-        return 0;
-    }
-
-    /**
-     * must be implemented by subclasses to return the \y timed rates if isVectorTimedDriveSupported
-     * base class just returns 0
-     */
-    public int getVectorTimedYMSPerInch(){
-        return 0;
     }
 
     /**
