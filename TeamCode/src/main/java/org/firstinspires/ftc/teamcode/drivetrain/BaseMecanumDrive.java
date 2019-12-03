@@ -31,8 +31,6 @@ package org.firstinspires.ftc.teamcode.drivetrain;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.HardwareMap;
 
 /**
  * This is NOT an opmode.
@@ -52,10 +50,10 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
  *
  */
 public abstract class BaseMecanumDrive extends Drivetrain{
-    protected DcMotor lfMotor = null;
-    protected DcMotor rfMotor = null;
-    protected DcMotor lrMotor = null;
-    protected DcMotor rrMotor = null;
+    protected ProportionalIntegralMotor lfMotor = null;
+    protected ProportionalIntegralMotor rfMotor = null;
+    protected ProportionalIntegralMotor lrMotor = null;
+    protected ProportionalIntegralMotor rrMotor = null;
 
     /**
      * Wheel circumference in inches
@@ -63,51 +61,34 @@ public abstract class BaseMecanumDrive extends Drivetrain{
     public static final double MECANUM_WHEEL_CIRCUMFERENCE = 12.1211;
 
     /**
-     * Core hex motor from the specification
-     */
-    public static final double ENCODER_COUNTS_PER_ROTATION = 288d;
-
-    /**
      * scale factor for strafe lateral distance.
      */
     public static final double STRAFE_ENCODER_DISTANCE_COEFFICIENT = 1.08d;
 
     /**
-     * Number of counts per inch of direct wheel movement.
-     **/
-    public static final double COUNTS_PER_INCH = ENCODER_COUNTS_PER_ROTATION / MECANUM_WHEEL_CIRCUMFERENCE;
-
-    /**
-     * Approximate number of milliseconds per inch forward and rearward at full power.
-     */
-    public static final int LINEAR_MILLISECONDS_PER_INCH = 50;
-    /**
-     * Approximate number of milliseconds per inch inch direction for vector drive
-     */
-    public static final int VECTOR_XMILLISECONDS_PER_INCH = 50;
-    /**
-     * Approximate number of milliseconds per inch in Y direction for vector drive
-     */
-    public static final int VECTOR_YMILLISECONDS_PER_INCH = 50;
-
-    /**
-     * constant for drivetrain rotation proportional control constant.
-     */
-    public static final double ROTATION_KP = 3.0d;
-    /**
-     * constant for linear correction proportional constant
-     */
-    public static final double LINEAR_KP = 0.25d;
-
-
-
-    /**
      * @param
      **/
     public BaseMecanumDrive(OpMode opMode) {
-        super(opMode,LINEAR_MILLISECONDS_PER_INCH,ROTATION_KP,LINEAR_KP);
+        super(opMode);
     }
 
+    /**
+     * Must be called from the OpMode service loop to service timers for drive and rotation handling.
+     */
+    public void loop() {
+        if (lfMotor != null)
+            lfMotor.loop();
+        if (lrMotor != null)
+            lrMotor.loop();
+        if (rfMotor != null)
+            rfMotor.loop();
+        if (rrMotor != null)
+            rrMotor.loop();
+        mOpMode.telemetry.addData("lf,lr,rf,rr","%d %d %d %d",lfMotor.getCurrentPosition(),
+                lrMotor.getCurrentPosition(),rfMotor.getCurrentPosition(),rrMotor.getCurrentPosition());
+        mOpMode.telemetry.update();
+        super.loop();
+    }
 
     /**
      * Helper function to set power to the wheel drive motors
@@ -147,6 +128,11 @@ public abstract class BaseMecanumDrive extends Drivetrain{
     }
 
     /**
+     * subclasses must implement to return the number of encoder counts per inch of rotation
+     */
+    protected abstract double getEncoderCountsPerInchRotation();
+
+    /**
      * private helper function for set target position.  Does nothing if motor pointer is
      * null to allow fail-op operation.
      */
@@ -155,16 +141,7 @@ public abstract class BaseMecanumDrive extends Drivetrain{
             motor.setTargetPosition(position);
         }
     }
-    /**
-     * private helper function for get target position.  Returns 0 if
-     * null to allow fail-op operation.
-     */
-    private int getTargetPosition(DcMotor motor){
-        if (motor != null){
-            return motor.getTargetPosition();
-        }
-        return 0;
-    }
+
     /**
      * private helper function for get current position.  Returns 0 if
      * null to allow fail-op operation.
@@ -209,17 +186,16 @@ public abstract class BaseMecanumDrive extends Drivetrain{
 
         // Compute the number of encoder counts for each wheel to move the requested distance
         double scaledDistance = strafeDistance * STRAFE_ENCODER_DISTANCE_COEFFICIENT;
-        int lfDeltaCounts = (int) Math.round(scaledDistance * BaseMecanumDrive.COUNTS_PER_INCH);
-        int lrDeltaCounts = (int) Math.round(-scaledDistance * BaseMecanumDrive.COUNTS_PER_INCH);
-        int rfDeltaCounts = (int) Math.round(-scaledDistance * BaseMecanumDrive.COUNTS_PER_INCH);
-        int rrDeltaCounts = (int) Math.round(scaledDistance * BaseMecanumDrive.COUNTS_PER_INCH);
+        int lfDeltaCounts = (int) Math.round(scaledDistance * getEncoderCountsPerInchRotation());
+        int lrDeltaCounts = (int) Math.round(-scaledDistance * getEncoderCountsPerInchRotation());
+        int rfDeltaCounts = (int) Math.round(-scaledDistance * getEncoderCountsPerInchRotation());
+        int rrDeltaCounts = (int) Math.round(scaledDistance * getEncoderCountsPerInchRotation());
 
         // Set target counts for each motor to the above
         setTargetPosition(lfMotor,lfDeltaCounts+getCurrentPosition(lfMotor));
         setTargetPosition(rfMotor,rfDeltaCounts+getCurrentPosition(rfMotor));
         setTargetPosition(lrMotor,lrDeltaCounts+getCurrentPosition(lrMotor));
         setTargetPosition(rrMotor,rrDeltaCounts+getCurrentPosition(rrMotor));
-
         //       mOpMode.telemetry.addData("counts","lf="+lfDeltaCounts+",rf="+rfDeltaCounts+",lr="+lrDeltaCounts+",rr="+rrDeltaCounts);
         //     mOpMode.telemetry.update();
         // Set mode to run to position
@@ -252,10 +228,10 @@ public abstract class BaseMecanumDrive extends Drivetrain{
 
         // Compute the number of encoder counts for each wheel to move the requested distance
         double scaledDistance = strafeDistance * STRAFE_ENCODER_DISTANCE_COEFFICIENT;
-        int lfDeltaCounts = (int) Math.round(scaledDistance * BaseMecanumDrive.COUNTS_PER_INCH);
-        int lrDeltaCounts = (int) Math.round(-scaledDistance * BaseMecanumDrive.COUNTS_PER_INCH);
-        int rfDeltaCounts = (int) Math.round(-scaledDistance * BaseMecanumDrive.COUNTS_PER_INCH);
-        int rrDeltaCounts = (int) Math.round(scaledDistance * BaseMecanumDrive.COUNTS_PER_INCH);
+        int lfDeltaCounts = (int) Math.round(scaledDistance * getEncoderCountsPerInchRotation());
+        int lrDeltaCounts = (int) Math.round(-scaledDistance * getEncoderCountsPerInchRotation());
+        int rfDeltaCounts = (int) Math.round(-scaledDistance * getEncoderCountsPerInchRotation());
+        int rrDeltaCounts = (int) Math.round(scaledDistance * getEncoderCountsPerInchRotation());
 
         // Set target counts for each motor to the above
         setTargetPosition(lfMotor,lfDeltaCounts+getCurrentPosition(lfMotor));
@@ -295,10 +271,10 @@ public abstract class BaseMecanumDrive extends Drivetrain{
         setMotorModes(DcMotor.RunMode.RUN_USING_ENCODER);
 
         // Compute the number of encoder counts for each wheel to move the requested distanc
-        int lfDeltaCounts = (int) Math.round(linearDistance * BaseMecanumDrive.COUNTS_PER_INCH);
-        int rfDeltaCounts = (int) Math.round(linearDistance * BaseMecanumDrive.COUNTS_PER_INCH);
-        int lrDeltaCounts = (int) Math.round(linearDistance * BaseMecanumDrive.COUNTS_PER_INCH);
-        int rrDeltaCounts = (int) Math.round(linearDistance * BaseMecanumDrive.COUNTS_PER_INCH);
+        int lfDeltaCounts = (int) Math.round(linearDistance * getEncoderCountsPerInchRotation());
+        int rfDeltaCounts = (int) Math.round(linearDistance * getEncoderCountsPerInchRotation());
+        int lrDeltaCounts = (int) Math.round(linearDistance * getEncoderCountsPerInchRotation());
+        int rrDeltaCounts = (int) Math.round(linearDistance * getEncoderCountsPerInchRotation());
 
         // Set target counts for each motor to the above
         setTargetPosition(lfMotor,lfDeltaCounts+getCurrentPosition(lfMotor));
@@ -380,15 +356,7 @@ public abstract class BaseMecanumDrive extends Drivetrain{
         return true;
     }
 
-    @Override
-    public int getVectorTimedXMSPerInch() {
-        return VECTOR_XMILLISECONDS_PER_INCH;
-    }
 
-    @Override
-    public int getVectorTimedYMSPerInch() {
-        return VECTOR_YMILLISECONDS_PER_INCH;
-    }
 
     /**
      * Drives for a set distance using open-loop, robot-specific time.
@@ -414,22 +382,6 @@ public abstract class BaseMecanumDrive extends Drivetrain{
         setPower(lfPower,rfPower,lrPower,rrPower);
     }
 
-    @Override
-    public int doVectorTimedDrive(double xdistance, double ydistance) {
-        int timeout = super.doVectorTimedDrive(xdistance, ydistance);
-        // TODO Need to figure out how to translate the vector into the power split
-        // TODO Make it do a vector.  For now only use ydistance to know which direction
-        double power = 1.0d;
-        if (xdistance > 0d){
-            power = -power;
-        }
-        double lfPower = power;
-        double rfPower = -power;
-        double lrPower = power;
-        double rrPower = -power;
-        setPower(lfPower,rfPower,lrPower,rrPower);
-        return timeout;
-    }
 
     /**
      * Overridden function calls base class to pass correction value into motors.

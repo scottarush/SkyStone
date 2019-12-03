@@ -2,7 +2,7 @@ package org.firstinspires.ftc.teamcode.autonomous;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
-import org.firstinspires.ftc.teamcode.FrameDevelopmentBot;
+import org.firstinspires.ftc.teamcode.SpeedBot;
 import org.firstinspires.ftc.teamcode.Globals;
 import org.firstinspires.ftc.teamcode.MecanumGrabberBot;
 import org.firstinspires.ftc.teamcode.Robot;
@@ -35,7 +35,7 @@ public class SkystoneAutonomousOpMode {
         String initErrs = "";
         try {
             if (Globals.USE_DEV_FRAME_BOT){
-                robot = new FrameDevelopmentBot(mOpmode);
+                robot = new SpeedBot(mOpmode);
             }
             else {
                 robot = new MecanumGrabberBot(mOpmode,true);

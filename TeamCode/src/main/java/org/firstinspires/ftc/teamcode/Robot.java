@@ -4,10 +4,8 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.firstinspires.ftc.teamcode.arm.FourBarArm;
 import org.firstinspires.ftc.teamcode.drivetrain.Drivetrain;
-import org.firstinspires.ftc.teamcode.drivetrain.FrameDevBotMecanumDrive;
 import org.firstinspires.ftc.teamcode.drivetrain.GrabberBotMecanumDrive;
-import org.firstinspires.ftc.teamcode.drivetrain.TwoWheelTankDrive;
-
+import org.firstinspires.ftc.teamcode.drivetrain.SpeedBotMecanumDrive;
 /**
  * Base class for a robot.
  *
@@ -16,8 +14,7 @@ public abstract class Robot {
 
     public enum DriveTrainStyle {
         GRABBER_BOT_MECANUM_DRIVE(0),
-        FRAME_DEV_BOT_MECANUM_DRIVE(1),
-        TWO_WHEEL_TANK(2);
+        SPEED_BOT_MECANUM_DRIVE(1);
 
         private final int id;
 
@@ -47,11 +44,8 @@ public abstract class Robot {
             case GRABBER_BOT_MECANUM_DRIVE:
                 drivetrain = new GrabberBotMecanumDrive(om);
                 break;
-            case FRAME_DEV_BOT_MECANUM_DRIVE:
-                drivetrain = new FrameDevBotMecanumDrive(om);
-                break;
-            case TWO_WHEEL_TANK:
-                drivetrain = new TwoWheelTankDrive(om);
+            case SPEED_BOT_MECANUM_DRIVE:
+                drivetrain = new SpeedBotMecanumDrive(om);
                 break;
             default:
                 drivetrain = new GrabberBotMecanumDrive(om);
