@@ -5,7 +5,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorController;
 import com.qualcomm.robotcore.hardware.configuration.typecontainers.MotorConfigurationType;
 
-public class ProportionalIntegralMotor implements DcMotor {
+public class WrappedDCMotor implements DcMotor {
 
     DcMotor mMotor = null;
 
@@ -13,7 +13,6 @@ public class ProportionalIntegralMotor implements DcMotor {
     private double mKi = 0.0d;
 
     private int mTargetPosition = 0;
-    private int mCurrentPosition = 0;
 
     private int mIntegralTermErrorThreshold = 0;
 
@@ -30,11 +29,12 @@ public class ProportionalIntegralMotor implements DcMotor {
 
     private RunMode mRunMode = RunMode.RUN_USING_ENCODER;
 
+    private static final boolean ENABLE_PIMOTOR_OVERRIDES = false;
     /**
      * Constructor must be provided a valid mapped motor
      * @param theMotor
      */
-    public ProportionalIntegralMotor(DcMotor theMotor,int encoderCountsPerRev,double kp,double ki){
+    public WrappedDCMotor(DcMotor theMotor, int encoderCountsPerRev, double kp, double ki){
         mMotor = theMotor;
         mIntegralTermErrorThreshold = encoderCountsPerRev * NUM_ROTATIONS_INTEGRAL_TERM;
     }
@@ -44,6 +44,8 @@ public class ProportionalIntegralMotor implements DcMotor {
      * encoder control pi loop.
      */
     public void loop(){
+        if (!ENABLE_PIMOTOR_OVERRIDES)
+            return;
         if (!mPILoopRunning)
             return;
         long currentTime = System.currentTimeMillis();
@@ -92,15 +94,19 @@ public class ProportionalIntegralMotor implements DcMotor {
 
     @Override
     public void setPower(double power) {
-        if ((mPILoopRunning == false) && (mMotor.getMode() == RunMode.RUN_TO_POSITION)) {
-            mPILoopRunning = true;
-            mLastSystemTime = System.currentTimeMillis();
-            mEncoderPowerLimit = power;
-            loop();
+        if (ENABLE_PIMOTOR_OVERRIDES) {
+            if ((mPILoopRunning == false) && (mMotor.getMode() == RunMode.RUN_TO_POSITION)) {
+                mPILoopRunning = true;
+                mLastSystemTime = System.currentTimeMillis();
+                mEncoderPowerLimit = power;
+                loop();
+            } else {
+                mPILoopRunning = false;
+                // Motor is moving so just set the power
+                mMotor.setPower(power);
+            }
         }
-        else {
-            mPILoopRunning = false;
-            // Motor is moving so just set the power
+        else{
             mMotor.setPower(power);
         }
     }
@@ -142,7 +148,9 @@ public class ProportionalIntegralMotor implements DcMotor {
 
     @Override
     public void setTargetPosition(int position) {
-        mTargetPosition = position;
+        if (ENABLE_PIMOTOR_OVERRIDES)
+            mTargetPosition = position;
+        mMotor.setTargetPosition(position);
     }
 
     @Override
@@ -157,7 +165,7 @@ public class ProportionalIntegralMotor implements DcMotor {
 
     @Override
     public void setMotorType(MotorConfigurationType motorType) {
-        setMotorType(motorType);
+        mMotor.setMotorType(motorType);
     }
 
     @Override
@@ -194,7 +202,7 @@ public class ProportionalIntegralMotor implements DcMotor {
 
     @Override
     public int getTargetPosition() {
-        return 0;
+        return mMotor.getTargetPosition();
     }
 
     @Override
@@ -204,6 +212,11 @@ public class ProportionalIntegralMotor implements DcMotor {
 
     @Override
     public void setMode(RunMode mode) {
+        if (ENABLE_PIMOTOR_OVERRIDES){
+            mMotor.setMode(mode);
+            return;
+        }
+        // Otherwise do override functionality
         mRunMode = mode;
         switch(mRunMode){
             case STOP_AND_RESET_ENCODER:
@@ -219,6 +232,9 @@ public class ProportionalIntegralMotor implements DcMotor {
 
     @Override
     public RunMode getMode() {
-        return mRunMode;
+        if (ENABLE_PIMOTOR_OVERRIDES)
+            return mRunMode;
+        else
+            return mMotor.getMode();
     }
 }

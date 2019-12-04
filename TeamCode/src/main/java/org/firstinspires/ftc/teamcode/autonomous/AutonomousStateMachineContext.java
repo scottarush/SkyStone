@@ -42,6 +42,14 @@ public class AutonomousStateMachineContext
         return;
     }
 
+    public void evDriveFail()
+    {
+        _transition = "evDriveFail";
+        getState().evDriveFail(this);
+        _transition = "";
+        return;
+    }
+
     public void evHookTimeout()
     {
         _transition = "evHookTimeout";
@@ -155,6 +163,11 @@ public class AutonomousStateMachineContext
         protected void exit(AutonomousStateMachineContext context) {}
 
         protected void evDriveComplete(AutonomousStateMachineContext context)
+        {
+            Default(context);
+        }
+
+        protected void evDriveFail(AutonomousStateMachineContext context)
         {
             Default(context);
         }
@@ -346,6 +359,16 @@ public class AutonomousStateMachineContext
         }
 
         @Override
+        protected void evDriveFail(AutonomousStateMachineContext context)
+        {
+
+            (context.getState()).exit(context);
+            context.setState(AutonomousStateMachine.DriveForwardToIntake);
+            (context.getState()).entry(context);
+            return;
+        }
+
+        @Override
         protected void evNoStoneFound(AutonomousStateMachineContext context)
         {
 
@@ -364,7 +387,7 @@ public class AutonomousStateMachineContext
             context.clearState();
             try
             {
-                ctxt.strafeToSkystone(10d, 5000);
+                ctxt.strafeToSkystone(10d, 2000);
             }
             finally
             {
@@ -384,7 +407,7 @@ public class AutonomousStateMachineContext
             context.clearState();
             try
             {
-                ctxt.strafeToSkystone(10d, 5000);
+                ctxt.strafeToStone(10d, 2000);
             }
             finally
             {

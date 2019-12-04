@@ -62,7 +62,7 @@ public class DualDriverOpMode extends OpMode{
      */
     @Override
     public void init() {
-        robot = new MecanumGrabberBot(this,true);
+        robot = new MecanumGrabberBot(this,false);
         /*
          * Initialize the robot.  Be sure to catch exception and dump out as
          * the exception string will have details of what didn't initialize and

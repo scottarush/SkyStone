@@ -35,7 +35,7 @@ public class TestIMU extends LinearOpMode
     double                  globalAngle, power = .30, correction;
     boolean                 aButton, bButton, touched;
 
-    // called when init button is  pressed.
+    // called when initIMU button is  pressed.
     @Override
     public void runOpMode() throws InterruptedException
     {

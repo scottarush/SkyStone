@@ -35,11 +35,10 @@ public class MecanumGrabberBot extends Robot {
 
     private SideHook sideHook= null;
 
-    private boolean mManualArmMode = false;
+    private boolean mManualArmMode = true;
 
-    public MecanumGrabberBot(OpMode opMode, boolean manualArmMode){
-        super(DriveTrainStyle.GRABBER_BOT_MECANUM_DRIVE,opMode);
-        mManualArmMode = manualArmMode;
+    public MecanumGrabberBot(OpMode opMode, boolean enableIMU){
+        super(DriveTrainStyle.GRABBER_BOT_MECANUM_DRIVE,opMode, enableIMU);
     }
 
     public BaseMecanumDrive getDrivetrain(){
@@ -65,7 +64,7 @@ public class MecanumGrabberBot extends Robot {
         catch (Exception e){
             initErrString += e.getMessage();
         }
-        // base drivetrain init must have been OK so init the rest of the bot.
+        // base drivetrain initIMU must have been OK so initIMU the rest of the bot.
         try{
             grabber = new Grabber(opMode);
             grabber.init(opMode.hardwareMap);
@@ -99,7 +98,7 @@ public class MecanumGrabberBot extends Robot {
             initErrString += e.getMessage();
         }
         if (initErrString.length() > 0) {
-            throw new Exception("Robot init errs: " + initErrString);
+            throw new Exception("Robot initIMU errs: " + initErrString);
         }
 
     }

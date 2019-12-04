@@ -29,11 +29,14 @@
 
 package org.firstinspires.ftc.teamcode.TestOpModes;
 
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+import org.firstinspires.ftc.teamcode.Globals;
+import org.firstinspires.ftc.teamcode.MecanumGrabberBot;
+import org.firstinspires.ftc.teamcode.SpeedBot;
 import org.firstinspires.ftc.teamcode.drivetrain.BaseMecanumDrive;
+import org.firstinspires.ftc.teamcode.drivetrain.GrabberBotMecanumDrive;
 import org.firstinspires.ftc.teamcode.drivetrain.SpeedBotMecanumDrive;
 
 
@@ -54,11 +57,18 @@ public class TestTankOpMode extends OpMode{
     @Override
     public void init() {
         /* Initialize the hardware variables.
-         * The init() method of the hardware class does all the work here
+         * The initIMU() method of the hardware class does all the work here
          */
         try {
-            drivetrain = new SpeedBotMecanumDrive(this);
-            drivetrain.init(hardwareMap);
+            switch(Globals.selectedBot) {
+                case Globals.GRABBER_BOT:
+                    drivetrain = new GrabberBotMecanumDrive(this);
+                    break;
+                case Globals.SPEED_BOT:
+                    drivetrain = new SpeedBotMecanumDrive(this);
+                    break;
+            }
+            //drivetrain.initIMU(hardwareMap);
         }
         catch(Exception e){
             telemetry.addData("Robot Init Error","%s",e.getMessage());

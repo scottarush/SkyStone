@@ -40,12 +40,12 @@ public abstract class Arm {
     /**
      * Starts moving the arm continously until stop is called at the last provided
      * power value.
-     * @return false if the arm motor wasn't init correctly or the arm was initialized in angle mode
+     * @return false if the arm motor wasn't initIMU correctly or the arm was initialized in angle mode
      */
     public abstract boolean moveArm(boolean up);
 
     /**
-     * @return true if arm was init'ed with angle mode
+     * @return true if arm was initIMU'ed with angle mode
      */
     public abstract boolean isAngleMode();
     /**

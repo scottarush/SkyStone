@@ -198,7 +198,7 @@ public class AutonomousController {
     /**
      * Called from the OpMode loop until the state machine reaches Success
      */
-     public void doOpmode(){
+     public void loop(){
         // If we haven't started then kick if off.
         if (mAsm.getState() == AutonomousStateMachineContext.AutonomousStateMachine.Idle){
             transition("evStart");
@@ -275,18 +275,27 @@ public class AutonomousController {
             transition("evNoStoneFound");
             return;
         }
-           for (Iterator<Recognition> riter = list.iterator(); riter.hasNext(); ) {
-                Recognition rec = riter.next();
-                if (rec.getLabel().equalsIgnoreCase(VuforiaTargetLocator.SKYSTONE_TFOD_LABEL)) {
-                    mSkystoneRecognition = rec;
-                    transition("evSkystoneFound");
-                    return;
-                } else if (rec.getLabel().equalsIgnoreCase(VuforiaTargetLocator.STONE_TFOD_LABEL)) {
-                    mStoneRecognition = rec;
-                    transition("evStoneFound");
-                    return;
-                }
+        // Try to find a Skystone first
+        for (Iterator<Recognition> riter = list.iterator(); riter.hasNext(); ) {
+            Recognition rec = riter.next();
+            if (rec.getLabel().equalsIgnoreCase(VuforiaTargetLocator.SKYSTONE_TFOD_LABEL)) {
+                mSkystoneRecognition = rec;
+                mStoneRecognition = null;
+                transition("evSkystoneFound");
+                return;
             }
+        }
+        // If control to here, then try to find a Stone
+        for (Iterator<Recognition> riter = list.iterator(); riter.hasNext(); ) {
+            Recognition rec = riter.next();
+            if (rec.getLabel().equalsIgnoreCase(VuforiaTargetLocator.STONE_TFOD_LABEL)) {
+                mStoneRecognition = rec;
+                mSkystoneRecognition = null;
+                transition("evStoneFound");
+                return;
+            }
+        }
+
         mSkystoneRecognition = null;
         mStoneRecognition = null;
         transition("evNoStoneFound");
@@ -296,13 +305,12 @@ public class AutonomousController {
      * Strafes sideways to a Skystone based only on recognition.
      * triggers:
      * evDriveComplete when the drive is finished.
-     * evNoStone if no stone is in view.
-     * @param linearDistance forward distance from expected skystone
+     * @param linearDistance  straight y distance to candidate skystone
      * @param timeoutms timeout in ms
      */
     public void strafeToSkystone(double linearDistance,int timeoutms){
         if (mSkystoneRecognition == null){
-            transition("evNoStoneFound");
+            transition("evDriveComplete");
         }
         double angle = mSkystoneRecognition.estimateAngleToObject(AngleUnit.RADIANS);
         double strafeDistance = linearDistance /Math.tan(angle);
@@ -310,16 +318,21 @@ public class AutonomousController {
     }
 
     /**
-     * @return the lateral distance to move to align to a stone in front of the robt.  + is to robots left, - to right
-     * or 0 if no stone or skystone in view.
-      */
-    public double getLateralDistanceToStone(){
-        if (mSkystoneRecognition == null){
-            return 0d;
+     * Strafes sideways to a Skystone based only on recognition.
+     * triggers:
+     * evDriveComplete when the drive is finished.
+     * @param linearDistance straight y distance to candidate stone
+     * @param timeoutms timeout in ms
+     */
+    public void strafeToStone(double linearDistance,int timeoutms){
+        if (mStoneRecognition == null){
+            transition("evDriveComplete");
         }
-        mSkystoneRecognition.estimateAngleToObject(AngleUnit.DEGREES);
-        return 0d;
+        double angle = mStoneRecognition.estimateAngleToObject(AngleUnit.RADIANS);
+        double strafeDistance = linearDistance /Math.tan(angle);
+        mecanumDrive.strafeEncoder(1.0d,strafeDistance,timeoutms);
     }
+
     /**
      * Called from state machine to drive toward the foundation
      */

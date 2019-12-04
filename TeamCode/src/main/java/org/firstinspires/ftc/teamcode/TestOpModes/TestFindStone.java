@@ -73,17 +73,19 @@ public class TestFindStone extends OpMode{
         msStuckDetectInit = 40000;
 
         /* Initialize the hardware variables.
-         * The init() method of the hardware class does all the work here
+         * The initIMU() method of the hardware class does all the work here
          */
         String initErrs = "";
         try {
-            if (Globals.USE_DEV_FRAME_BOT){
-                mRobot = new SpeedBot(this);
+            switch(Globals.selectedBot) {
+                case Globals.SPEED_BOT:
+                    mRobot = new SpeedBot(this,false);
+                    break;
+                case Globals.GRABBER_BOT:
+                    mRobot = new MecanumGrabberBot(this,true);
+                    break;
             }
-            else {
-                mRobot = new MecanumGrabberBot(this,true);
-            }
-            // Get utility variable
+           // Get utility variable
             mecanumDrive = (BaseMecanumDrive)mRobot.getDrivetrain();
             mRobot.init();
         }

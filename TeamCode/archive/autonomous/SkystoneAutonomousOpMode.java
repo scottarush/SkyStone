@@ -83,7 +83,7 @@ public class SkystoneAutonomousOpMode extends OpMode {
         }
 
         if (initErrs.length() == 0){
-            telemetry.addData("Status:","Robot init complete");
+            telemetry.addData("Status:","Robot initIMU complete");
             telemetry.update();
         }
         else{
@@ -145,7 +145,7 @@ public class SkystoneAutonomousOpMode extends OpMode {
      }
 
     private String doRedTeamInit(){
-        return "Error:  Red team init is TBD";
+        return "Error:  Red team initIMU is TBD";
     }
     private String doBlueTeamInit(){
         String rets = "";

@@ -61,7 +61,7 @@ public class MecanumTeleopTank_Iterative extends OpMode{
     @Override
     public void init() {
         /* Initialize the hardware variables.
-         * The init() method of the hardware class does all the work here
+         * The initIMU() method of the hardware class does all the work here
          */
         try {
             robot = new MecanumDrive(this,false);

@@ -79,7 +79,7 @@ public class FourBarArm extends Arm {
     }
 
     /**
-     * @return true if arm was init'ed with angle mode
+     * @return true if arm was initIMU'ed with angle mode
      */
     public boolean isAngleMode(){
         return (mMode == ANGLE_MODE);
@@ -92,20 +92,20 @@ public class FourBarArm extends Arm {
         try {
             mArmMotor = hwMap.get(DcMotor.class, ARM_MOTOR_NAME);
         } catch (Exception e) {
-            initErrString += "Arm motor init failed,";
+            initErrString += "Arm motor initIMU failed,";
         }
         try{
             mLimitSwitch = hwMap.get(DigitalChannel.class,LIMIT_SENSOR_NAME);
             mLimitSwitch.setMode(DigitalChannel.Mode.INPUT);
         }
         catch(Exception e){
-            initErrString += "Arm limit switch init failed,";
+            initErrString += "Arm limit switch initIMU failed,";
         }
         // now initialize the grabber server.
         try {
             mClawServo = hwMap.get(Servo.class, CLAW_SERVO_NAME);
         } catch (Exception e) {
-            initErrString += "Claw servo init failed";
+            initErrString += "Claw servo initIMU failed";
         }
         if (initErrString.length() > 0){
             throw new Exception(initErrString);
@@ -126,7 +126,7 @@ public class FourBarArm extends Arm {
      * This function is called from the OpMode run loop continuously to start
      * the arm to the fully retracted position using the limit switch to detect when the
      * position has been reached.
-     * @return true if still in progress, false otherwise or init error
+     * @return true if still in progress, false otherwise or initIMU error
      */
     public boolean resetToRetractPosition(){
         if ((mArmMotor == null) || (mLimitSwitch == null))
@@ -177,7 +177,7 @@ public class FourBarArm extends Arm {
     /**
      * Starts moving the arm continously.
      *
-     * @return false if the arm motor wasn't init correctly or the arm was initialized in angle mode
+     * @return false if the arm motor wasn't initIMU correctly or the arm was initialized in angle mode
      */
     @Override
     public boolean moveArm(boolean extend){
@@ -251,8 +251,8 @@ public class FourBarArm extends Arm {
     @Override
     public void gotoAngle(double targetAngle) {
         if (mArmMotor == null)
-            return; // init error
-        // Return without action if not init'ed for angle mode or the retract angle is invalid
+            return; // initIMU error
+        // Return without action if not initIMU'ed for angle mode or the retract angle is invalid
         if (mMode != ANGLE_MODE){
             opMode.telemetry.addData("Error","Cannot call FourBarArm.gotoAngle in manual mode");
             opMode.telemetry.update();
