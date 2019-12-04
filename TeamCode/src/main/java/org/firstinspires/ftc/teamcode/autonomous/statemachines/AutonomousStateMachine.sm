@@ -1,6 +1,6 @@
 %class AutonomousController
 %package org.firstinspires.ftc.teamcode.autonomous
-
+// http://smc.sourceforge.net/
 %start AutonomousStateMachine::Idle
 
 %map AutonomousStateMachine
@@ -11,7 +11,7 @@
     */
     Idle
     {
-        evStart DriveToStones {}
+        evStart DriveToStones { }
     }
 
 
@@ -27,8 +27,11 @@
     {
         evDriveComplete nil { checkStoneRecognition(); }
         evDriveFail DriveForwardToIntake {}
-        evSkystoneFound StrafeToStone { strafeToSkystone(10d,5000); }
-        evStoneFound StrafeToStone { strafeToSkystone(10d,5000); }
+        // Triggered by checkStoneRecognition if we found a Skystone
+        evSkystoneFound StrafeToStone { strafeToSkystone(10d,2000); }
+        // Triggered by checkStoneRecognition if we found a Skystone
+        evStoneFound StrafeToStone { strafeToStone(10d,2000); }
+        // Triggered by checkStoneRecognition if no stone was found
         evNoStoneFound DriveForwardToIntake {   }
     }
 

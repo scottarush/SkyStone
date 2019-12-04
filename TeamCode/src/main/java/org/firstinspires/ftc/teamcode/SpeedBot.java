@@ -22,8 +22,8 @@ public class SpeedBot extends Robot {
     private final Grabber mDummyGrabber = new Grabber(null);
     private final Hook mDummyHook = new Hook(null);
 
-    public SpeedBot(OpMode opMode){
-        super(DriveTrainStyle.SPEED_BOT_MECANUM_DRIVE,opMode);
+    public SpeedBot(OpMode opMode,boolean enableIMU){
+        super(DriveTrainStyle.SPEED_BOT_MECANUM_DRIVE,opMode,enableIMU);
     }
 
 

@@ -15,6 +15,7 @@ public class SkystoneAutonomousOpMode {
     private Robot robot = null;
 
 
+
     private AutonomousController autoController = null;
 
 
@@ -28,22 +29,25 @@ public class SkystoneAutonomousOpMode {
 
     public SkystoneAutonomousOpMode(OpMode opMode, boolean isBlueTeam){
         mOpmode = opMode;
-        mBlueAlliance = isBlueTeam;
+        // lengthen init timeout to give time to initialize the IMU
+        mOpmode.msStuckDetectInit = 40000;
      }
 
     public void init() {
         String initErrs = "";
         try {
-            if (Globals.USE_DEV_FRAME_BOT){
-                robot = new SpeedBot(mOpmode);
-            }
-            else {
-                robot = new MecanumGrabberBot(mOpmode,true);
+            switch(Globals.selectedBot) {
+                case Globals.GRABBER_BOT:
+                    robot = new MecanumGrabberBot(mOpmode, true);
+                    break;
+                case Globals.SPEED_BOT:
+                    robot = new SpeedBot(mOpmode, true);
+                    break;
             }
             robot.init();
         }
         catch(Exception e){
-            initErrs += e.getMessage();
+            initErrs += ","+e.getMessage();
         }
         // Initialize Vuforia
         mVuforia = new VuforiaTargetLocator();
@@ -51,7 +55,7 @@ public class SkystoneAutonomousOpMode {
             mVuforia.init(mOpmode);
         }
         catch(Exception e){
-            initErrs += e.getMessage();
+            initErrs += ", Vuforia init error";
         }
         // Activate vuforia
         mVuforia.activate();
@@ -59,7 +63,7 @@ public class SkystoneAutonomousOpMode {
         autoController = new AutonomousController(mOpmode,robot,mVuforia, mBlueAlliance);
 
         if (initErrs.length() == 0){
-            mOpmode.telemetry.addData("Status:","Robot init complete");
+            mOpmode.telemetry.addData("Status:","Robot initIMU complete");
             mOpmode.telemetry.update();
         }
         else{
@@ -72,7 +76,7 @@ public class SkystoneAutonomousOpMode {
 
     public void loop() {
          if (!autoController.isAutonomousComplete()){
-            autoController.doOpmode();
+            autoController.loop();
         }
 
     }

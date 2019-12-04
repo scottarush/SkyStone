@@ -43,7 +43,7 @@ public class Grabber {
         // If we have an error then throw an exception at the end so that
         // owner can catch and post a message
         if (initErrString.length() > 0)
-            throw new Exception("Grabber init errs: '"+initErrString+"'");
+            throw new Exception("Grabber initIMU errs: '"+initErrString+"'");
 
     }
 
@@ -92,7 +92,7 @@ public class Grabber {
     }
 
     /**
-     *  Utility function to handle motor initialization.  init must have been called
+     *  Utility function to handle motor initialization.  initIMU must have been called
      *  with a non-null mHWMap or exception will be thrown.
      *
      */

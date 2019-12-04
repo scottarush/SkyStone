@@ -36,7 +36,7 @@ public class SideHook {
             // Force servo to closed position to start
             mServo.setPosition(SideHook.UP);
         } catch (Exception e) {
-            initErrString += "SideHook init failed,";
+            initErrString += "SideHook initIMU failed,";
         }
 
         if  (initErrString.length() > 0){

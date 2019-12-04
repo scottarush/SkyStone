@@ -37,7 +37,7 @@ public class Hook {
             // Force servo to closed position to start
             mServo.setPosition(Hook.CLOSED);
         } catch (Exception e) {
-            initErrString += "Hook Servo init failed,";
+            initErrString += "Hook Servo initIMU failed,";
         }
 
         if  (initErrString.length() > 0){

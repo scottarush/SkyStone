@@ -61,9 +61,9 @@ public class SpeedBotMecanumDrive extends BaseMecanumDrive {
     }
 
     /* Initialize standard Hardware interfaces.
-     * NOTE:  This class throws Exception on any hardware init error so be sure to catch and
+     * NOTE:  This class throws Exception on any hardware initIMU error so be sure to catch and
      * report to Telemetry in your initialization. */
-    public void init(HardwareMap ahwMap) throws Exception {
+    public void initIMU(HardwareMap ahwMap) throws Exception {
         // Save reference to Hardware map
         mHWMap = ahwMap;
 
@@ -72,7 +72,7 @@ public class SpeedBotMecanumDrive extends BaseMecanumDrive {
         DcMotor motor = null;
         try {
             motor = tryMapMotor("lf");
-            lfMotor = new ProportionalIntegralMotor(motor,ENCODER_COUNTS_PER_ROTATION, PIMOTOR_KP, PIMOTOR_KI);
+            lfMotor = new WrappedDCMotor(motor,ENCODER_COUNTS_PER_ROTATION, PIMOTOR_KP, PIMOTOR_KI);
             lfMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         }
         catch (Exception e){
@@ -80,14 +80,14 @@ public class SpeedBotMecanumDrive extends BaseMecanumDrive {
         }
         try {
             motor = tryMapMotor("rf");
-            rfMotor = new ProportionalIntegralMotor(motor,ENCODER_COUNTS_PER_ROTATION, PIMOTOR_KP, PIMOTOR_KI);
+            rfMotor = new WrappedDCMotor(motor,ENCODER_COUNTS_PER_ROTATION, PIMOTOR_KP, PIMOTOR_KI);
         }
         catch(Exception e){
             motorInitError += "rf,";
         }
         try {
             motor = tryMapMotor("lr");
-            lrMotor = new ProportionalIntegralMotor(motor,ENCODER_COUNTS_PER_ROTATION, PIMOTOR_KP, PIMOTOR_KI);
+            lrMotor = new WrappedDCMotor(motor,ENCODER_COUNTS_PER_ROTATION, PIMOTOR_KP, PIMOTOR_KI);
             lrMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         }
         catch(Exception e){
@@ -95,17 +95,17 @@ public class SpeedBotMecanumDrive extends BaseMecanumDrive {
         }
         try {
             motor = tryMapMotor("rr");
-            rrMotor = new ProportionalIntegralMotor(motor,ENCODER_COUNTS_PER_ROTATION, PIMOTOR_KP, PIMOTOR_KI);
+            rrMotor = new WrappedDCMotor(motor,ENCODER_COUNTS_PER_ROTATION, PIMOTOR_KP, PIMOTOR_KI);
         }
         catch(Exception e){
             motorInitError += "rr,";
         }
         try{
-            super.init(ahwMap);
+            super.initIMU(ahwMap);
         }
         catch(Exception e){
             // This exception can't actually happen but change in the future to catch this somehow
-            motorInitError += "IMU init";
+            motorInitError += "IMU initIMU";
         }
 
         // Set all motors to zero power
@@ -115,7 +115,7 @@ public class SpeedBotMecanumDrive extends BaseMecanumDrive {
         setMotorModes(DcMotor.RunMode.RUN_USING_ENCODER);
 
         if (motorInitError.length() > 0){
-            throw new Exception("Motor init errs: '"+motorInitError+"'");
+            throw new Exception("Motor initIMU errs: '"+motorInitError+"'");
         }
 
     }

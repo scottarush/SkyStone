@@ -114,7 +114,7 @@ public abstract class Drivetrain {
      *
      * IMPORTANT:  IMU can take a long time to initialize
      */
-    public void init(HardwareMap hwMap) throws Exception {
+    public void initIMU(HardwareMap hwMap) throws Exception {
         this.mHWMap = hwMap;
         try{
             // Initialize the IMU
@@ -441,7 +441,7 @@ public abstract class Drivetrain {
 
 
     /**
-         *  Utility function to handle motor initialization.  init must have been called
+         *  Utility function to handle motor initialization.  initIMU must have been called
          *  with a non-null mHWMap or exception will be thrown.
          *
          */

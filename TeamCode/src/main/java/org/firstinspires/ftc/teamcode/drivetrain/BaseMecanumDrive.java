@@ -37,7 +37,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
  *
  * This is the base class for a Mecanum Drive robot.  Because the motor direction configurations
  * must be different between the GrabberBot and the development frame bot, this class has
- * been made with an abstract init method.  The rest of the behavior is the same between the
+ * been made with an abstract initIMU method.  The rest of the behavior is the same between the
  * subclasses.
  *
  * This hardware class assumes the following device names have been configured on the robot:
@@ -50,10 +50,14 @@ import com.qualcomm.robotcore.hardware.DcMotor;
  *
  */
 public abstract class BaseMecanumDrive extends Drivetrain{
-    protected ProportionalIntegralMotor lfMotor = null;
-    protected ProportionalIntegralMotor rfMotor = null;
-    protected ProportionalIntegralMotor lrMotor = null;
-    protected ProportionalIntegralMotor rrMotor = null;
+//    protected WrappedDCMotor lfMotor = null;
+//    protected WrappedDCMotor rfMotor = null;
+//    protected WrappedDCMotor lrMotor = null;
+//    protected WrappedDCMotor rrMotor = null;
+    protected DcMotor lfMotor = null;
+    protected DcMotor rfMotor = null;
+    protected DcMotor lrMotor = null;
+    protected DcMotor rrMotor = null;
 
     /**
      * Wheel circumference in inches
@@ -72,23 +76,23 @@ public abstract class BaseMecanumDrive extends Drivetrain{
         super(opMode);
     }
 
-    /**
-     * Must be called from the OpMode service loop to service timers for drive and rotation handling.
-     */
-    public void loop() {
-        if (lfMotor != null)
-            lfMotor.loop();
-        if (lrMotor != null)
-            lrMotor.loop();
-        if (rfMotor != null)
-            rfMotor.loop();
-        if (rrMotor != null)
-            rrMotor.loop();
-        mOpMode.telemetry.addData("lf,lr,rf,rr","%d %d %d %d",lfMotor.getCurrentPosition(),
-                lrMotor.getCurrentPosition(),rfMotor.getCurrentPosition(),rrMotor.getCurrentPosition());
-        mOpMode.telemetry.update();
-        super.loop();
-    }
+//    /**
+//     * Must be called from the OpMode service loop to service timers for drive and rotation handling.
+//     */
+//    public void loop() {
+//        if (lfMotor != null)
+//            lfMotor.loop();
+//        if (lrMotor != null)
+//            lrMotor.loop();
+//        if (rfMotor != null)
+//            rfMotor.loop();
+//        if (rrMotor != null)
+//            rrMotor.loop();
+//        mOpMode.telemetry.addData("lf,lr,rf,rr","%d %d %d %d",lfMotor.getCurrentPosition(),
+//                lrMotor.getCurrentPosition(),rfMotor.getCurrentPosition(),rrMotor.getCurrentPosition());
+//        mOpMode.telemetry.update();
+//        super.loop();
+//    }
 
     /**
      * Helper function to set power to the wheel drive motors

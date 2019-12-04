@@ -331,6 +331,8 @@ public class VuforiaTargetLocator {
 
 
     public void activate(){
+        if (!mInitialized)
+            return;
         targetsSkyStone.activate();
         tfod.activate();
     }
@@ -347,6 +349,9 @@ public class VuforiaTargetLocator {
     public List<TargetPosition> getTargets() {
 
         ArrayList<TargetPosition>targets = new ArrayList<>();
+        if (!mInitialized)
+            return targets;
+
         // check all the trackable targets to see which one (if any) is visible.
         VuforiaTrackable targetTrackable = null;
         // Get any recognitions fronm the tfod and use it to set the heading as well as determine a Skystone

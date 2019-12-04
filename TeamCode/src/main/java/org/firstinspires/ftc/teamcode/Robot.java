@@ -31,15 +31,17 @@ public abstract class Robot {
 
     private Drivetrain drivetrain;
 
+    private boolean mEnableIMU = false;
+
     /**
      * Base constructor
      * @param activeDTS
      * @param om
      */
-    public Robot(DriveTrainStyle activeDTS, OpMode om) {
+    public Robot(DriveTrainStyle activeDTS, OpMode om,boolean enableIMU) {
         this.activeDTS = activeDTS;
         this.opMode = om;
-
+        this.mEnableIMU = enableIMU;
         switch(activeDTS) {
             case GRABBER_BOT_MECANUM_DRIVE:
                 drivetrain = new GrabberBotMecanumDrive(om);
@@ -81,13 +83,15 @@ public abstract class Robot {
     }
     /**
      * Base initialization of drivetrain.
-     * @throws Exception on any drivetrain init.
+     * @throws Exception on any drivetrain initIMU.
      */
     public void init() throws Exception {
         try {
-            drivetrain.init(opMode.hardwareMap);
+            if (mEnableIMU) {
+                drivetrain.initIMU(opMode.hardwareMap);
+            }
         } catch (Exception e) {
-            throw new Exception("Drivetrain init err: "+e.getMessage());
+            throw new Exception("Drivetrain initIMU err: "+e.getMessage());
         }
     }
 

@@ -32,7 +32,7 @@ public class TestHook extends OpMode {
             mLimitSwitch = hardwareMap.get(DigitalChannel.class, FourBarArm.LIMIT_SENSOR_NAME);
             mLimitSwitch.setMode(DigitalChannel.Mode.INPUT);
         } catch (Exception e) {
-            telemetry.addData("Limit switch init error:",e.getMessage());
+            telemetry.addData("Limit switch initIMU error:",e.getMessage());
             telemetry.update();
         }
     }
