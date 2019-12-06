@@ -105,9 +105,14 @@ public class TestIMURotation extends OpMode{
             drivetrain.rotate(90);
         }
         if (gamepad1.b){
-            stop();
-           drivetrain.driveEncoder(36d,1.0d,1000);
-
+            if (!drivetrain.isMoving()) {
+                drivetrain.driveEncoder(1.0d, 12.0d, 1000);
+            }
+        }
+        if (gamepad1.x){
+            if (!drivetrain.isMoving()) {
+                drivetrain.strafeEncoder(1.0d, 12.0d, 1000);
+            }
         }
         drivetrain.loop();
     }

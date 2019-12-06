@@ -107,7 +107,6 @@ public class TestTankOpMode extends OpMode{
 
         // the speeds with the new gamepad inputs
         drivetrain.setTankDriveJoystickInput(xleft,yleft,xright,yright);
-
     }
 
     /*

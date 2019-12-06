@@ -15,8 +15,6 @@ public class GrabberBotMecanumDrive extends BaseMecanumDrive {
      * Number of counts per inch of direct wheel movement.
      **/
     public static final double COUNTS_PER_INCH = ENCODER_COUNTS_PER_ROTATION / MECANUM_WHEEL_CIRCUMFERENCE;
-    public static final double PIMOTOR_KP = 1.0;
-    public static final double PIMOTOR_KI = 1.0;
     public static final double ROTATION_KP = 4.0d;
     public static final double ROTATION_KI  = 1.0d;
     /**
@@ -65,21 +63,24 @@ public class GrabberBotMecanumDrive extends BaseMecanumDrive {
         DcMotor motor = null;
         try {
             motor = tryMapMotor("lf");
-            lfMotor = new WrappedDCMotor(motor,ENCODER_COUNTS_PER_ROTATION, PIMOTOR_KP, PIMOTOR_KI);
+ //           lfMotor = new WrappedDCMotor(motor,ENCODER_COUNTS_PER_ROTATION, PIMOTOR_KP, PIMOTOR_KI);
+            lfMotor = motor;
         }
         catch (Exception e){
             motorInitError += "lf,";
         }
         try {
             motor = tryMapMotor("rf");
-            rfMotor = new WrappedDCMotor(motor,ENCODER_COUNTS_PER_ROTATION, PIMOTOR_KP, PIMOTOR_KI);
+  //          rfMotor = new WrappedDCMotor(motor,ENCODER_COUNTS_PER_ROTATION, PIMOTOR_KP, PIMOTOR_KI);
+            rfMotor = motor;
         }
         catch(Exception e){
             motorInitError += "rf,";
         }
         try {
             motor = tryMapMotor("lr");
-            lrMotor = new WrappedDCMotor(motor,ENCODER_COUNTS_PER_ROTATION, PIMOTOR_KP, PIMOTOR_KI);
+//            lrMotor = new WrappedDCMotor(motor,ENCODER_COUNTS_PER_ROTATION, PIMOTOR_KP, PIMOTOR_KI);
+            lrMotor = motor;
             lrMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         }
         catch(Exception e){
@@ -87,7 +88,8 @@ public class GrabberBotMecanumDrive extends BaseMecanumDrive {
         }
         try {
             motor = tryMapMotor("rr");
-            rrMotor = new WrappedDCMotor(motor,ENCODER_COUNTS_PER_ROTATION, PIMOTOR_KP, PIMOTOR_KI);
+//            rrMotor = new WrappedDCMotor(motor,ENCODER_COUNTS_PER_ROTATION, PIMOTOR_KP, PIMOTOR_KI);
+            rrMotor = motor;
             rrMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         }
         catch(Exception e){
