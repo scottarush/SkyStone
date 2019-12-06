@@ -181,18 +181,19 @@ public abstract class Drivetrain {
      */
      public void driveEncoder(double speed, double linearDistance, int timeoutms) {
          stop();  // case we were moving
-         // Reset the angle in the IMU logic
-         resetAngle();
+         if (mLinearDriveActive){
+                 // Reset the angle in the IMU logic if we are using linear drive
+                 resetAngle();
 
-         mLinearDrivePower = speed;
-         if (mLinearDrivePower > 1.0d){
-             mLinearDrivePower = 1.0d;
+             mLinearDrivePower = speed;
+             if (mLinearDrivePower > 1.0d) {
+                 mLinearDrivePower = 1.0d;
+             }
+
+             if (linearDistance < 0.0d) {
+                 mLinearDrivePower *= -1.0d;
+             }
          }
-
-         if (linearDistance < 0.0d){
-             mLinearDrivePower *= -1.0d;
-         }
-
          mDriveByEncoderFailTimer.setTimeout(timeoutms);
          mDriveByEncoderFailTimer.start();
     }

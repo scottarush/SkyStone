@@ -82,10 +82,18 @@ public class AutonomousStateMachineContext
         return;
     }
 
-    public void evStart()
+    public void evStartDragFoundation()
     {
-        _transition = "evStart";
-        getState().evStart(this);
+        _transition = "evStartDragFoundation";
+        getState().evStartDragFoundation(this);
+        _transition = "";
+        return;
+    }
+
+    public void evStartDriveToStones()
+    {
+        _transition = "evStartDriveToStones";
+        getState().evStartDriveToStones(this);
         _transition = "";
         return;
     }
@@ -192,7 +200,12 @@ public class AutonomousStateMachineContext
             Default(context);
         }
 
-        protected void evStart(AutonomousStateMachineContext context)
+        protected void evStartDragFoundation(AutonomousStateMachineContext context)
+        {
+            Default(context);
+        }
+
+        protected void evStartDriveToStones(AutonomousStateMachineContext context)
         {
             Default(context);
         }
@@ -239,26 +252,6 @@ public class AutonomousStateMachineContext
 
         public static final AutonomousStateMachine_Idle Idle =
             new AutonomousStateMachine_Idle("AutonomousStateMachine.Idle", 0);
-        public static final AutonomousStateMachine_DriveToStones DriveToStones =
-            new AutonomousStateMachine_DriveToStones("AutonomousStateMachine.DriveToStones", 1);
-        public static final AutonomousStateMachine_StrafeToStone StrafeToStone =
-            new AutonomousStateMachine_StrafeToStone("AutonomousStateMachine.StrafeToStone", 2);
-        public static final AutonomousStateMachine_DriveForwardToIntake DriveForwardToIntake =
-            new AutonomousStateMachine_DriveForwardToIntake("AutonomousStateMachine.DriveForwardToIntake", 3);
-        public static final AutonomousStateMachine_IntakeStone IntakeStone =
-            new AutonomousStateMachine_IntakeStone("AutonomousStateMachine.IntakeStone", 4);
-        public static final AutonomousStateMachine_BackupToBeginDrag BackupToBeginDrag =
-            new AutonomousStateMachine_BackupToBeginDrag("AutonomousStateMachine.BackupToBeginDrag", 5);
-        public static final AutonomousStateMachine_BlueAllianceRotateTowardBridge BlueAllianceRotateTowardBridge =
-            new AutonomousStateMachine_BlueAllianceRotateTowardBridge("AutonomousStateMachine.BlueAllianceRotateTowardBridge", 6);
-        public static final AutonomousStateMachine_RedAllianceRotateTowardBridge RedAllianceRotateTowardBridge =
-            new AutonomousStateMachine_RedAllianceRotateTowardBridge("AutonomousStateMachine.RedAllianceRotateTowardBridge", 7);
-        public static final AutonomousStateMachine_DragStone DragStone =
-            new AutonomousStateMachine_DragStone("AutonomousStateMachine.DragStone", 8);
-        public static final AutonomousStateMachine_ReleaseStone ReleaseStone =
-            new AutonomousStateMachine_ReleaseStone("AutonomousStateMachine.ReleaseStone", 9);
-        public static final AutonomousStateMachine_Complete Complete =
-            new AutonomousStateMachine_Complete("AutonomousStateMachine.Complete", 10);
     }
 
     protected static class AutonomousStateMachine_Default
@@ -297,11 +290,21 @@ public class AutonomousStateMachineContext
         }
 
         @Override
-        protected void evStart(AutonomousStateMachineContext context)
+        protected void evStartDragFoundation(AutonomousStateMachineContext context)
         {
 
             (context.getState()).exit(context);
-            context.setState(AutonomousStateMachine.DriveToStones);
+            context.setState(DragFoundation.Start);
+            (context.getState()).entry(context);
+            return;
+        }
+
+        @Override
+        protected void evStartDriveToStones(AutonomousStateMachineContext context)
+        {
+
+            (context.getState()).exit(context);
+            context.setState(GetStones.Start);
             (context.getState()).entry(context);
             return;
         }
@@ -317,14 +320,73 @@ public class AutonomousStateMachineContext
         private static final long serialVersionUID = 1L;
     }
 
-    private static final class AutonomousStateMachine_DriveToStones
-        extends AutonomousStateMachine_Default
+    /* package */ static abstract class GetStones
+    {
+    //-----------------------------------------------------------
+    // Member methods.
+    //
+
+    //-----------------------------------------------------------
+    // Member data.
+    //
+
+        //-------------------------------------------------------
+        // Constants.
+        //
+
+        public static final GetStones_Start Start =
+            new GetStones_Start("GetStones.Start", 1);
+        public static final GetStones_StrafeToStone StrafeToStone =
+            new GetStones_StrafeToStone("GetStones.StrafeToStone", 2);
+        public static final GetStones_DriveForwardToIntake DriveForwardToIntake =
+            new GetStones_DriveForwardToIntake("GetStones.DriveForwardToIntake", 3);
+        public static final GetStones_IntakeStone IntakeStone =
+            new GetStones_IntakeStone("GetStones.IntakeStone", 4);
+        public static final GetStones_BackupToBeginDrag BackupToBeginDrag =
+            new GetStones_BackupToBeginDrag("GetStones.BackupToBeginDrag", 5);
+        public static final GetStones_BlueAllianceRotateTowardBridge BlueAllianceRotateTowardBridge =
+            new GetStones_BlueAllianceRotateTowardBridge("GetStones.BlueAllianceRotateTowardBridge", 6);
+        public static final GetStones_RedAllianceRotateTowardBridge RedAllianceRotateTowardBridge =
+            new GetStones_RedAllianceRotateTowardBridge("GetStones.RedAllianceRotateTowardBridge", 7);
+        public static final GetStones_DragStone DragStone =
+            new GetStones_DragStone("GetStones.DragStone", 8);
+        public static final GetStones_ReleaseStone ReleaseStone =
+            new GetStones_ReleaseStone("GetStones.ReleaseStone", 9);
+        public static final GetStones_Complete Complete =
+            new GetStones_Complete("GetStones.Complete", 10);
+    }
+
+    protected static class GetStones_Default
+        extends AutonomousControllerState
+    {
+    //-----------------------------------------------------------
+    // Member methods.
+    //
+
+        protected GetStones_Default(String name, int id)
+        {
+            super (name, id);
+        }
+
+    //-----------------------------------------------------------
+    // Member data.
+    //
+
+        //---------------------------------------------------
+        // Constants.
+        //
+
+        private static final long serialVersionUID = 1L;
+    }
+
+    private static final class GetStones_Start
+        extends GetStones_Default
     {
     //-------------------------------------------------------
     // Member methods.
     //
 
-        private AutonomousStateMachine_DriveToStones(String name, int id)
+        private GetStones_Start(String name, int id)
         {
             super (name, id);
         }
@@ -363,7 +425,7 @@ public class AutonomousStateMachineContext
         {
 
             (context.getState()).exit(context);
-            context.setState(AutonomousStateMachine.DriveForwardToIntake);
+            context.setState(GetStones.DriveForwardToIntake);
             (context.getState()).entry(context);
             return;
         }
@@ -373,7 +435,7 @@ public class AutonomousStateMachineContext
         {
 
             (context.getState()).exit(context);
-            context.setState(AutonomousStateMachine.DriveForwardToIntake);
+            context.setState(GetStones.DriveForwardToIntake);
             (context.getState()).entry(context);
             return;
         }
@@ -391,7 +453,7 @@ public class AutonomousStateMachineContext
             }
             finally
             {
-                context.setState(AutonomousStateMachine.StrafeToStone);
+                context.setState(GetStones.StrafeToStone);
                 (context.getState()).entry(context);
             }
 
@@ -411,7 +473,7 @@ public class AutonomousStateMachineContext
             }
             finally
             {
-                context.setState(AutonomousStateMachine.StrafeToStone);
+                context.setState(GetStones.StrafeToStone);
                 (context.getState()).entry(context);
             }
 
@@ -429,14 +491,14 @@ public class AutonomousStateMachineContext
         private static final long serialVersionUID = 1L;
     }
 
-    private static final class AutonomousStateMachine_StrafeToStone
-        extends AutonomousStateMachine_Default
+    private static final class GetStones_StrafeToStone
+        extends GetStones_Default
     {
     //-------------------------------------------------------
     // Member methods.
     //
 
-        private AutonomousStateMachine_StrafeToStone(String name, int id)
+        private GetStones_StrafeToStone(String name, int id)
         {
             super (name, id);
         }
@@ -446,7 +508,7 @@ public class AutonomousStateMachineContext
         {
 
             (context.getState()).exit(context);
-            context.setState(AutonomousStateMachine.DriveForwardToIntake);
+            context.setState(GetStones.DriveForwardToIntake);
             (context.getState()).entry(context);
             return;
         }
@@ -462,14 +524,14 @@ public class AutonomousStateMachineContext
         private static final long serialVersionUID = 1L;
     }
 
-    private static final class AutonomousStateMachine_DriveForwardToIntake
-        extends AutonomousStateMachine_Default
+    private static final class GetStones_DriveForwardToIntake
+        extends GetStones_Default
     {
     //-------------------------------------------------------
     // Member methods.
     //
 
-        private AutonomousStateMachine_DriveForwardToIntake(String name, int id)
+        private GetStones_DriveForwardToIntake(String name, int id)
         {
             super (name, id);
         }
@@ -488,7 +550,7 @@ public class AutonomousStateMachineContext
         {
 
             (context.getState()).exit(context);
-            context.setState(AutonomousStateMachine.IntakeStone);
+            context.setState(GetStones.IntakeStone);
             (context.getState()).entry(context);
             return;
         }
@@ -504,14 +566,14 @@ public class AutonomousStateMachineContext
         private static final long serialVersionUID = 1L;
     }
 
-    private static final class AutonomousStateMachine_IntakeStone
-        extends AutonomousStateMachine_Default
+    private static final class GetStones_IntakeStone
+        extends GetStones_Default
     {
     //-------------------------------------------------------
     // Member methods.
     //
 
-        private AutonomousStateMachine_IntakeStone(String name, int id)
+        private GetStones_IntakeStone(String name, int id)
         {
             super (name, id);
         }
@@ -532,7 +594,7 @@ public class AutonomousStateMachineContext
         {
 
             (context.getState()).exit(context);
-            context.setState(AutonomousStateMachine.BackupToBeginDrag);
+            context.setState(GetStones.BackupToBeginDrag);
             (context.getState()).entry(context);
             return;
         }
@@ -548,14 +610,14 @@ public class AutonomousStateMachineContext
         private static final long serialVersionUID = 1L;
     }
 
-    private static final class AutonomousStateMachine_BackupToBeginDrag
-        extends AutonomousStateMachine_Default
+    private static final class GetStones_BackupToBeginDrag
+        extends GetStones_Default
     {
     //-------------------------------------------------------
     // Member methods.
     //
 
-        private AutonomousStateMachine_BackupToBeginDrag(String name, int id)
+        private GetStones_BackupToBeginDrag(String name, int id)
         {
             super (name, id);
         }
@@ -578,14 +640,14 @@ public class AutonomousStateMachineContext
             {
                 (context.getState()).exit(context);
                 // No actions.
-                context.setState(AutonomousStateMachine.BlueAllianceRotateTowardBridge);
+                context.setState(GetStones.BlueAllianceRotateTowardBridge);
                 (context.getState()).entry(context);
             }
             else if (ctxt.isBlueAlliance() == false)
             {
                 (context.getState()).exit(context);
                 // No actions.
-                context.setState(AutonomousStateMachine.RedAllianceRotateTowardBridge);
+                context.setState(GetStones.RedAllianceRotateTowardBridge);
                 (context.getState()).entry(context);
             }            else
             {
@@ -606,14 +668,14 @@ public class AutonomousStateMachineContext
         private static final long serialVersionUID = 1L;
     }
 
-    private static final class AutonomousStateMachine_BlueAllianceRotateTowardBridge
-        extends AutonomousStateMachine_Default
+    private static final class GetStones_BlueAllianceRotateTowardBridge
+        extends GetStones_Default
     {
     //-------------------------------------------------------
     // Member methods.
     //
 
-        private AutonomousStateMachine_BlueAllianceRotateTowardBridge(String name, int id)
+        private GetStones_BlueAllianceRotateTowardBridge(String name, int id)
         {
             super (name, id);
         }
@@ -632,7 +694,7 @@ public class AutonomousStateMachineContext
         {
 
             (context.getState()).exit(context);
-            context.setState(AutonomousStateMachine.DragStone);
+            context.setState(GetStones.DragStone);
             (context.getState()).entry(context);
             return;
         }
@@ -648,14 +710,14 @@ public class AutonomousStateMachineContext
         private static final long serialVersionUID = 1L;
     }
 
-    private static final class AutonomousStateMachine_RedAllianceRotateTowardBridge
-        extends AutonomousStateMachine_Default
+    private static final class GetStones_RedAllianceRotateTowardBridge
+        extends GetStones_Default
     {
     //-------------------------------------------------------
     // Member methods.
     //
 
-        private AutonomousStateMachine_RedAllianceRotateTowardBridge(String name, int id)
+        private GetStones_RedAllianceRotateTowardBridge(String name, int id)
         {
             super (name, id);
         }
@@ -674,7 +736,7 @@ public class AutonomousStateMachineContext
         {
 
             (context.getState()).exit(context);
-            context.setState(AutonomousStateMachine.DragStone);
+            context.setState(GetStones.DragStone);
             (context.getState()).entry(context);
             return;
         }
@@ -690,14 +752,14 @@ public class AutonomousStateMachineContext
         private static final long serialVersionUID = 1L;
     }
 
-    private static final class AutonomousStateMachine_DragStone
-        extends AutonomousStateMachine_Default
+    private static final class GetStones_DragStone
+        extends GetStones_Default
     {
     //-------------------------------------------------------
     // Member methods.
     //
 
-        private AutonomousStateMachine_DragStone(String name, int id)
+        private GetStones_DragStone(String name, int id)
         {
             super (name, id);
         }
@@ -716,7 +778,7 @@ public class AutonomousStateMachineContext
         {
 
             (context.getState()).exit(context);
-            context.setState(AutonomousStateMachine.ReleaseStone);
+            context.setState(GetStones.ReleaseStone);
             (context.getState()).entry(context);
             return;
         }
@@ -732,14 +794,14 @@ public class AutonomousStateMachineContext
         private static final long serialVersionUID = 1L;
     }
 
-    private static final class AutonomousStateMachine_ReleaseStone
-        extends AutonomousStateMachine_Default
+    private static final class GetStones_ReleaseStone
+        extends GetStones_Default
     {
     //-------------------------------------------------------
     // Member methods.
     //
 
-        private AutonomousStateMachine_ReleaseStone(String name, int id)
+        private GetStones_ReleaseStone(String name, int id)
         {
             super (name, id);
         }
@@ -760,7 +822,7 @@ public class AutonomousStateMachineContext
         {
 
             (context.getState()).exit(context);
-            context.setState(AutonomousStateMachine.Complete);
+            context.setState(GetStones.Complete);
             (context.getState()).entry(context);
             return;
         }
@@ -776,14 +838,14 @@ public class AutonomousStateMachineContext
         private static final long serialVersionUID = 1L;
     }
 
-    private static final class AutonomousStateMachine_Complete
-        extends AutonomousStateMachine_Default
+    private static final class GetStones_Complete
+        extends GetStones_Default
     {
     //-------------------------------------------------------
     // Member methods.
     //
 
-        private AutonomousStateMachine_Complete(String name, int id)
+        private GetStones_Complete(String name, int id)
         {
             super (name, id);
         }
@@ -794,6 +856,99 @@ public class AutonomousStateMachineContext
                 AutonomousController ctxt = context.getOwner();
 
             ctxt.stopGrabber();
+            return;
+        }
+
+    //-------------------------------------------------------
+    // Member data.
+    //
+
+        //---------------------------------------------------
+        // Constants.
+        //
+
+        private static final long serialVersionUID = 1L;
+    }
+
+    /* package */ static abstract class DragFoundation
+    {
+    //-----------------------------------------------------------
+    // Member methods.
+    //
+
+    //-----------------------------------------------------------
+    // Member data.
+    //
+
+        //-------------------------------------------------------
+        // Constants.
+        //
+
+        public static final DragFoundation_Start Start =
+            new DragFoundation_Start("DragFoundation.Start", 11);
+    }
+
+    protected static class DragFoundation_Default
+        extends AutonomousControllerState
+    {
+    //-----------------------------------------------------------
+    // Member methods.
+    //
+
+        protected DragFoundation_Default(String name, int id)
+        {
+            super (name, id);
+        }
+
+    //-----------------------------------------------------------
+    // Member data.
+    //
+
+        //---------------------------------------------------
+        // Constants.
+        //
+
+        private static final long serialVersionUID = 1L;
+    }
+
+    private static final class DragFoundation_Start
+        extends DragFoundation_Default
+    {
+    //-------------------------------------------------------
+    // Member methods.
+    //
+
+        private DragFoundation_Start(String name, int id)
+        {
+            super (name, id);
+        }
+
+        @Override
+        protected void entry(AutonomousStateMachineContext context)
+            {
+                AutonomousController ctxt = context.getOwner();
+
+            ctxt.openHook();
+            ctxt.linearDrive(10d);
+            return;
+        }
+
+        @Override
+        protected void evDriveComplete(AutonomousStateMachineContext context)
+        {
+            AutonomousController ctxt = context.getOwner();
+
+            AutonomousControllerState endState = context.getState();
+            context.clearState();
+            try
+            {
+                ctxt.checkStoneRecognition();
+            }
+            finally
+            {
+                context.setState(endState);
+            }
+
             return;
         }
 

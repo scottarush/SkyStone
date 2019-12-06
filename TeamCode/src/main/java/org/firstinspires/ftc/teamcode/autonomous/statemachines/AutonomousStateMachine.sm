@@ -3,22 +3,25 @@
 // http://smc.sourceforge.net/
 %start AutonomousStateMachine::Idle
 
+
+
+
 %map AutonomousStateMachine
 %%
-
-    /*
-    * idle state until started by controller
-    */
     Idle
     {
-        evStart DriveToStones { }
+        evStartDriveToStones jump(GetStones::Start) { }
+        evStartDragFoundation jump(DragFoundation::Start) { }
     }
+%%
 
-
+    // StateMachine for GetStones sequence
+%map GetStones
+%%
     /*
     * drives forward close enough to be able to locate a Skystone with the camera
     */
-    DriveToStones
+    Start
         Entry {
             openHook();
             // start drive forward
@@ -132,4 +135,19 @@
 
     }
 %%
-
+// StateMachine for GetStones sequence
+%map DragFoundation
+%%
+    /*
+    * drives forward close enough to be able to locate a Skystone with the camera
+    */
+    Start
+        Entry {
+            openHook();
+            // start drive forward
+            linearDrive(10d);
+        }
+    {
+        evDriveComplete nil { checkStoneRecognition(); }
+     }
+%%
