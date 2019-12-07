@@ -44,7 +44,7 @@ import org.firstinspires.ftc.teamcode.drivetrain.SpeedBotMecanumDrive;
 This class implements the equations that Marcus derived on October 3.
   */
 
-@TeleOp(name="TestTankDrive", group="Robot")
+@TeleOp(name="TestTankOpMode", group="Robot")
 //@Disabled
 public class TestTankOpMode extends OpMode{
 
