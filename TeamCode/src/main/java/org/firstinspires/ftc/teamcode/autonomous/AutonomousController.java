@@ -218,7 +218,8 @@ public class AutonomousController {
     }
 
     public boolean isAutonomousComplete(){
-        return (mAsm.getState() == AutonomousStateMachineContext.AutonomousStateMachine.Complete);
+         return false;
+        //return (mAsm.getState() == AutonomousStateMachineContext.AutonomousStateMachine.Complete);
     }
 
 

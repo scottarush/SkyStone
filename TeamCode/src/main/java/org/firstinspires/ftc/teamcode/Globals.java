@@ -8,5 +8,5 @@ public class Globals {
      */
     public static final int SPEED_BOT = 0;
     public static final int GRABBER_BOT = 1;
-    public static final int selectedBot = GRABBER_BOT;
+    public static final int selectedBot = SPEED_BOT;
 }
