@@ -32,21 +32,18 @@ package org.firstinspires.ftc.teamcode.TestOpModes;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.firstinspires.ftc.teamcode.Globals;
-import org.firstinspires.ftc.teamcode.MecanumGrabberBot;
-import org.firstinspires.ftc.teamcode.SpeedBot;
 import org.firstinspires.ftc.teamcode.drivetrain.BaseMecanumDrive;
 import org.firstinspires.ftc.teamcode.drivetrain.GrabberBotMecanumDrive;
 import org.firstinspires.ftc.teamcode.drivetrain.SpeedBotMecanumDrive;
 
 
 /**
-This class implements the equations that Marcus derived on October 3.
+This class is used to test the speed bot tank drive.
   */
 
-@TeleOp(name="TestTankOpMode", group="Robot")
+@TeleOp(name="TestSpeedBotTankDrive", group="Robot")
 //@Disabled
-public class TestTankOpMode extends OpMode{
+public class TestSpeedBotTankDrive extends OpMode{
 
     /* Declare OpMode members. */
     private BaseMecanumDrive drivetrain = null;
@@ -56,20 +53,9 @@ public class TestTankOpMode extends OpMode{
      */
     @Override
     public void init() {
-        /* Initialize the hardware variables.
-         * The initIMU() method of the hardware class does all the work here
-         */
-        try {
-            switch(Globals.selectedBot) {
-                case Globals.GRABBER_BOT:
-                    drivetrain = new GrabberBotMecanumDrive(this);
-                    break;
-                case Globals.SPEED_BOT:
-                    drivetrain = new SpeedBotMecanumDrive(this);
-                    break;
-            }
-            //drivetrain.initIMU(hardwareMap);
-        }
+        try{
+           drivetrain = new SpeedBotMecanumDrive(this);
+         }
         catch(Exception e){
             telemetry.addData("Robot Init Error","%s",e.getMessage());
             telemetry.update();

@@ -6,7 +6,7 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
-import org.firstinspires.ftc.teamcode.Hook;
+import org.firstinspires.ftc.teamcode.grabberbot.Hook;
 import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.drivetrain.BaseMecanumDrive;
 import org.firstinspires.ftc.teamcode.drivetrain.IDriveSessionStatusListener;
@@ -26,9 +26,6 @@ import statemap.FSMContext;
 import statemap.State;
 
 public class AutonomousController {
-    public static final int ENCODER_CONTROL = 0;
-    public static final int OPEN_LOOP_TIME = 1;
-    private int mDriveMode = ENCODER_CONTROL;
 
     private static boolean TELEMETRY_STATE_LOGGING_ENABLED = true;
 
@@ -253,15 +250,7 @@ public class AutonomousController {
      *
      */
     public void linearDrive(double distance){
-        switch(mDriveMode){
-            case ENCODER_CONTROL:
-                startDriveByEncoder(1.0d, distance,3000);
-                break;
-            case OPEN_LOOP_TIME:
-                robot.getDrivetrain().driveLinearTime(distance,1.0d);
-                break;
-        }
-
+        startDriveByEncoder(1.0d, distance,3000);
     }
 
     /**
@@ -334,19 +323,6 @@ public class AutonomousController {
         mecanumDrive.strafeEncoder(1.0d,strafeDistance,timeoutms);
     }
 
-    /**
-     * Called from state machine to drive toward the foundation
-     */
-    public void dragFoundation(){
-        switch(mDriveMode){
-            case ENCODER_CONTROL:
-                startDriveByEncoder(1.0d, -12.0d,3000);
-                break;
-            case OPEN_LOOP_TIME:
-                robot.getDrivetrain().driveLinearTime(-12d,1.0d);
-                break;
-        }
-    }
 
     /**
      * Called from state machine to lower the arm until it hits the limit switch.

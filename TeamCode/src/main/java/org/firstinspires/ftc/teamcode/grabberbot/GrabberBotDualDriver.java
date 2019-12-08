@@ -27,12 +27,16 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.grabberbot;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.util.ElapsedTime;
+
+import org.firstinspires.ftc.teamcode.grabberbot.Hook;
+import org.firstinspires.ftc.teamcode.grabberbot.MecanumGrabberBot;
+import org.firstinspires.ftc.teamcode.grabberbot.SideHook;
 
 
 /**
@@ -42,9 +46,9 @@ import com.qualcomm.robotcore.util.ElapsedTime;
  * Grabber on both sets of bumpers and triggers.
  * Arm up down on pad.
  */
-@TeleOp(name="DualDriverOpMode", group="Robot")
+@TeleOp(name="GrabberBotDualDriver", group="Robot")
 //@Disabled
-public class DualDriverOpMode extends OpMode{
+public class GrabberBotDualDriver extends OpMode{
 
     private MecanumGrabberBot robot  = null;
 
