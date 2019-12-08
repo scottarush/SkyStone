@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.arm;
+package org.firstinspires.ftc.teamcode.grabberbot;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -177,7 +177,7 @@ public class FourBarArm extends Arm {
     /**
      * Starts moving the arm continously.
      *
-     * @return false if the arm motor wasn't initIMU correctly or the arm was initialized in angle mode
+     * @return false if the arm motor wasn't inited correctly or the arm was initialized in angle mode
      */
     @Override
     public boolean moveArm(boolean extend){

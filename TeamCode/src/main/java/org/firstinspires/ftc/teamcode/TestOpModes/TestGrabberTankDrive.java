@@ -34,50 +34,33 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.drivetrain.BaseMecanumDrive;
 import org.firstinspires.ftc.teamcode.drivetrain.GrabberBotMecanumDrive;
-import org.firstinspires.ftc.teamcode.drivetrain.SpeedBotMecanumDrive;
-import org.firstinspires.ftc.teamcode.grabberbot.MecanumGrabberBot;
-import org.firstinspires.ftc.teamcode.speedbot.SpeedBot;
 
 
 /**
 This class implements the equations that Marcus derived on October 3.
   */
 
-@TeleOp(name="TestIMURotation", group="Robot")
+@TeleOp(name="TestGrabberTankDrive", group="Robot")
 //@Disabled
-public class TestIMURotation extends OpMode{
+public class TestGrabberTankDrive extends OpMode{
 
     /* Declare OpMode members. */
     private BaseMecanumDrive drivetrain = null;
-
-    private long lastTime = 0;
-
-    private static final boolean USE_GRABBER_BOT = true;
 
     /*
      * Code to run ONCE when the driver hits INIT
      */
     @Override
     public void init() {
-        /* Initialize the hardware variables.
-         * The initIMU() method of the hardware class does all the work here
-         */
-        try {
-            if (USE_GRABBER_BOT){
-                drivetrain = new GrabberBotMecanumDrive(this);
-                drivetrain.initIMU(hardwareMap);
-            }
-            else{
-                drivetrain = new SpeedBotMecanumDrive(this);
-                drivetrain.initIMU(hardwareMap);
-            }
+        try{
+           drivetrain = new GrabberBotMecanumDrive(this);
          }
         catch(Exception e){
             telemetry.addData("Robot Init Error","%s",e.getMessage());
             telemetry.update();
             return;
         }
-        lastTime = System.currentTimeMillis();
+
         // Send telemetry message to signify drivetrain waiting;
         telemetry.addData("Say", "Init Complete");    //
     }
@@ -101,22 +84,14 @@ public class TestIMURotation extends OpMode{
      */
     @Override
     public void loop() {
+         // Run wheels in tank mode (note: The joystick goes negative when pushed forwards, so negate it)
+        double xleft = gamepad1.left_stick_x;
+        double yleft = -gamepad1.left_stick_y;
+        double xright = gamepad1.right_stick_x;
+        double yright = -gamepad1.right_stick_y;
 
-        if (gamepad1.a) {
-            stop();
-            drivetrain.rotate(90);
-        }
-        if (gamepad1.b){
-            if (!drivetrain.isMoving()) {
-                drivetrain.driveEncoder(1.0d, 12.0d, 1000);
-            }
-        }
-        if (gamepad1.x){
-            if (!drivetrain.isMoving()) {
-                drivetrain.strafeEncoder(1.0d, 12.0d, 1000);
-            }
-        }
-        drivetrain.loop();
+        // the speeds with the new gamepad inputs
+        drivetrain.setTankDriveJoystickInput(xleft,yleft,xright,yright);
     }
 
     /*

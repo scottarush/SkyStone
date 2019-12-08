@@ -1,8 +1,11 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.speedbot;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
-import org.firstinspires.ftc.teamcode.arm.FourBarArm;
+import org.firstinspires.ftc.teamcode.Robot;
+import org.firstinspires.ftc.teamcode.grabberbot.FourBarArm;
+import org.firstinspires.ftc.teamcode.grabberbot.Grabber;
+import org.firstinspires.ftc.teamcode.grabberbot.Hook;
 
 /**
  * This is the Mecanum Frame Development Bot

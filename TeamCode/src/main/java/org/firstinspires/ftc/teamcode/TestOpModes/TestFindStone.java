@@ -34,9 +34,8 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
-import org.firstinspires.ftc.teamcode.SpeedBot;
-import org.firstinspires.ftc.teamcode.Globals;
-import org.firstinspires.ftc.teamcode.MecanumGrabberBot;
+import org.firstinspires.ftc.teamcode.speedbot.SpeedBot;
+import org.firstinspires.ftc.teamcode.grabberbot.MecanumGrabberBot;
 import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.autonomous.TargetPosition;
 import org.firstinspires.ftc.teamcode.autonomous.VuforiaTargetLocator;
@@ -49,7 +48,7 @@ import java.util.List;
 
 
 /**
-This class implements the equations that Marcus derived on October 3.
+This class tests using the Vuforia system to locate a stone.
   */
 
 @TeleOp(name="TestFindStone", group="Robot")
@@ -64,6 +63,8 @@ public class TestFindStone extends OpMode{
     VuforiaTargetLocator mVuforiaLocator = null;
 
     private static final boolean ENABLE_VUFORIA_TELEMETRY = false;
+
+    private static final boolean USE_GRABBER_BOT = true;
     /*
      * Code to run ONCE when the driver hits INIT
      */
@@ -77,15 +78,13 @@ public class TestFindStone extends OpMode{
          */
         String initErrs = "";
         try {
-            switch(Globals.selectedBot) {
-                case Globals.SPEED_BOT:
-                    mRobot = new SpeedBot(this,false);
-                    break;
-                case Globals.GRABBER_BOT:
-                    mRobot = new MecanumGrabberBot(this,true);
-                    break;
+            if (USE_GRABBER_BOT){
+                mRobot = new MecanumGrabberBot(this,true);
             }
-           // Get utility variable
+            else{
+                mRobot = new SpeedBot(this,false);
+            }
+            // Get utility variable
             mecanumDrive = (BaseMecanumDrive)mRobot.getDrivetrain();
             mRobot.init();
         }

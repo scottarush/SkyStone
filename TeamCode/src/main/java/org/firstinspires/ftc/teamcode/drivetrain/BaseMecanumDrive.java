@@ -76,24 +76,6 @@ public abstract class BaseMecanumDrive extends Drivetrain{
         super(opMode);
     }
 
-//    /**
-//     * Must be called from the OpMode service loop to service timers for drive and rotation handling.
-//     */
-//    public void loop() {
-//        if (lfMotor != null)
-//            lfMotor.loop();
-//        if (lrMotor != null)
-//            lrMotor.loop();
-//        if (rfMotor != null)
-//            rfMotor.loop();
-//        if (rrMotor != null)
-//            rrMotor.loop();
-//        mOpMode.telemetry.addData("lf,lr,rf,rr","%d %d %d %d",lfMotor.getCurrentPosition(),
-//                lrMotor.getCurrentPosition(),rfMotor.getCurrentPosition(),rrMotor.getCurrentPosition());
-//        mOpMode.telemetry.update();
-//        super.loop();
-//    }
-
     /**
      * Helper function to set power to the wheel drive motors
      *
@@ -351,8 +333,8 @@ public abstract class BaseMecanumDrive extends Drivetrain{
             lrPower = lrPower / speedmax;
             rrPower = rrPower / speedmax;
         }
-        mOpMode.telemetry.addData("power","lf %1.2f rf %1.2f lr %1.2f rr %1.2f",lfPower,rfPower,lrPower,rrPower);
-        mOpMode.telemetry.update();
+//        mOpMode.telemetry.addData("power","lf %1.2f rf %1.2f lr %1.2f rr %1.2f",lfPower,rfPower,lrPower,rrPower);
+//        mOpMode.telemetry.update();
 
         setPower(lfPower,rfPower,lrPower,rrPower);
     }

@@ -2,9 +2,10 @@ package org.firstinspires.ftc.teamcode.autonomous;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
-import org.firstinspires.ftc.teamcode.SpeedBot;
-import org.firstinspires.ftc.teamcode.Globals;
-import org.firstinspires.ftc.teamcode.MecanumGrabberBot;
+import org.firstinspires.ftc.teamcode.drivetrain.GrabberBotMecanumDrive;
+import org.firstinspires.ftc.teamcode.drivetrain.SpeedBotMecanumDrive;
+import org.firstinspires.ftc.teamcode.speedbot.SpeedBot;
+import org.firstinspires.ftc.teamcode.grabberbot.MecanumGrabberBot;
 import org.firstinspires.ftc.teamcode.Robot;
 
 //@Autonomous(name="AutonomousMode", group="Robot")
@@ -14,7 +15,7 @@ public class SkystoneAutonomousOpMode {
  //   private MecanumGrabberBot robot = new MecanumGrabberBot(this, Robot.DriveTrainStyle.MECANUM_HEX_BOT,true);
     private Robot robot = null;
 
-
+    private static final boolean USE_GRABBER_BOT = true;
 
     private AutonomousController autoController = null;
 
@@ -36,15 +37,13 @@ public class SkystoneAutonomousOpMode {
     public void init() {
         String initErrs = "";
         try {
-            switch(Globals.selectedBot) {
-                case Globals.GRABBER_BOT:
-                    robot = new MecanumGrabberBot(mOpmode, true);
-                    break;
-                case Globals.SPEED_BOT:
-                    robot = new SpeedBot(mOpmode, true);
-                    break;
+            if (USE_GRABBER_BOT){
+                robot = new MecanumGrabberBot(mOpmode, true);
             }
-            robot.init();
+            else{
+                robot = new SpeedBot(mOpmode, true);
+            }
+             robot.init();
         }
         catch(Exception e){
             initErrs += ","+e.getMessage();

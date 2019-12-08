@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.grabberbot;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
@@ -6,26 +6,25 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
 /**
- * This is the hook on the front of the robot that can be used to pull as well
- * as push bocks into the grabber.
+ * This is the hook on the side of the robot that can be deployed to pull the foundation
  */
-public class Hook {
+public class SideHook {
     private Servo mServo = null;
     private HardwareMap mHWMap = null;
     private OpMode mOpMode = null;
 
     private DigitalChannel mLimitSwitch = null;
 
-    public static final String HOOK_SERVER_NAME = "hookservo";
+    public static final String SIDE_HOOK_SERVO_NAME = "sidehook";
 
-    private static final double OPEN_POSITION = 0.0d;
-    private static final double CLOSED_POSITION = 1.0d;
+    private static final double DOWN_POSITION = 0.0d;
+    private static final double UP_POSITION = 1.0d;
 
-    public static final int OPEN = 0;
-    public static final int CLOSED = 1;
-    private int mPosition = CLOSED;
+    public static final int DOWN = 0;
+    public static final int UP = 1;
+    private int mPosition = UP;
 
-    public Hook(OpMode opMode){
+    public SideHook(OpMode opMode){
         opMode = mOpMode;
     }
 
@@ -33,11 +32,11 @@ public class Hook {
         mHWMap = ahwMap;
         String initErrString = "";
         try {
-            mServo = mHWMap.get(Servo.class, HOOK_SERVER_NAME);
+            mServo = mHWMap.get(Servo.class, SIDE_HOOK_SERVO_NAME);
             // Force servo to closed position to start
-            mServo.setPosition(Hook.CLOSED);
+            mServo.setPosition(SideHook.UP);
         } catch (Exception e) {
-            initErrString += "Hook Servo initIMU failed,";
+            initErrString += "SideHook initIMU failed,";
         }
 
         if  (initErrString.length() > 0){
@@ -51,19 +50,19 @@ public class Hook {
     public int getPosition(){
          return mPosition;
     }
-    /** Sets the hook to either OPEN, CLOSED, or RETRACTED.
+    /** Sets the hook to either DOWN or UP.
      * @return true on success, false on any error. **/
     public boolean setPosition(int position){
         if (mServo == null)
             return false;
         switch(position) {
-            case OPEN:
-                mServo.setPosition(OPEN_POSITION);
-                mPosition = OPEN;
+            case DOWN:
+                mServo.setPosition(DOWN_POSITION);
+                mPosition = DOWN;
                 return true;
-            case CLOSED:
-                mServo.setPosition(CLOSED_POSITION);
-                mPosition = CLOSED;
+            case UP:
+                mServo.setPosition(UP_POSITION);
+                mPosition = UP;
                 return true;
         }
         return false;
