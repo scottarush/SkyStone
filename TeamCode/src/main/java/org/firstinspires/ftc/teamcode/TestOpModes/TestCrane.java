@@ -42,11 +42,16 @@ public class TestCrane extends OpMode {
             else if (gamepad1.a) {
                 mCrane.closeHand();
             }
-            else if (gamepad1.x) {
-                mCrane.lowerAutoRamp();
+            double lower = gamepad1.left_trigger;
+            double right = gamepad1.right_trigger;
+            if (lower > 0.05d) {
+                mCrane.lowerManual(lower);
             }
-            else if (gamepad1.y){
-                mCrane.raiseAutoRamp();
+            else if (right > 0.05d){
+                mCrane.raiseManual(right);
+            }
+            else{
+                mCrane.stop();
             }
         }
     }
