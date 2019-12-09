@@ -2,18 +2,15 @@ package org.firstinspires.ftc.teamcode.autonomous;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
-import org.firstinspires.ftc.teamcode.drivetrain.GrabberBotMecanumDrive;
-import org.firstinspires.ftc.teamcode.drivetrain.SpeedBotMecanumDrive;
 import org.firstinspires.ftc.teamcode.speedbot.SpeedBot;
 import org.firstinspires.ftc.teamcode.grabberbot.MecanumGrabberBot;
-import org.firstinspires.ftc.teamcode.Robot;
 
 //@Autonomous(name="AutonomousMode", group="Robot")
 //@Disabled
 public class SkystoneAutonomousOpMode {
 
- //   private MecanumGrabberBot robot = new MecanumGrabberBot(this, Robot.DriveTrainStyle.MECANUM_HEX_BOT,true);
-    private Robot robot = null;
+    private MecanumGrabberBot mGrabberBot = null;
+    private SpeedBot mSpeedBot = null;
 
     private static final boolean USE_GRABBER_BOT = true;
 
@@ -38,12 +35,13 @@ public class SkystoneAutonomousOpMode {
         String initErrs = "";
         try {
             if (USE_GRABBER_BOT){
-                robot = new MecanumGrabberBot(mOpmode, true);
+                mGrabberBot = new MecanumGrabberBot(mOpmode, true);
+                mGrabberBot.init();
             }
             else{
-                robot = new SpeedBot(mOpmode, true);
+                mSpeedBot = new SpeedBot(mOpmode, true);
+                mSpeedBot.init();
             }
-             robot.init();
         }
         catch(Exception e){
             initErrs += ","+e.getMessage();
@@ -58,11 +56,16 @@ public class SkystoneAutonomousOpMode {
         }
         // Activate vuforia
         mVuforia.activate();
-        // Initialize the controller
-        autoController = new AutonomousController(mOpmode,robot,mVuforia, mBlueAlliance);
+        // Initialize the controller based on the bot
+        if (USE_GRABBER_BOT){
+            autoController = new AutonomousController(mOpmode,mGrabberBot,mVuforia, mBlueAlliance);
+        }
+        else{
+            autoController = new AutonomousController(mOpmode,mSpeedBot,mVuforia, mBlueAlliance);
+        }
 
         if (initErrs.length() == 0){
-            mOpmode.telemetry.addData("Status:","Robot initIMU complete");
+            mOpmode.telemetry.addData("Status:","Robot init complete");
             mOpmode.telemetry.update();
         }
         else{

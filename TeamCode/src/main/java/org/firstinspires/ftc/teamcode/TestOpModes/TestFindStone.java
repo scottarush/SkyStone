@@ -36,7 +36,6 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.teamcode.speedbot.SpeedBot;
 import org.firstinspires.ftc.teamcode.grabberbot.MecanumGrabberBot;
-import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.autonomous.TargetPosition;
 import org.firstinspires.ftc.teamcode.autonomous.VuforiaTargetLocator;
 import org.firstinspires.ftc.teamcode.drivetrain.BaseMecanumDrive;
@@ -55,9 +54,10 @@ This class tests using the Vuforia system to locate a stone.
 //@Disabled
 public class TestFindStone extends OpMode{
 
-    private Robot mRobot = null;
+    private MecanumGrabberBot mGrabberBot = null;
+    private SpeedBot mSpeedBot = null;
 
-    private BaseMecanumDrive mecanumDrive = null;
+    private BaseMecanumDrive mMecanumDrive = null;
 
     private long lastTime = 0;
     VuforiaTargetLocator mVuforiaLocator = null;
@@ -79,14 +79,15 @@ public class TestFindStone extends OpMode{
         String initErrs = "";
         try {
             if (USE_GRABBER_BOT){
-                mRobot = new MecanumGrabberBot(this,true);
+                mGrabberBot = new MecanumGrabberBot(this, true);
+                mGrabberBot.init();
+                mMecanumDrive = mGrabberBot.getDrivetrain();
             }
             else{
-                mRobot = new SpeedBot(this,false);
+                mSpeedBot = new SpeedBot(this, true);
+                mSpeedBot.init();
+                mMecanumDrive = mSpeedBot.getDrivetrain();
             }
-            // Get utility variable
-            mecanumDrive = (BaseMecanumDrive)mRobot.getDrivetrain();
-            mRobot.init();
         }
         catch(Exception e){
             initErrs += e.getMessage();
@@ -106,7 +107,7 @@ public class TestFindStone extends OpMode{
         if (mVuforiaLocator.mInitialized){
             mVuforiaLocator.activate();
         }
-        mRobot.getDrivetrain().addDriveSessionStatusListener(new IDriveSessionStatusListener() {
+        mMecanumDrive.addDriveSessionStatusListener(new IDriveSessionStatusListener() {
             @Override
             public void driveComplete() {
                 telemetry.addData("driveComplete Called","");
@@ -119,7 +120,7 @@ public class TestFindStone extends OpMode{
                 telemetry.update();
             }
         });
-        mRobot.getDrivetrain().addRotationStatusListener(new IRotationStatusListener() {
+        mMecanumDrive.addRotationStatusListener(new IRotationStatusListener() {
             @Override
             public void rotationComplete() {
                 telemetry.addData("rotationComplete Called","");
@@ -155,7 +156,7 @@ public class TestFindStone extends OpMode{
 
         long currentTime = System.currentTimeMillis();
         long delta = currentTime-lastTime;
-        mRobot.getDrivetrain().loop();
+        mMecanumDrive.loop();
 
         double yoffset = 0d;
         double xoffset = 0d;
@@ -206,17 +207,17 @@ public class TestFindStone extends OpMode{
 //            ((BaseMecanumDrive)mRobot.getDrivetrain()).strafeEncoder(1.0d,12.0d,3000);
 //        }
         if (gamepad1.a){
-            mecanumDrive.rotate(90);
+            mMecanumDrive.rotate(90);
         }
         if (gamepad1.x){
-            mecanumDrive.strafeEncoder(1.0d,xoffset,5000);
+            mMecanumDrive.strafeEncoder(1.0d,xoffset,5000);
         }
         if (gamepad1.y){
- //           mecanumDrive.driveEncoder(1.0d,yoffset,2000);
-            mecanumDrive.driveEncoder(1.0d,12d,2000);
+ //           mMecanumDrive.driveEncoder(1.0d,yoffset,2000);
+            mMecanumDrive.driveEncoder(1.0d,12d,2000);
         }
         if (gamepad1.b){
-            mecanumDrive.strafeEncoder(1.0d,12d,10000);
+            mMecanumDrive.strafeEncoder(1.0d,12d,10000);
         }
     }
 
@@ -225,7 +226,7 @@ public class TestFindStone extends OpMode{
      */
     @Override
     public void stop() {
-        mRobot.getDrivetrain().stop();
+        mMecanumDrive.stop();
     }
 
 

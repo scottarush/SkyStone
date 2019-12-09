@@ -10,10 +10,6 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
  */
 public class SpeedBotMecanumDrive extends BaseMecanumDrive {
 
-
-    public static final double PIMOTOR_KP = 1.0;
-    public static final double PIMOTOR_KI = 1.0;
-
     public static final double ROTATION_KP = 4.0d;
     public static final double ROTATION_KI  = 1.0d;
     /**
@@ -63,7 +59,7 @@ public class SpeedBotMecanumDrive extends BaseMecanumDrive {
     /* Initialize standard Hardware interfaces.
      * NOTE:  This class throws Exception on any hardware initIMU error so be sure to catch and
      * report to Telemetry in your initialization. */
-    public void initIMU(HardwareMap ahwMap) throws Exception {
+    public void init(HardwareMap ahwMap,boolean initIMU) throws Exception {
         // Save reference to Hardware map
         mHWMap = ahwMap;
 
@@ -104,12 +100,13 @@ public class SpeedBotMecanumDrive extends BaseMecanumDrive {
         catch(Exception e){
             motorInitError += "rr,";
         }
-        try{
-            super.initIMU(ahwMap);
-        }
-        catch(Exception e){
-            // This exception can't actually happen but change in the future to catch this somehow
-            motorInitError += "IMU initIMU";
+        if (initIMU) {
+            try {
+                initIMU(ahwMap);
+            } catch (Exception e) {
+                // This exception can't actually happen but change in the future to catch this somehow
+                motorInitError += "IMU initIMU";
+            }
         }
 
         // Set all motors to zero power

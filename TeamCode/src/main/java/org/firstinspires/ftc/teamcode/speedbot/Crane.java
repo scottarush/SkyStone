@@ -8,6 +8,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 /**
  * This class encapsulates the Crane and grabbing hand on the speed bot.
+ *
  */
 public class Crane {
 
@@ -71,21 +72,56 @@ public class Crane {
     }
 
     /**
-     * raises the crane continuously
+     * raises the crane continuously with manual power
+     * @param power 0 to 1.0 power to raiseAutoRamp
      */
-    public void raise(){
+    public void raiseManual(double power){
+        if (mCraneMotor == null){
+            return;
+        }
+        if (power < 0d){
+            mCraneMotor.setPower(0d);
+            return;
+        }
+        else if (power > 1.0d){
+            power = 1.0d;
+        }
+        mCraneMotor.setPower(power);
+    }
+    /**
+     * lowers the crane continuously with manual power
+     * @param power 0 to 1.0 power to raiseAutoRamp
+     */
+    public void lowerManual(double power){
+        if (mCraneMotor == null){
+            return;
+        }
+        if (power < 0d){
+            mCraneMotor.setPower(0d);
+            return;
+        }
+        else if (power > 1.0d){
+            power = 1.0d;
+        }
+        mCraneMotor.setPower(-power);
+    }
+
+    /**
+     * raises the crane continuously with automatic power ramping
+     */
+    public void raiseAutoRamp(){
         if (mCraneMotor == null){
             return;
         }
         double abspower = 0d;
         double power = mCraneMotor.getPower();
         if (power == 0d){
-            // We are starting a raise
+            // We are starting a raiseAutoRamp
             mRampTimer.reset();
             abspower = RAISE_START_POWER;
          }
         else if (power < 0d) {
-            // We are lowering and reversing to a raise
+            // We are lowering and reversing to a raiseAutoRamp
             stop();
             mRampTimer.reset();
             abspower = RAISE_START_POWER;
@@ -101,19 +137,19 @@ public class Crane {
     /**
      * lowers the crane continuously
      */
-    public void lower(){
+    public void lowerAutoRamp(){
         if (mCraneMotor == null){
             return;
         }
         double abspower = 0d;
         double power = mCraneMotor.getPower();
         if (power == 0d){
-            // We are starting a lower
+            // We are starting a lowerAutoRamp
             mRampTimer.reset();
             abspower = LOWER_START_POWER;
         }
         else if (power > 0d) {
-            // We are raising so reverse to a lower
+            // We are raising so reverse to a lowerAutoRamp
             stop();
             mRampTimer.reset();
             abspower = LOWER_START_POWER;

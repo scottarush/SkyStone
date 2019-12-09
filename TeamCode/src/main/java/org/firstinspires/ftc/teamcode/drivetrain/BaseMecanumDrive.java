@@ -41,19 +41,16 @@ import com.qualcomm.robotcore.hardware.DcMotor;
  * subclasses.
  *
  * This hardware class assumes the following device names have been configured on the robot:
- * Note:  All names are lower case and some have single spaces between words.
+ * Note:  All names are lowerAutoRamp case and some have single spaces between words.
  *
- * Motor channel:  Left front drive motor:        "lf"
+ * Motor channel:  Left front drive motor:    "lf"
  * Motor channel:  Right front drive motor:  "rf"
  * Motor channel:  Left rear drive motor:    "lr"
  * Motor channel:  Right rear drive motor:   "r"
  *
  */
 public abstract class BaseMecanumDrive extends Drivetrain{
-//    protected WrappedDCMotor lfMotor = null;
-//    protected WrappedDCMotor rfMotor = null;
-//    protected WrappedDCMotor lrMotor = null;
-//    protected WrappedDCMotor rrMotor = null;
+
     protected DcMotor lfMotor = null;
     protected DcMotor rfMotor = null;
     protected DcMotor lrMotor = null;
@@ -338,13 +335,6 @@ public abstract class BaseMecanumDrive extends Drivetrain{
 
         setPower(lfPower,rfPower,lrPower,rrPower);
     }
-
-    @Override
-    public boolean isVectorTimedDriveSupported() {
-        return true;
-    }
-
-
 
     /**
      * Drives for a set distance using open-loop, robot-specific time.

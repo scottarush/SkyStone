@@ -70,7 +70,7 @@ public class FieldTile {
         }
         /** left edge of tile  **/
         public double x = 0;
-        /** lower edge of tile  **/
+        /** lowerAutoRamp edge of tile  **/
         public double y = 0;
         public int mTileNum = 0;
 

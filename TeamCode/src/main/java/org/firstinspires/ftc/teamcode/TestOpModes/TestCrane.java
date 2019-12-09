@@ -1,12 +1,8 @@
 package org.firstinspires.ftc.teamcode.TestOpModes;
 
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.DigitalChannel;
 
-import org.firstinspires.ftc.teamcode.grabberbot.Hook;
-import org.firstinspires.ftc.teamcode.grabberbot.FourBarArm;
 import org.firstinspires.ftc.teamcode.speedbot.Crane;
 
 /**
@@ -47,10 +43,10 @@ public class TestCrane extends OpMode {
                 mCrane.closeHand();
             }
             else if (gamepad1.x) {
-                mCrane.lower();
+                mCrane.lowerAutoRamp();
             }
             else if (gamepad1.y){
-                mCrane.raise();
+                mCrane.raiseAutoRamp();
             }
         }
     }

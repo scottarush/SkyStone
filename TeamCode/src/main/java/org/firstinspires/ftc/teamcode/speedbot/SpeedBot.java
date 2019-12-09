@@ -2,13 +2,12 @@ package org.firstinspires.ftc.teamcode.speedbot;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
-import org.firstinspires.ftc.teamcode.Robot;
-import org.firstinspires.ftc.teamcode.grabberbot.FourBarArm;
-import org.firstinspires.ftc.teamcode.grabberbot.Grabber;
-import org.firstinspires.ftc.teamcode.grabberbot.Hook;
+import org.firstinspires.ftc.teamcode.drivetrain.BaseMecanumDrive;
+import org.firstinspires.ftc.teamcode.drivetrain.Drivetrain;
+import org.firstinspires.ftc.teamcode.drivetrain.SpeedBotMecanumDrive;
 
 /**
- * This is the Mecanum Frame Development Bot
+ * This is the Speed Bot
  * -------------------------------------------------
  * HUB Layout:
  * -------------------------------------------------
@@ -19,26 +18,52 @@ import org.firstinspires.ftc.teamcode.grabberbot.Hook;
  *
  * Camera is "webcam"
  */
-public class SpeedBot extends Robot {
+public class SpeedBot  {
 
-    private final FourBarArm mDummyArm = new FourBarArm(null,false);
-    private final Grabber mDummyGrabber = new Grabber(null);
-    private final Hook mDummyHook = new Hook(null);
+    protected OpMode mOpMode;
+
+    private SpeedBotMecanumDrive mDrivetrain = null;
+    private boolean mEnableIMU = false;
+
+    private Crane mCrane = null;
+
+    private  FrontHooks mFrontHooks = null;
 
     public SpeedBot(OpMode opMode,boolean enableIMU){
-        super(DriveTrainStyle.SPEED_BOT_MECANUM_DRIVE,opMode,enableIMU);
+        this.mOpMode = opMode;
+        this.mEnableIMU = enableIMU;
+        mDrivetrain = new SpeedBotMecanumDrive(opMode);
+        mCrane = new Crane(opMode);
+
+        mFrontHooks = new FrontHooks(opMode);
     }
 
+    public BaseMecanumDrive getDrivetrain(){
+        return mDrivetrain;
+    }
 
+    public Crane getCrane(){
+        return  mCrane;
+    }
+
+    public FrontHooks getFrontHooks(){
+        return mFrontHooks;
+    }
     /**
-     * Override base class function to initialize the rest of the
-     * bot.
+     *
      * @throws Exception
      */
     public void init() throws Exception {
         String initErrString = "";
         try {
-            super.init();
+            mDrivetrain.init(mOpMode.hardwareMap,mEnableIMU);
+
+        }
+        catch (Exception e){
+            initErrString += e.getMessage();
+        }
+        try{
+            mCrane.init(mOpMode.hardwareMap);
         }
         catch (Exception e){
             initErrString += e.getMessage();
@@ -48,32 +73,4 @@ public class SpeedBot extends Robot {
         }
     }
 
-    /**
-     * Dummy implementation to allow this class to be used in same OpMode and AutonomousController
-     * classes as other bots.
-     * @return
-     */
-    @Override
-    public FourBarArm getArm() {
-        return mDummyArm;
-    }
-
-    /**
-     * Dummy implementation to allow this class to be used in same OpMode and AutonomousController
-     * classes as other bots.
-     * @return
-     */
-    @Override
-    public Grabber getGrabber() {
-        return mDummyGrabber;
-    }
-
-/**
- * Dummy implementation to allow this class to be used in same OpMode and AutonomousController
- * classes as other bots.
- **/
-    @Override
-    public Hook getHook() {
-        return mDummyHook;
-    }
 }
