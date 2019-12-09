@@ -52,6 +52,7 @@ public class Crane {
         String initErrString = "";
         try {
             mCraneMotor = ahwMap.get(DcMotor.class, CRANE_MOTOR_NAME);
+            mCraneMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         } catch (Exception e) {
             initErrString += "Crane motor err,";
         }
