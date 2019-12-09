@@ -33,9 +33,8 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 /**
- * This is the class to be used for the teleop dual driver mode with the
- * SpeedBot
- * Layout is:
+ * This is the class to be used for the teleop dual driver mode with theSpeedBot
+ * Control layout is:
  * 1. Tank drive on both joysticks.  Gamepad 1 is primary but if both joysticks are idle,
  *    then Gamepad2 joysticks work otherwise ignored.
  * 2. left bumper on either controller closes hand
