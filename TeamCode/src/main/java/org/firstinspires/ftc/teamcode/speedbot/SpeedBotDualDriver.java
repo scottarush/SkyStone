@@ -31,43 +31,32 @@ package org.firstinspires.ftc.teamcode.speedbot;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.Gamepad;
-import com.qualcomm.robotcore.util.ElapsedTime;
-
-import org.firstinspires.ftc.teamcode.grabberbot.Hook;
-import org.firstinspires.ftc.teamcode.grabberbot.MecanumGrabberBot;
-import org.firstinspires.ftc.teamcode.grabberbot.SideHook;
-
 
 /**
  * This is the class to be used for the teleop dual driver mode with the
  * SpeedBot
  * Layout is:
- * Tank drive on both joysticks.
- * Grabber on both sets of bumpers and triggers.
- * Arm up down on pad.
+ * 1. Tank drive on both joysticks.  Gamepad 1 is primary but if both joysticks are idle,
+ *    then Gamepad2 joysticks work otherwise ignored.
+ * 2. left bumper on either controller closes hand
+ * 3. right bumper on either controller closes hand
+ * 4. left trigger on either controller lowers crane
+ * 5. right trigger on either controller raises crane.
+ * 6. y button on either controller closes both front hooks
+ * 7. a button on either controller opens both front hooks
  */
 @TeleOp(name="SpeedBotDualDriver", group="Robot")
 //@Disabled
 public class SpeedBotDualDriver extends OpMode{
 
-    private MecanumGrabberBot robot  = null;
-
-    public static final double DELTA_ARM_ANGLE_STEP = 5.0d;
-
-    public ElapsedTime mRetractButtonHoldTimer = new ElapsedTime();
-
-     private boolean mAButtonPressed = false;
-
-    private static final double RETRACT_BUTTON_HOLD_TIME = 1.0d;
-    private boolean mRetractButtonPressed = false;
+    private SpeedBot robot  = null;
 
     /*
      * Code to run ONCE when the driver hits INIT
      */
     @Override
     public void init() {
-        robot = new MecanumGrabberBot(this,false);
+        robot = new SpeedBot(this,false);
         /*
          * Initialize the robot.  Be sure to catch exception and dump out as
          * the exception string will have details of what didn't initialize and
@@ -109,99 +98,86 @@ public class SpeedBotDualDriver extends OpMode{
         double xright = gamepad1.right_stick_x;
         double yright = -gamepad1.right_stick_y;
 
-        // the speeds with the new gamepad inputs
+        // Allow gamepad 2 if gamepad1 all zeros
+        if ((xleft == 0d) && (yleft == 0d) && (xright == 0d) && (yright == 0d)){
+            xleft = gamepad2.left_stick_x;
+            yleft = -gamepad2.left_stick_y;
+            xright = gamepad2.right_stick_x;
+            yright = -gamepad2.right_stick_y;
+
+        }
         robot.getDrivetrain().setTankDriveJoystickInput(xleft,yleft,xright,yright);
 
-        boolean leftBumper = gamepad1.left_bumper || gamepad2.right_bumper;
+        // Use the bumpers to open and close the hand on the crane
+        boolean leftBumper = gamepad1.left_bumper || gamepad2.left_bumper;
         boolean rightBumper = gamepad1.right_bumper || gamepad2.right_bumper;
+        if (leftBumper) {
+            if (!rightBumper) {
+                robot.getCrane().closeHand();
+            }
+        }
+        if (rightBumper){
+            if (!leftBumper){
+                robot.getCrane().openHand();
+            }
+        }
 
+        // Use the triggers to raise and lower the crane.  Allow either controller to
+        // raise and lower, but if both triggers are press just stop the crane motor
+        double triggerThreshold = 0.05d;
         double leftTrigger = gamepad1.left_trigger;
-        if (Math.abs(leftTrigger) < 0.05d){
+        if (Math.abs(leftTrigger) < triggerThreshold){
             leftTrigger = gamepad2.left_trigger;
         }
         double rightTrigger = gamepad1.right_trigger;
-        if (Math.abs(rightTrigger) < 0.05d){
+        if (Math.abs(rightTrigger) < triggerThreshold){
             rightTrigger = gamepad2.right_trigger;
         }
-
-        // Read the bumpers and triggers for the grabber.
-         robot.getGrabber().moveGrabber(leftBumper,rightBumper,leftTrigger,rightTrigger);
-
-        // Do arm handling
-        // If a start is in progress then call teh service routine in the arm
-        Gamepad armPad = gamepad2;
-        if (robot.getArm().isResetToRetractInProgress()){
-            robot.getArm().resetToRetractPosition();
-        }
-        else{
-            if (robot.getArm().isAngleMode()) {
-                // Read gamepad and move delta degrees per press
-                if (armPad.dpad_up) {
-                    if (!robot.getArm().isArmMoving()) {
-                        // Arm has stopped.  Move it another 5 degrees.
-                        robot.getArm().moveDeltaAngle(DELTA_ARM_ANGLE_STEP);
-                    }
-                } else if (armPad.dpad_down) {
-                    if (!robot.getArm().isArmMoving()) {
-                        // Arm has stopped.  Move it another 5 degrees.
-                        robot.getArm().moveDeltaAngle(-DELTA_ARM_ANGLE_STEP);
-                    }
-                }
-            } else {
-                // Manual arm mode read the d-pad up and down for the arm moti
-                if (armPad.dpad_up) {
-                    // While dpad-up pressed move the arm in up direction
-                    robot.getArm().moveArm(true);
-                } else if (armPad.dpad_down) {
-                    robot.getArm().moveArm(false);
-                } else {
-                    robot.getArm().stop();
-                }
+        if (rightTrigger > triggerThreshold){
+            if (leftTrigger < triggerThreshold){
+                robot.getCrane().raiseManual(Math.abs(rightTrigger));
+            }
+            else{
+                robot.getCrane().stop();  // both triggers pressed
             }
         }
-        // Do the hook
-        processFrontHookPosition();
-        // Do the side hook
-        processSideHookPosition();
-         // Do the claw
-        if (armPad.x){
-            // Open the clase
-            robot.getArm().setClaw(true);
+        else if (leftTrigger > triggerThreshold){
+            if (rightTrigger < triggerThreshold){
+                robot.getCrane().lowerManual(Math.abs(leftTrigger));
+            }
+            else {
+                robot.getCrane().stop();  // both triggers pressed
+            }
         }
-        else if (armPad.b){
-            robot.getArm().setClaw(false);
+        else{
+            // Neither trigger so stop the crane
+            robot.getCrane().stop();
         }
 
+        // Use the Y and A buttons to close and open the front hooks
+        boolean y = gamepad1.y || gamepad2.y;
+        boolean a = gamepad1.a || gamepad2.a;
+        if (y) {
+            robot.getFrontHooks().closeHooks();
+        }
+        else if (a){
+            robot.getFrontHooks().openHooks();
+        }
+
+//        // Process the autoramp Crane inputs on either controller's dpad Up or Down
+//        boolean dpadUp = gamepad1.dpad_up || gamepad1.dpad_up;
+//        boolean dpadDown = gamepad2.dpad_down || gamepad2.dpad_down;
+//        if (dpadUp){
+//            robot.getCrane().raiseAutoRamp();
+//        }
+//        else if (dpadDown){
+//            robot.getCrane().lowerAutoRamp();
+//        }
+//        else {
+//            robot.getCrane().stop();
+//        }
     }
 
-    /**
-     * Processes the front hook buttons y and a
-     */
-    private void processFrontHookPosition(){
-        boolean yButtonState = (gamepad2.y || gamepad1.y);
-         // Now do a button
-        boolean aButtonState = (gamepad1.a || gamepad2.a);
-        if (aButtonState) {
-            robot.getHook().setPosition(Hook.CLOSED);
-        }
-        else if (yButtonState){
-            robot.getHook().setPosition(Hook.OPEN);
-        }
-    }
-    /**
-     * Processes the side hook buttons y and a
-     */
-    private void processSideHookPosition(){
-        boolean startButton = (gamepad2.start || gamepad1.start);
-        // Now do a button
-        boolean backButton = (gamepad1.back || gamepad2.back);
-        if (backButton) {
-            robot.getSideHook().setPosition(SideHook.UP);
-        }
-        else if (startButton){
-            robot.getSideHook().setPosition(SideHook.DOWN);
-        }
-    }
 
     /*
      * Code to run ONCE after the driver hits STOP

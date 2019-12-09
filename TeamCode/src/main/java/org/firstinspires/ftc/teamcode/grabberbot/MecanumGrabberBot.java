@@ -2,8 +2,9 @@ package org.firstinspires.ftc.teamcode.grabberbot;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
-import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.drivetrain.BaseMecanumDrive;
+import org.firstinspires.ftc.teamcode.drivetrain.Drivetrain;
+import org.firstinspires.ftc.teamcode.drivetrain.GrabberBotMecanumDrive;
 
 /**
  * This is the Mecanum bot with a grabber arm.
@@ -25,7 +26,7 @@ import org.firstinspires.ftc.teamcode.drivetrain.BaseMecanumDrive;
  * Servo0:  Front hook servo "hookservo"
  * Servo1:  Arm claw servo "claw"
  */
-public class MecanumGrabberBot extends Robot {
+public class MecanumGrabberBot  {
 
     private Grabber grabber;
 
@@ -36,15 +37,26 @@ public class MecanumGrabberBot extends Robot {
     private SideHook sideHook= null;
 
     private boolean mManualArmMode = true;
+    protected OpMode mOpMode;
+
+    private GrabberBotMecanumDrive mDrivetrain = null;
+
+    private boolean mEnableIMU = false;
 
     public MecanumGrabberBot(OpMode opMode, boolean enableIMU){
-        super(DriveTrainStyle.GRABBER_BOT_MECANUM_DRIVE,opMode, enableIMU);
+        mEnableIMU = enableIMU;
+        mOpMode = opMode;
+
+        mDrivetrain = new GrabberBotMecanumDrive(mOpMode);
+
     }
 
+    /**
+     * Returns the BaseMecanumDrive for this bot
+     */
     public BaseMecanumDrive getDrivetrain(){
-        return (BaseMecanumDrive) super.getDrivetrain();
+        return mDrivetrain;
     }
-
     /**
      * Returns the grabber.
      */
@@ -58,24 +70,23 @@ public class MecanumGrabberBot extends Robot {
      */
     public void init() throws Exception {
         String initErrString = "";
-        try {
-            super.init();
+        try{
+           mDrivetrain.init(mOpMode.hardwareMap,mEnableIMU);
         }
-        catch (Exception e){
+        catch(Exception e){
             initErrString += e.getMessage();
         }
-        // base drivetrain initIMU must have been OK so initIMU the rest of the bot.
         try{
-            grabber = new Grabber(opMode);
-            grabber.init(opMode.hardwareMap);
+            grabber = new Grabber(mOpMode);
+            grabber.init(mOpMode.hardwareMap);
         }
         catch (Exception e) {
             initErrString += e.getMessage();
         }
         // Initialize the arm to manual mode
         try{
-            arm = new FourBarArm(opMode, mManualArmMode);
-            arm.init(opMode.hardwareMap);
+            arm = new FourBarArm(mOpMode, mManualArmMode);
+            arm.init(mOpMode.hardwareMap);
             arm.setClaw(false);
         }
         catch(Exception e){
@@ -83,22 +94,23 @@ public class MecanumGrabberBot extends Robot {
         }
         // Initialize the front hook
         try{
-            hook = new Hook(opMode);
-            hook.init(opMode.hardwareMap);
+            hook = new Hook(mOpMode);
+            hook.init(mOpMode.hardwareMap);
         }
         catch(Exception e){
             initErrString += e.getMessage();
         }
         // Initialize the side hook
         try{
-            sideHook = new SideHook(opMode);
-            sideHook.init(opMode.hardwareMap);
+            sideHook = new SideHook(mOpMode);
+            sideHook.init(mOpMode.hardwareMap);
         }
-        catch(Exception e){
+        catch(Exception e) {
             initErrString += e.getMessage();
         }
+
         if (initErrString.length() > 0) {
-            throw new Exception("Robot initIMU errs: " + initErrString);
+            throw new Exception("Robot init errs: " + initErrString);
         }
 
     }

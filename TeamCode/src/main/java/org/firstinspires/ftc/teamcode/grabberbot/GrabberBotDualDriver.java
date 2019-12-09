@@ -54,13 +54,6 @@ public class GrabberBotDualDriver extends OpMode{
 
     public static final double DELTA_ARM_ANGLE_STEP = 5.0d;
 
-    public ElapsedTime mRetractButtonHoldTimer = new ElapsedTime();
-
-     private boolean mAButtonPressed = false;
-
-    private static final double RETRACT_BUTTON_HOLD_TIME = 1.0d;
-    private boolean mRetractButtonPressed = false;
-
     /*
      * Code to run ONCE when the driver hits INIT
      */

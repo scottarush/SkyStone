@@ -1,12 +1,9 @@
 %class AutonomousController
 %package org.firstinspires.ftc.teamcode.autonomous
 // http://smc.sourceforge.net/
-%start AutonomousStateMachine::Idle
+%start SpeedBotAutoStateMachine::Idle
 
-
-
-
-%map AutonomousStateMachine
+%map SpeedBotAutoStateMachine
 %%
     Idle
     {

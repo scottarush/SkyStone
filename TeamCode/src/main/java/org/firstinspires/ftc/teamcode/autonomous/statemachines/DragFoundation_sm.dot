@@ -1,0 +1,78 @@
+digraph DragFoundation {
+
+    node
+        [shape=Mrecord width=1.5];
+
+    subgraph cluster_DragFoundation {
+
+        label="DragFoundation";
+
+        //
+        // States (Nodes)
+        //
+
+        "DragFoundation::Idle"
+            [label="{Idle}"];
+
+        "DragFoundation::DriveForward"
+            [label="{DriveForward|Entry/\l&nbsp;&nbsp;&nbsp;setLogMessage(\"DriveForward\");\l&nbsp;&nbsp;&nbsp;openHook();\l&nbsp;&nbsp;&nbsp;driveToFoundation();\l}"];
+
+        "DragFoundation::DriveForwardSuccess"
+            [label="{DriveForwardSuccess|Entry/\l&nbsp;&nbsp;&nbsp;setLogMessage(\"DriveForwardSuccess\");\l&nbsp;&nbsp;&nbsp;closeHook();\l&nbsp;&nbsp;&nbsp;startHookTimer();\l}"];
+
+        "DragFoundation::DriveForwardFail"
+            [label="{DriveForwardFail|Entry/\l&nbsp;&nbsp;&nbsp;setLogMessage(\"DriveForwardFail\");\l}"];
+
+        "DragFoundation::DragFoundation"
+            [label="{DragFoundation|Entry/\l&nbsp;&nbsp;&nbsp;setLogMessage(\"DragFoundation\");\l&nbsp;&nbsp;&nbsp;dragFoundation();\l|evDriveComplete()/\l&nbsp;&nbsp;&nbsp;openHook();\l&nbsp;&nbsp;&nbsp;startHookTimer();\l}"];
+
+        "DragFoundation::RotateToQuarry"
+            [label="{RotateToQuarry|Entry/\l&nbsp;&nbsp;&nbsp;setLogMessage(\"RotateToQuarry\");\l&nbsp;&nbsp;&nbsp;rotateToQuarry();\l}"];
+
+        "DragFoundation::PrepareDriveToQuarry"
+            [label="{PrepareDriveToQuarry|Entry/\l&nbsp;&nbsp;&nbsp;setLogMessage(\"PrepareDriveToQuarry\");\l&nbsp;&nbsp;&nbsp;retractArm();\l}"];
+
+        "DragFoundation::DriveToQuarry"
+            [label="{DriveToQuarry|Entry/\l&nbsp;&nbsp;&nbsp;setLogMessage(\"DriveToQuarry\");\l&nbsp;&nbsp;&nbsp;driveToQuarry();\l}"];
+
+        "DragFoundation::RotateToBlock"
+            [label="{RotateToBlock|Entry/\l&nbsp;&nbsp;&nbsp;setLogMessage(\"RotateToBlock\");\l}"];
+
+        "DragFoundation::Success"
+            [label="{Success|Entry/\l&nbsp;&nbsp;&nbsp;setLogMessage(\"Success\");\l}"];
+
+        "%start"
+            [label="" shape=circle style=filled fillcolor=black width=0.25];
+
+        //
+        // Transitions (Edges)
+        //
+
+        "DragFoundation::Idle" -> "DragFoundation::DriveForward"
+            [label="evStart()/\l"];
+
+        "DragFoundation::DriveForward" -> "DragFoundation::DriveForwardSuccess"
+            [label="evDriveComplete()/\l"];
+
+        "DragFoundation::DriveForward" -> "DragFoundation::DriveForwardFail"
+            [label="evDriveFail()/\l"];
+
+        "DragFoundation::DriveForwardSuccess" -> "DragFoundation::DragFoundation"
+            [label="evHookTimeout()/\l"];
+
+        "DragFoundation::DragFoundation" -> "DragFoundation::RotateToQuarry"
+            [label="evHookTimeout()/\l"];
+
+        "DragFoundation::RotateToQuarry" -> "DragFoundation::PrepareDriveToQuarry"
+            [label="evRotationComplete()/\l"];
+
+        "DragFoundation::PrepareDriveToQuarry" -> "DragFoundation::DriveToQuarry"
+            [label="evArmRetracted()/\l"];
+
+        "DragFoundation::DriveToQuarry" -> "DragFoundation::Success"
+            [label="evDriveComplete()/\l"];
+
+        "%start" -> "DragFoundation::Idle"
+    }
+
+}

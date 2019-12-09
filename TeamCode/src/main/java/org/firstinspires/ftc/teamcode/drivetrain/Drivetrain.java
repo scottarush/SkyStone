@@ -354,15 +354,6 @@ public abstract class Drivetrain {
         return correction;
     }
 
-    /**
-     * Must be implemented by subclasses to provide time values and whether or not angled drive
-     * is supported.
-     * base function just saves values and returns false
-     * @return true if supported, false if not
-     */
-    public boolean isVectorTimedDriveSupported(){
-        return false;
-    }
 
     /**
      * called to add a listener for drive status.
@@ -376,19 +367,12 @@ public abstract class Drivetrain {
     }
 
     /**
-     * called to cancel a drive by time.
-     */
-    public void cancelTimedDrive(){
-        mTimedDriveTimer.cancel();
-        stop();
-    }
-
-    /**
      * base class function must be called by subclasses
      */
     public void stop(){
         mRotationActive = false;
         mLinearDriveActive = false;
+        mTimedDriveTimer.cancel();
     }
 
     /**

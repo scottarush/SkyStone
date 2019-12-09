@@ -7,10 +7,11 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.teamcode.grabberbot.Hook;
-import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.drivetrain.BaseMecanumDrive;
 import org.firstinspires.ftc.teamcode.drivetrain.IDriveSessionStatusListener;
 import org.firstinspires.ftc.teamcode.drivetrain.IRotationStatusListener;
+import org.firstinspires.ftc.teamcode.grabberbot.MecanumGrabberBot;
+import org.firstinspires.ftc.teamcode.speedbot.SpeedBot;
 import org.firstinspires.ftc.teamcode.util.OneShotTimer;
 
 import java.beans.PropertyChangeEvent;
@@ -29,15 +30,26 @@ public class AutonomousController {
 
     private static boolean TELEMETRY_STATE_LOGGING_ENABLED = true;
 
-    private AutonomousStateMachineContext mAsm = null;
+    private GrabberBotAutoStateMachineContext mGrabberBotAutoSM = null;
+    private SpeedBotAutoStateMachineContext mSpeedBotAutoSM = null;
 
     private OpMode opMode = null;
 
     private boolean mBlueAlliance = false;
 
-    private Robot robot = null;
+    /**
+     * This reference will be non-null when using the speed bot
+     */
+    private SpeedBot mSpeedBot = null;
+    /**
+     * This reference will be non-null when using the grabber bot
+     */
+    private MecanumGrabberBot mGrabberBot = null;
 
-    private BaseMecanumDrive mecanumDrive = null;
+    /**
+     * Common reference used for the MecanumDrive on either bot
+     */
+    private BaseMecanumDrive mMecanumDrive = null;
 
     private Recognition mSkystoneRecognition = null;
 
@@ -45,17 +57,38 @@ public class AutonomousController {
 
     private ArrayList<OneShotTimer> mStateTimers = new ArrayList<>();
 
+    /**
+     * Common timer used to open or close the hooks on either bot
+     */
     private OneShotTimer mHookTimer = new OneShotTimer(1000, new OneShotTimer.IOneShotTimerCallback() {
         @Override
         public void timeoutComplete() {
-            mAsm.evHookTimeout();
+            transition("evHookTimeout");
         }
     });
 
+    /**
+     * Timmer for grabber only on grabber bot
+     */
     private OneShotTimer mGrabberTimer = new OneShotTimer(5000, new OneShotTimer.IOneShotTimerCallback() {
         @Override
         public void timeoutComplete() {
-            robot.getGrabber().stop();
+            if (mGrabberBot != null)
+                mGrabberBot.getGrabber().stop();
+
+        }
+    });
+
+    /**
+     * Timmer for hand only on speed bot
+     */
+    private OneShotTimer mHandTimer = new OneShotTimer(1000, new OneShotTimer.IOneShotTimerCallback() {
+        @Override
+        public void timeoutComplete() {
+            if (mSpeedBot != null){
+                transition("evHandTimeout");
+            }
+
         }
     });
 
@@ -67,23 +100,58 @@ public class AutonomousController {
     private static HashMap<String, Method> mTransition_map;
     private LinkedList<String> mTransition_queue;
 
-    public AutonomousController(final OpMode opMode, Robot robot, VuforiaTargetLocator vuforia, boolean blueAlliance){
-        mAsm = new AutonomousStateMachineContext(this);
+    /**
+     * Constructor for use with SpeedBot
+     * @param opMode
+     * @param speedBot
+     * @param vuforia
+     * @param blueAlliance
+     */
+    public AutonomousController(final OpMode opMode, SpeedBot speedBot, VuforiaTargetLocator vuforia, boolean blueAlliance) {
+        mSpeedBotAutoSM = new SpeedBotAutoStateMachineContext(this);
         this.opMode = opMode;
         this.mBlueAlliance = blueAlliance;
-        this.robot = robot;
+        mSpeedBot = speedBot;
         mVuforia = vuforia;
 
-        buildTransitionTable();
+        mMecanumDrive = speedBot.getDrivetrain();
+
+        // Now do common initializations
+        init();
+    }
+
+    /**
+     * Constructor for use with MecanumGrabberBot
+     * @param opMode
+     * @param grabberBot
+     * @param vuforia
+     * @param blueAlliance
+     */
+    public AutonomousController(final OpMode opMode, MecanumGrabberBot grabberBot, VuforiaTargetLocator vuforia, boolean blueAlliance) {
+        mGrabberBotAutoSM = new GrabberBotAutoStateMachineContext(this);
+        this.opMode = opMode;
+        this.mBlueAlliance = blueAlliance;
+        mGrabberBot = grabberBot;
+        mVuforia = vuforia;
+
+        mMecanumDrive = mGrabberBot.getDrivetrain();
 
         // Add all the timers to the state timers so that they get service each loop
         mStateTimers.add(mHookTimer);
         mStateTimers.add(mGrabberTimer);
 
-        mecanumDrive = (BaseMecanumDrive)robot.getDrivetrain();
+        // Now do common initializations
+        init();
+    }
+
+    /**
+     * Does initializations common to both robots.
+     */
+    private void init(){
+        buildTransitionTable();
 
         // Add listeners to drivetrain for callbacks in order to translate into state machine events
-        robot.getDrivetrain().addDriveSessionStatusListener(new IDriveSessionStatusListener() {
+        mMecanumDrive.addDriveSessionStatusListener(new IDriveSessionStatusListener() {
             @Override
             public void driveComplete() {
                 opMode.telemetry.addData("driveComplete Called","");
@@ -96,7 +164,7 @@ public class AutonomousController {
                 transition("evDriveFail");
             }
         });
-        robot.getDrivetrain().addRotationStatusListener(new IRotationStatusListener() {
+        mMecanumDrive.addRotationStatusListener(new IRotationStatusListener() {
             @Override
             public void rotationComplete() {
                 transition("evRotationComplete");
@@ -105,7 +173,7 @@ public class AutonomousController {
 
 
         // And add a listener to the state machine to send the state transitions to telemtry
-        mAsm.addStateChangeListener(new PropertyChangeListener() {
+        getFSMContext().addStateChangeListener(new PropertyChangeListener() {
             @Override
             public void propertyChange(PropertyChangeEvent event) {
                 FSMContext fsm = (FSMContext) event.getSource();
@@ -121,6 +189,20 @@ public class AutonomousController {
     }
 
     /**
+     * helper function returns the valid FSMContext based on which robot was initialized
+     */
+    private FSMContext getFSMContext(){
+        FSMContext context = null;
+        if (mGrabberBotAutoSM != null){
+            context = mGrabberBotAutoSM;
+        }
+        else if (mSpeedBotAutoSM != null){
+            context = mSpeedBotAutoSM;
+        }
+        return context;
+    }
+
+    /**
      * helper method to build the transition table so that we can trigger events from
      * within state machine handlers.
      */
@@ -129,7 +211,7 @@ public class AutonomousController {
         mTransition_map = new HashMap<>();
         try
         {
-            Class context = AutonomousStateMachineContext.class;
+            Class context = getFSMContext().getClass();
             Method[] transitions = context.getDeclaredMethods();
             String name;
             int i;
@@ -163,7 +245,7 @@ public class AutonomousController {
 
         // Only if a transition is not in progress should a
         // transition be issued.
-        if (mAsm.isInTransition() == false)
+        if (getFSMContext().isInTransition() == false)
         {
             String name;
             Method transition;
@@ -175,7 +257,7 @@ public class AutonomousController {
                 transition = (Method) mTransition_map.get(name);
                 try
                 {
-                    transition.invoke(mAsm, args);
+                    transition.invoke(getFSMContext(), args);
                 }
                 catch (Exception ex)
                 {
@@ -197,54 +279,69 @@ public class AutonomousController {
      */
      public void loop(){
         // If we haven't started then kick if off.
-        if (mAsm.getState() == AutonomousStateMachineContext.AutonomousStateMachine.Idle){
-            transition("evStart");
-        }
+         if (mGrabberBotAutoSM != null){
+             if (mGrabberBotAutoSM.getState() == GrabberBotAutoStateMachineContext.GrabberBotAutoStateMachine.Idle){
+                 transition("evStart");
+             }
+         }
+         else if (mSpeedBotAutoSM != null){
+             if (mSpeedBotAutoSM.getState() == SpeedBotAutoStateMachineContext.SpeedBotAutoStateMachine.Idle){
+                 transition("evStart");
+             }
+         }
 
         // Service all the timers in order to trigger any timeout callbacks/events
         serviceTimers();
         // Call loop method on drivetrain to support drive and rotation controls
-         robot.getDrivetrain().loop();
-        // If a reset of the arm is active, then service it by calling it from here.
-         if (robot.getArm().isResetToRetractInProgress()){
-             if (!robot.getArm().resetToRetractPosition()){
-                 // Assume same event even if we fail to retract.
-      //           mAsm.evArmRetracted();
-             }
-         }
-    }
+        mMecanumDrive.loop();
+     }
 
     public boolean isAutonomousComplete(){
          return false;
-        //return (mAsm.getState() == AutonomousStateMachineContext.AutonomousStateMachine.Complete);
+ /*       if (mGrabberBotAutoSM != null){
+            if (mGrabberBotAutoSM.getState() == GrabberBotAutoStateMachineContext.GrabberBotAutoStateMachine.){
+                transition("evStart");
+            }
+        }
+        else if (mSpeedBotAutoSM != null){
+            if (mSpeedBotAutoSM.getState() == SpeedBotAutoStateMachineContext.SpeedBotAutoStateMachine.Idle){
+                transition("evStart");
+            }
+        }
+**/
     }
 
 
     private void startDriveByEncoder(double speed, double linearDistance, int timeoutms){
-        if (robot.getDrivetrain().isMoving()){
+        if (mMecanumDrive.isMoving()){
             return;  // Already driving, this is an error, ignore
         }
-        robot.getDrivetrain().driveEncoder(speed,linearDistance,timeoutms);
+        mMecanumDrive.driveEncoder(speed,linearDistance,timeoutms);
     }
 
     /**
-     * start grabber turns the grab on forward or reverse
+     * start grabber turns the grab on forward or reverse.  does nothing if not using GrabberBot
      */
     public void startGrabber(boolean intake, int timeoutms){
+        if (mGrabberBot == null)
+            return;
         if (intake){
-            robot.getGrabber().moveGrabber(false,false, 1.0,1.0);
+            mGrabberBot.getGrabber().moveGrabber(false,false, 1.0,1.0);
         }
         else{
             // Spit it out
-            robot.getGrabber().moveGrabber(true,true, 0.0,0.0);
+            mGrabberBot.getGrabber().moveGrabber(true,true, 0.0,0.0);
 
         }
         mGrabberTimer.setTimeout(timeoutms);
         mGrabberTimer.start();
     }
 
+
     public void stopGrabber(){
-        robot.getGrabber().stop();
+        if (mGrabberBot == null)
+            return;
+        mGrabberBot.getGrabber().stop();
     }
     /**
      *
@@ -304,7 +401,7 @@ public class AutonomousController {
         }
         double angle = mSkystoneRecognition.estimateAngleToObject(AngleUnit.RADIANS);
         double strafeDistance = linearDistance /Math.tan(angle);
-        mecanumDrive.strafeEncoder(1.0d,strafeDistance,timeoutms);
+        mMecanumDrive.strafeEncoder(1.0d,strafeDistance,timeoutms);
     }
 
     /**
@@ -320,41 +417,36 @@ public class AutonomousController {
         }
         double angle = mStoneRecognition.estimateAngleToObject(AngleUnit.RADIANS);
         double strafeDistance = linearDistance /Math.tan(angle);
-        mecanumDrive.strafeEncoder(1.0d,strafeDistance,timeoutms);
-    }
-
-
-    /**
-     * Called from state machine to lower the arm until it hits the limit switch.
-     */
-    public void retractArm(){
-        // Start the retract.  OpMode loop will do the rest
-        robot.getArm().resetToRetractPosition();
+        mMecanumDrive.strafeEncoder(1.0d,strafeDistance,timeoutms);
     }
 
     /**
-     * Called from OpMode when the arm has closed.
-     */
-    public void armRetracted(){
-
-    }
-    /**
-     * Called from state machine to open the hook
+     * Called from state machine to open the hook(s) on either supported bot
      */
     public void openHook(){
-        robot.getHook().setPosition(Hook.OPEN);
+        if (mGrabberBot != null) {
+            mGrabberBot.getHook().setPosition(Hook.OPEN);
+        }
+        if (mSpeedBot != null){
+            mSpeedBot.getFrontHooks().openHooks();
+        }
     }
     /**
-     * Called from state machine to close the hook
+     * Called from state machine to close the hook(s) on either supported bot
      */
     public void closeHook(){
-        robot.getHook().setPosition(Hook.CLOSED);
+        if (mGrabberBot != null) {
+            mGrabberBot.getHook().setPosition(Hook.CLOSED);
+        }
+        if (mSpeedBot != null){
+            mSpeedBot.getFrontHooks().closeHooks();
+        }
     }
     /**
      * rotation by degrees.  + is ccw
      */
     public void rotate(int degrees){
-        robot.getDrivetrain().rotate(degrees);
+        mMecanumDrive.rotate(degrees);
     }
 
     /**
@@ -367,7 +459,7 @@ public class AutonomousController {
      * Called from state machine to stop the robot
      */
     public void stop(){
-        robot.getDrivetrain().stop();
+        mMecanumDrive.stop();
     }
 
     public void startHookTimer(){

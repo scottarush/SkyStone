@@ -54,7 +54,7 @@ public class GrabberBotMecanumDrive extends BaseMecanumDrive {
     /* Initialize standard Hardware interfaces.
      * NOTE:  This class throws Exception on any hardware initIMU error so be sure to catch and
      * report to Telemetry in your initialization. */
-    public void initIMU(HardwareMap ahwMap) throws Exception {
+    public void init(HardwareMap ahwMap,boolean initIMU) throws Exception {
         // Save reference to Hardware map
         mHWMap = ahwMap;
 
@@ -95,13 +95,15 @@ public class GrabberBotMecanumDrive extends BaseMecanumDrive {
         catch(Exception e){
             motorInitError += "rr,";
         }
-        // Initialize the IMU with the superclass initialization
-        try{
-            super.initIMU(ahwMap);
-        }
-        catch(Exception e){
-            // This exception can't actually happen but change in the future to catch this somehow
-            motorInitError += "IMU initIMU";
+        // Initialize the IMU if enabled
+        if (initIMU){
+            try {
+                initIMU(mOpMode.hardwareMap);
+
+            } catch (Exception e) {
+                motorInitError += e.getMessage();
+            }
+
         }
 
         // Set all motors to zero power
@@ -111,7 +113,7 @@ public class GrabberBotMecanumDrive extends BaseMecanumDrive {
         setMotorModes(DcMotor.RunMode.RUN_USING_ENCODER);
 
         if (motorInitError.length() > 0){
-            throw new Exception("Motor initIMU errs: '"+motorInitError+"'");
+            throw new Exception("Motor init errs: '"+motorInitError+"'");
         }
 
     }
