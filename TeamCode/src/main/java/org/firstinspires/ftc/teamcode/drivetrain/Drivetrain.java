@@ -171,7 +171,7 @@ public abstract class Drivetrain {
     /**
      * starts a drive by encoder session.  Base class handles failure timer. Subclasses
      * override to add drivetrain specific behavior.  Subclasses should register for
-     * IDriveSessionStatusListener to receive notification of session timeout failure.
+     * ICraneMovementStatusListener to receive notification of session timeout failure.
      *
      * @param speed   speed to move
      * @param linearDistance distance in inches to move + is forward, - is backward

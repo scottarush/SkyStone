@@ -23,7 +23,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.Velocity;
 import org.firstinspires.ftc.teamcode.drivetrain.MecanumDrive;
 
 @Autonomous(name="Drive Avoid Imu", group="Exercises")
-//@Disabled
+@Disabled
 public class TestIMU extends LinearOpMode
 {
 

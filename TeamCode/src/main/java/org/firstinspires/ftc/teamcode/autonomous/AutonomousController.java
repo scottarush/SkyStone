@@ -11,6 +11,7 @@ import org.firstinspires.ftc.teamcode.drivetrain.BaseMecanumDrive;
 import org.firstinspires.ftc.teamcode.drivetrain.IDriveSessionStatusListener;
 import org.firstinspires.ftc.teamcode.drivetrain.IRotationStatusListener;
 import org.firstinspires.ftc.teamcode.grabberbot.MecanumGrabberBot;
+import org.firstinspires.ftc.teamcode.speedbot.ICraneMovementStatusListener;
 import org.firstinspires.ftc.teamcode.speedbot.SpeedBot;
 import org.firstinspires.ftc.teamcode.util.OneShotTimer;
 
@@ -26,7 +27,7 @@ import java.util.List;
 import statemap.FSMContext;
 import statemap.State;
 
-public class AutonomousController {
+public class AutonomousController implements ICraneMovementStatusListener {
 
     private static boolean TELEMETRY_STATE_LOGGING_ENABLED = true;
 
@@ -116,6 +117,7 @@ public class AutonomousController {
 
         mMecanumDrive = speedBot.getDrivetrain();
 
+        mSpeedBot.getCrane().addCraneMovementStatusListener(this);
         // Now do common initializations
         init();
     }
@@ -232,6 +234,26 @@ public class AutonomousController {
         {}
 
         mTransition_queue = new LinkedList<>();
+    }
+
+    @Override
+    public void moveComplete() {
+        transition("evCraneMoveComplete");
+    }
+
+    @Override
+    public void moveTimeoutFailure() {
+        transition("evCraneMoveTimeoutFailure");
+
+    }
+
+    /**
+     * Raises or lowers the crane.
+     */
+    public void moveCrane(double height){
+        if (mSpeedBot != null){
+            mSpeedBot.getCrane().moveByEncoder(height);
+        }
     }
 
     /**
@@ -442,6 +464,25 @@ public class AutonomousController {
             mSpeedBot.getFrontHooks().closeHooks();
         }
     }
+
+    /**
+     * opens the hand on the speed bot.
+     */
+    public void openHand(){
+        if (mSpeedBot != null){
+            mSpeedBot.getCrane().openHand();
+        }
+    }
+    /**
+     * opens the hand on the speed bot.
+     */
+    public void closeHand(){
+        if (mSpeedBot != null){
+            mSpeedBot.getCrane().closeHand();
+        }
+    }
+
+
     /**
      * rotation by degrees.  + is ccw
      */

@@ -20,46 +20,44 @@
     */
     Start
         Entry {
-            openHook();
+            openHand();
             // start drive forward
             linearDrive(10d);
         }
     {
         evDriveComplete nil { checkStoneRecognition(); }
-        evDriveFail DriveForwardToIntake {}
+        evDriveFail DriveForwardToStone {}
         // Triggered by checkStoneRecognition if we found a Skystone
         evSkystoneFound StrafeToStone { strafeToSkystone(10d,2000); }
         // Triggered by checkStoneRecognition if we found a Skystone
         evStoneFound StrafeToStone { strafeToStone(10d,2000); }
         // Triggered by checkStoneRecognition if no stone was found
-        evNoStoneFound DriveForwardToIntake {   }
+        evNoStoneFound DriveForwardToStone {   }
     }
 
     StrafeToStone
         Entry{
          }
     {
-        evDriveComplete DriveForwardToIntake {}
+        evDriveComplete DriveForwardToStone {}
     }
 
-    DriveForwardToIntake
+    DriveForwardToStone
         Entry{
-            linearDrive(10d);
+            linearDrive(8d);
         }
     {
-        evDriveComplete IntakeStone {}
+        evDriveComplete GrabStone {}
     }
     /*
     * Stop after drive forward and check to see if we are at foundation.
     */
-    IntakeStone
+    GrabStone
         Entry{
             // close the hook and wait for it to stop so that we grab the block
-            closeHook();
+            closeHand();
             startHookTimer();
-            // Also start the grabber to suck the block in for a short time
-            startGrabber(true,1000);
-        }
+         }
     {
         evHookTimeout BackupToBeginDrag { }
     }
@@ -71,39 +69,27 @@
             linearDrive(-18d);
          }
     {
-        evDriveComplete [ctxt.isBlueAlliance() == true] BlueAllianceRotateTowardBridge { }
-        evDriveComplete [ctxt.isBlueAlliance() == false] RedAllianceRotateTowardBridge { }
-    }
-
-    /*
-    *
-    */
-    BlueAllianceRotateTowardBridge
-        Entry{
+        evDriveComplete [ctxt.isBlueAlliance() == true] RotateTowardBridge {
             // Rotate CCW toward the bridge
             rotate(+90);
         }
-    {
-        evRotationComplete DragStone { }
-    }
-    /*
-    *
-    */
-    RedAllianceRotateTowardBridge
-        Entry{
+        evDriveComplete [ctxt.isBlueAlliance() == false] RotateTowardBridge {
             // Rotate CW toward the bridege
             rotate(-90);
-         }
+        }
+    }
+
+    /*
+    * Rotates toward the bridge and then starts the linear drive to the bridge
+    */
+    RotateTowardBridge
     {
-        evRotationComplete DragStone { }
+        evDriveComplete DragStone  { linearDrive(72d); }
     }
     /*
-    * Drag the stone back
+    * Drags the stone back under the bridge
     */
     DragStone
-        Entry {
-            linearDrive(72d);
-        }
     {
         evDriveComplete ReleaseStone {}
     }
@@ -113,8 +99,8 @@
     */
     ReleaseStone
         Entry {
-            openHook();
-            startGrabber(false,3000);
+            openHand();
+            //  backup to the line
             linearDrive(-37d);
         }
     {
@@ -126,25 +112,82 @@
     */
     Complete
         Entry{
-            stopGrabber();
+            stop();
         }
     {
 
     }
 %%
-// StateMachine for GetStones sequence
+// StateMachine for DragFoundation sequence
 %map DragFoundation
 %%
     /*
-    * drives forward close enough to be able to locate a Skystone with the camera
+    * drive forward 26 inches.  This should push the foundation by 2 inches
     */
     Start
         Entry {
             openHook();
+            // Raise crane by 2 inches
+            moveCrane(2d);
             // start drive forward
-            linearDrive(10d);
+            linearDrive(26d);
         }
     {
-        evDriveComplete nil { checkStoneRecognition(); }
+        evDriveComplete GrabFoundation {  }
      }
+
+    GrabFoundation
+        Entry {
+            closeHook();
+            startHookTimer();
+        }
+    {
+        evHookTimeout DragFoundationBack {  }
+    }
+
+    DragFoundationBack
+        Entry {
+            linearDrive(-20d);
+        }
+    {
+        evDriveComplete [ctxt.isBlueAlliance() == true] RotateFoundation {
+            // Rotate CCW toward the blue line
+            rotate(+20);
+    }
+        evDriveComplete [ctxt.isBlueAlliance() == false] RotateFoundation {
+            // Rotate CW toward the red line
+            rotate(-20);
+        }
+    }
+
+    RotateFoundation
+    {
+        evDriveComplete nil {
+            openHook();
+            startHookTimer();
+        }
+        evHookTimeout [ctxt.isBlueAlliance() == true] RotateToBackup {
+            // Rotate CCW to line up backwards to the skybridge
+            rotate(+70);
+        }
+        evHookTimeout [ctxt.isBlueAlliance() == false] RotateToBackup {
+            // Rotate CW to line up backwards to the skybridge
+            rotate(-70);
+        }
+    }
+
+    RotateToBackup
+    {
+        evDriveComplete BackupToBridge { linearDrive(-32d); }
+
+    }
+    BackupToBridge
+    {
+        evDriveComplete Complete { stop(); }
+    }
+
+    Complete
+    {
+
+    }
 %%
