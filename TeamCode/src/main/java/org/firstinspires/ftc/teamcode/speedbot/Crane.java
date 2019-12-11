@@ -17,11 +17,13 @@ import java.util.Iterator;
  *
  */
 public class Crane {
+
     /**
      * Core hex motor from the specification
      */
     public static final int ENCODER_COUNTS_PER_ROTATION = 288;
     public static final double PULLY_CIRCUMFERENCE = 4.712d;
+    public static final double COUNTS_PER_INCH = ENCODER_COUNTS_PER_ROTATION / PULLY_CIRCUMFERENCE;
 
     private OpMode mOpMode = null;
 
@@ -111,6 +113,11 @@ public class Crane {
         if (mCraneMotor == null){
             return;
         }
+        // Restore default mode (if it had been changed)
+        if (mCraneMotor.getMode() != DcMotor.RunMode.RUN_USING_ENCODER) {
+            mCraneMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            mCraneMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        }
         if (power < 0d){
             mCraneMotor.setPower(0d);
             return;
@@ -128,6 +135,12 @@ public class Crane {
         if (mCraneMotor == null){
             return;
         }
+        // Restore default mode (if it had been changed)
+        if (mCraneMotor.getMode() != DcMotor.RunMode.RUN_USING_ENCODER) {
+            mCraneMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            mCraneMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        }
+
         if (power < 0d){
             mCraneMotor.setPower(0d);
             return;
@@ -143,7 +156,7 @@ public class Crane {
      * continuously to determine when the raise has finished
      * @param deltaHeight height + or - in inches to move
      */
-    public void moveByEncoder(double deltaHeight){
+    public void moveByEncoder(double speed, double deltaHeight){
         if (mCraneMotor == null)
             return;
         if (mCraneMovementTimeoutTimer.isRunning()){
@@ -151,12 +164,18 @@ public class Crane {
             mCraneMotor.setPower(0d);
         }
 
-        double deltaCounts = ENCODER_COUNTS_PER_ROTATION * deltaHeight / PULLY_CIRCUMFERENCE;
+        double deltaCounts = COUNTS_PER_INCH * deltaHeight;
+
+ //       mOpMode.telemetry.addData("counts: ",deltaCounts);
+//        mOpMode.telemetry.update();
 
         mCraneMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         mCraneMotor.setTargetPosition(Math.round((float)deltaCounts));
-        mCraneMovementTimeoutTimer.start();
-        mCraneMotor.setPower(0.5d);
+        mCraneMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+         speed = Math.abs(speed);
+        if (Math.abs(speed) > 1.0d)
+            speed = 1.0d;
+        mCraneMotor.setPower(speed);
     }
 
     /*
@@ -169,6 +188,9 @@ public class Crane {
             if (!mCraneMotor.isBusy()){
                 // Success.  Cancel timeout timer
                 mCraneMovementTimeoutTimer.cancel();
+                // Restore default mode
+                mCraneMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                mCraneMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
                 // And notify listeners
                 for(Iterator<ICraneMovementStatusListener> iter = mCraneMoveListeners.iterator(); iter.hasNext();){
                     ICraneMovementStatusListener listener = iter.next();

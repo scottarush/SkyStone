@@ -12,7 +12,7 @@ public class SkystoneAutonomousOpMode {
     private MecanumGrabberBot mGrabberBot = null;
     private SpeedBot mSpeedBot = null;
 
-    private static final boolean USE_GRABBER_BOT = true;
+    private static final boolean USE_GRABBER_BOT = false;
 
     private AutonomousController autoController = null;
 

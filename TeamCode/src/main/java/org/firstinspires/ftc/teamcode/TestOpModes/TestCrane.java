@@ -36,7 +36,7 @@ public class TestCrane extends OpMode {
         long delta = System.currentTimeMillis() - mLastUpdateTime;
         if (delta > MIN_DELTA_UPDATE_TIME_MS) {
             mLastUpdateTime = System.currentTimeMillis();
-            if (gamepad1.b) {
+            if (gamepad1.y) {
                 mCrane.openHand();
             }
             else if (gamepad1.a) {
@@ -53,6 +53,15 @@ public class TestCrane extends OpMode {
             else{
                 mCrane.stop();
             }
+
+            if (gamepad1.b){
+                mCrane.moveByEncoder(1.0d,12d);
+            }
+            else if (gamepad1.x){
+                mCrane.moveByEncoder(1.0d,-12d);
+            }
+
+            mCrane.loop();
         }
     }
 

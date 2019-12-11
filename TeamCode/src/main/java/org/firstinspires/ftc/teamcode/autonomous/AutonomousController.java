@@ -252,7 +252,7 @@ public class AutonomousController implements ICraneMovementStatusListener {
      */
     public void moveCrane(double height){
         if (mSpeedBot != null){
-            mSpeedBot.getCrane().moveByEncoder(height);
+            mSpeedBot.getCrane().moveByEncoder(1.0d,height);
         }
     }
 
@@ -316,6 +316,8 @@ public class AutonomousController implements ICraneMovementStatusListener {
         serviceTimers();
         // Call loop method on drivetrain to support drive and rotation controls
         mMecanumDrive.loop();
+        // Call loop on Crane to service automatic movement
+         mSpeedBot.getCrane().loop();
      }
 
     public boolean isAutonomousComplete(){
