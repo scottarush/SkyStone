@@ -34,6 +34,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.drivetrain.BaseMecanumDrive;
 import org.firstinspires.ftc.teamcode.drivetrain.GrabberBotMecanumDrive;
+import org.firstinspires.ftc.teamcode.drivetrain.IDriveSessionStatusListener;
 import org.firstinspires.ftc.teamcode.drivetrain.SpeedBotMecanumDrive;
 import org.firstinspires.ftc.teamcode.grabberbot.MecanumGrabberBot;
 import org.firstinspires.ftc.teamcode.speedbot.SpeedBot;
@@ -45,14 +46,15 @@ This class implements the equations that Marcus derived on October 3.
 
 @TeleOp(name="TestIMURotation", group="Robot")
 //@Disabled
-public class TestIMURotation extends OpMode{
+public class TestIMURotation extends OpMode implements IDriveSessionStatusListener {
+    private static final int MIN_DELTA_UPDATE_TIME_MS = 100;
+
+    private long mLastUpdateTime = 0L;
 
     /* Declare OpMode members. */
     private BaseMecanumDrive drivetrain = null;
 
-    private long lastTime = 0;
-
-    private static final boolean USE_GRABBER_BOT = true;
+    private static final boolean USE_GRABBER_BOT = false;
 
     /*
      * Code to run ONCE when the driver hits INIT
@@ -65,11 +67,11 @@ public class TestIMURotation extends OpMode{
         try {
             if (USE_GRABBER_BOT){
                 drivetrain = new GrabberBotMecanumDrive(this);
-                drivetrain.initIMU(hardwareMap);
+                drivetrain.init(hardwareMap,true);
             }
             else{
                 drivetrain = new SpeedBotMecanumDrive(this);
-                drivetrain.initIMU(hardwareMap);
+                drivetrain.init(hardwareMap,true);
             }
          }
         catch(Exception e){
@@ -77,7 +79,8 @@ public class TestIMURotation extends OpMode{
             telemetry.update();
             return;
         }
-        lastTime = System.currentTimeMillis();
+        drivetrain.addDriveSessionStatusListener(this);
+        mLastUpdateTime = System.currentTimeMillis();
         // Send telemetry message to signify drivetrain waiting;
         telemetry.addData("Say", "Init Complete");    //
     }
@@ -101,18 +104,18 @@ public class TestIMURotation extends OpMode{
      */
     @Override
     public void loop() {
-
-        if (gamepad1.a) {
-            stop();
-            drivetrain.rotate(90);
-        }
-        if (gamepad1.b){
-            if (!drivetrain.isMoving()) {
-                drivetrain.driveEncoder(1.0d, 12.0d, 1000);
+        long delta = System.currentTimeMillis() - mLastUpdateTime;
+        if (delta > MIN_DELTA_UPDATE_TIME_MS) {
+            mLastUpdateTime = System.currentTimeMillis();
+            if (gamepad1.a) {
+                stop();
+                drivetrain.rotate(90);
             }
-        }
-        if (gamepad1.x){
-            if (!drivetrain.isMoving()) {
+            if (gamepad1.b) {
+                drivetrain.driveEncoder(1.0d, 12.0d, 1000);
+
+            }
+            if (gamepad1.x) {
                 drivetrain.strafeEncoder(1.0d, 12.0d, 1000);
             }
         }
@@ -127,5 +130,15 @@ public class TestIMURotation extends OpMode{
          drivetrain.stop();
     }
 
+    @Override
+    public void driveComplete() {
+        telemetry.addData("Status","drive complete");
+        telemetry.update();
+    }
 
- }
+    @Override
+    public void driveByEncoderTimeoutFailure() {
+        telemetry.addData("Status","encoder timeout");
+        telemetry.update();
+    }
+}

@@ -91,7 +91,7 @@ public abstract class BaseMecanumDrive extends Drivetrain{
             lrMotor.setPower(lr);
         if (rrMotor != null)
             rrMotor.setPower(rr);
-    }
+     }
 
     /**
      * Helper function sets all motor modes to the same mode
@@ -160,7 +160,7 @@ public abstract class BaseMecanumDrive extends Drivetrain{
      */
     public void strafeByTime(double speed, double strafeDistance, int timeoutms) {
         if (isDriveByEncoderSessionActive()){
-            return;
+            stop();
         }
         super.driveEncoder(speed,strafeDistance,timeoutms);
         // Stop and reset the encoders first
@@ -201,10 +201,7 @@ public abstract class BaseMecanumDrive extends Drivetrain{
      * @return true if session started, false on error.
      */
     public void strafeEncoder(double speed, double strafeDistance, int timeoutms) {
-        if (isDriveByEncoderSessionActive()){
-            return;
-        }
-        super.driveEncoder(speed,strafeDistance,timeoutms);
+         super.driveEncoder(speed,strafeDistance,timeoutms);
         // Stop and reset the encoders first
         setMotorModes(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         setMotorModes(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -245,9 +242,6 @@ public abstract class BaseMecanumDrive extends Drivetrain{
      */
     @Override
     public void driveEncoder(double speed, double linearDistance, int timeoutms) {
-        if (isDriveByEncoderSessionActive()){
-            return;
-        }
         super.driveEncoder(speed,linearDistance,timeoutms);
         // Stop and reset the encoders first
         setMotorModes(DcMotor.RunMode.STOP_AND_RESET_ENCODER);

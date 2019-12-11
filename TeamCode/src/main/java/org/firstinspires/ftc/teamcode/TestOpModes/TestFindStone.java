@@ -64,7 +64,7 @@ public class TestFindStone extends OpMode{
 
     private static final boolean ENABLE_VUFORIA_TELEMETRY = false;
 
-    private static final boolean USE_GRABBER_BOT = true;
+    private static final boolean USE_GRABBER_BOT = false;
     /*
      * Code to run ONCE when the driver hits INIT
      */

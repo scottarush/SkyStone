@@ -48,7 +48,7 @@ public abstract class Drivetrain {
 
     private boolean mRotationActive = false;
 
-    private boolean mLinearDriveActive = false;
+    private static final boolean ENABLE_LINEAR_DRIVE_CORRECTION = false;
     /**
      * Current linear drive session power.
      */
@@ -110,11 +110,16 @@ public abstract class Drivetrain {
      */
     public abstract double getRotationKi();
 
-    /**
-     *
-     * IMPORTANT:  IMU can take a long time to initialize
-     */
-    public void initIMU(HardwareMap hwMap) throws Exception {
+    /* Initialize standard Hardware interfaces.
+     * NOTE:  This class throws Exception on any hardware initIMU error so be sure to catch and
+     * report to Telemetry in your initialization. */
+    public abstract void init(HardwareMap ahwMap,boolean initIMU) throws Exception;
+
+        /**
+         *
+         * IMPORTANT:  IMU can take a long time to initialize
+         */
+    protected void initIMU(HardwareMap hwMap) throws Exception {
         this.mHWMap = hwMap;
         try{
             // Initialize the IMU
@@ -157,7 +162,7 @@ public abstract class Drivetrain {
             checkRotation();
             // if a linear drive is active then get a correction and call the correct power function in the
             // subclass if non-zero
-            if (mLinearDriveActive){
+            if (ENABLE_LINEAR_DRIVE_CORRECTION){
                 double correction = getHeadingCorrection();
                 correctHeading(correction);
             }
@@ -181,7 +186,7 @@ public abstract class Drivetrain {
      */
      public void driveEncoder(double speed, double linearDistance, int timeoutms) {
          stop();  // case we were moving
-         if (mLinearDriveActive){
+         if (ENABLE_LINEAR_DRIVE_CORRECTION){
                  // Reset the angle in the IMU logic if we are using linear drive
                  resetAngle();
 
@@ -220,7 +225,7 @@ public abstract class Drivetrain {
         int timeoutms = (int) Math.abs(Math.round(linearDistance * getLinearMillisecondsPerInch() * mLinearDrivePower));
         mTimedDriveTimer.setTimeout(timeoutms);
         mTimedDriveTimer.start();
-        mLinearDriveActive = true;
+//        ENABLE_LINEAR_DRIVE_CORRECTION = true;
         return timeoutms;
     }
 
@@ -371,8 +376,9 @@ public abstract class Drivetrain {
      */
     public void stop(){
         mRotationActive = false;
-        mLinearDriveActive = false;
+//        ENABLE_LINEAR_DRIVE_CORRECTION = false;
         mTimedDriveTimer.cancel();
+        mDriveByEncoderFailTimer.cancel();
     }
 
     /**
