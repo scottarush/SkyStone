@@ -43,7 +43,7 @@ This OpMode tests the move by encoder utility in the drivetrain class.
   */
 
 @TeleOp(name="TestDriveByEncoder", group="Robot")
-//@Disabled
+@Disabled
 public class TestDriveByEncoder extends OpMode {
 
     /* Declare OpMode members. */

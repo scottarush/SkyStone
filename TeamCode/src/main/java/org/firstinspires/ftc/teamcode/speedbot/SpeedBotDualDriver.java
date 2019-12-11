@@ -167,10 +167,10 @@ public class SpeedBotDualDriver extends OpMode{
 //        boolean dpadUp = gamepad1.dpad_up || gamepad1.dpad_up;
 //        boolean dpadDown = gamepad2.dpad_down || gamepad2.dpad_down;
 //        if (dpadUp){
-//            robot.getCrane().raiseAutoRamp();
+//            robot.getCrane().raiseManualRamp();
 //        }
 //        else if (dpadDown){
-//            robot.getCrane().lowerAutoRamp();
+//            robot.getCrane().lowerManualRamp();
 //        }
 //        else {
 //            robot.getCrane().stop();

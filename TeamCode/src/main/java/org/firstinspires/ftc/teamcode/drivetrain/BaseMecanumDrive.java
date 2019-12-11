@@ -41,7 +41,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
  * subclasses.
  *
  * This hardware class assumes the following device names have been configured on the robot:
- * Note:  All names are lowerAutoRamp case and some have single spaces between words.
+ * Note:  All names are lowerManualRamp case and some have single spaces between words.
  *
  * Motor channel:  Left front drive motor:    "lf"
  * Motor channel:  Right front drive motor:  "rf"

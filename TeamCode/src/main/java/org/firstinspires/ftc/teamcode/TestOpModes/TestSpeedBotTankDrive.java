@@ -29,6 +29,7 @@
 
 package org.firstinspires.ftc.teamcode.TestOpModes;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -42,7 +43,7 @@ This class is used to test the speed bot tank drive.
   */
 
 @TeleOp(name="TestSpeedBotTankDrive", group="Robot")
-//@Disabled
+@Disabled
 public class TestSpeedBotTankDrive extends OpMode{
 
     /* Declare OpMode members. */

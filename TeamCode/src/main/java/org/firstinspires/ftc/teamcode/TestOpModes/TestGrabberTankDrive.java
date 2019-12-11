@@ -29,6 +29,7 @@
 
 package org.firstinspires.ftc.teamcode.TestOpModes;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -41,7 +42,7 @@ This class implements the equations that Marcus derived on October 3.
   */
 
 @TeleOp(name="TestGrabberTankDrive", group="Robot")
-//@Disabled
+@Disabled
 public class TestGrabberTankDrive extends OpMode{
 
     /* Declare OpMode members. */

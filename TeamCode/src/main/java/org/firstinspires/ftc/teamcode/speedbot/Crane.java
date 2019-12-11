@@ -6,11 +6,22 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.teamcode.drivetrain.IDriveSessionStatusListener;
+import org.firstinspires.ftc.teamcode.util.OneShotTimer;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+
 /**
  * This class encapsulates the Crane and grabbing hand on the speed bot.
  *
  */
 public class Crane {
+    /**
+     * Core hex motor from the specification
+     */
+    public static final int ENCODER_COUNTS_PER_ROTATION = 288;
+    public static final double PULLY_CIRCUMFERENCE = 4.712d;
 
     private OpMode mOpMode = null;
 
@@ -26,8 +37,9 @@ public class Crane {
 
     private ElapsedTime mRampTimer = new ElapsedTime();
 
+    private ArrayList<ICraneMovementStatusListener> mCraneMoveListeners = new ArrayList<>();
    // private DigitalChannel mLimitSwitch = null;
-
+    private OneShotTimer mCraneMovementTimeoutTimer = null;
     // Constants
 
     public static final double RAISE_MAX_POWER = 0.5d;
@@ -39,12 +51,24 @@ public class Crane {
     public static final double LOWER_START_POWER = 0.1d;
     public static final double LOWER_POWER_SLOPE_PER_SEC = (LOWER_MAX_POWER - LOWER_START_POWER)/ LOWER_RAMP_UP_TIME;
 
+
     /**
      * Constructs the Crane
      * @param opMode
      */
     public Crane(OpMode opMode) {
         mOpMode = opMode;
+        mCraneMovementTimeoutTimer = new OneShotTimer(2000, new OneShotTimer.IOneShotTimerCallback() {
+            @Override
+            public void timeoutComplete() {
+                stop();
+                for(Iterator<ICraneMovementStatusListener> iter = mCraneMoveListeners.iterator(); iter.hasNext();){
+                    ICraneMovementStatusListener listener = iter.next();
+                    listener.moveTimeoutFailure();
+                }
+            }
+        });
+
     }
 
 
@@ -53,6 +77,7 @@ public class Crane {
         try {
             mCraneMotor = ahwMap.get(DcMotor.class, CRANE_MOTOR_NAME);
             mCraneMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            mCraneMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         } catch (Exception e) {
             initErrString += "Crane motor err,";
         }
@@ -72,9 +97,15 @@ public class Crane {
         }
     }
 
+    public void addCraneMovementStatusListener(ICraneMovementStatusListener listener){
+        if (mCraneMoveListeners.contains(listener)){
+            return;
+        }
+        mCraneMoveListeners.add(listener);
+    }
     /**
      * raises the crane continuously with manual power
-     * @param power 0 to 1.0 power to raiseAutoRamp
+     * @param power 0 to 1.0 power to raiseManualRamp
      */
     public void raiseManual(double power){
         if (mCraneMotor == null){
@@ -91,7 +122,7 @@ public class Crane {
     }
     /**
      * lowers the crane continuously with manual power
-     * @param power 0 to 1.0 power to raiseAutoRamp
+     * @param power 0 to 1.0 power to raiseManualRamp
      */
     public void lowerManual(double power){
         if (mCraneMotor == null){
@@ -108,21 +139,61 @@ public class Crane {
     }
 
     /**
+     * starts a raise of the crane by a linear distance.  Call checkRaiseStatus
+     * continuously to determine when the raise has finished
+     * @param deltaHeight height + or - in inches to move
+     */
+    public void moveByEncoder(double deltaHeight){
+        if (mCraneMotor == null)
+            return;
+        if (mCraneMovementTimeoutTimer.isRunning()){
+            mCraneMovementTimeoutTimer.cancel();
+            mCraneMotor.setPower(0d);
+        }
+
+        double deltaCounts = ENCODER_COUNTS_PER_ROTATION * deltaHeight / PULLY_CIRCUMFERENCE;
+
+        mCraneMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        mCraneMotor.setTargetPosition(Math.round((float)deltaCounts));
+        mCraneMovementTimeoutTimer.start();
+        mCraneMotor.setPower(0.5d);
+    }
+
+    /*
+    * Must be called from opmode loop to process automatic raise/lowerByEncoder operations
+     */
+    public void loop(){
+        if (mCraneMotor == null)
+            return;
+        if (mCraneMovementTimeoutTimer.isRunning()){
+            if (!mCraneMotor.isBusy()){
+                // Success.  Cancel timeout timer
+                mCraneMovementTimeoutTimer.cancel();
+                // And notify listeners
+                for(Iterator<ICraneMovementStatusListener> iter = mCraneMoveListeners.iterator(); iter.hasNext();){
+                    ICraneMovementStatusListener listener = iter.next();
+                    listener.moveComplete();
+                }
+            }
+        }
+    }
+
+    /**
      * raises the crane continuously with automatic power ramping
      */
-    public void raiseAutoRamp(){
+    public void raiseManualRamp(){
         if (mCraneMotor == null){
             return;
         }
         double abspower = 0d;
         double power = mCraneMotor.getPower();
         if (power == 0d){
-            // We are starting a raiseAutoRamp
+            // We are starting a raiseManualRamp
             mRampTimer.reset();
             abspower = RAISE_START_POWER;
          }
         else if (power < 0d) {
-            // We are lowering and reversing to a raiseAutoRamp
+            // We are lowering and reversing to a raiseManualRamp
             stop();
             mRampTimer.reset();
             abspower = RAISE_START_POWER;
@@ -138,19 +209,19 @@ public class Crane {
     /**
      * lowers the crane continuously
      */
-    public void lowerAutoRamp(){
+    public void lowerManualRamp(){
         if (mCraneMotor == null){
             return;
         }
         double abspower = 0d;
         double power = mCraneMotor.getPower();
         if (power == 0d){
-            // We are starting a lowerAutoRamp
+            // We are starting a lowerManualRamp
             mRampTimer.reset();
             abspower = LOWER_START_POWER;
         }
         else if (power > 0d) {
-            // We are raising so reverse to a lowerAutoRamp
+            // We are raising so reverse to a lowerManualRamp
             stop();
             mRampTimer.reset();
             abspower = LOWER_START_POWER;
