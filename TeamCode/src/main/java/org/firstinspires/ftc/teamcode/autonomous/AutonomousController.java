@@ -11,6 +11,7 @@ import org.firstinspires.ftc.teamcode.drivetrain.BaseMecanumDrive;
 import org.firstinspires.ftc.teamcode.drivetrain.IDriveSessionStatusListener;
 import org.firstinspires.ftc.teamcode.drivetrain.IRotationStatusListener;
 import org.firstinspires.ftc.teamcode.grabberbot.MecanumGrabberBot;
+import org.firstinspires.ftc.teamcode.speedbot.Crane;
 import org.firstinspires.ftc.teamcode.speedbot.ICraneMovementStatusListener;
 import org.firstinspires.ftc.teamcode.speedbot.SpeedBot;
 import org.firstinspires.ftc.teamcode.util.OneShotTimer;
@@ -40,8 +41,15 @@ public class AutonomousController implements ICraneMovementStatusListener {
 
     private boolean mBlueAlliance = false;
 
-    private static final double ROTATION_POWER = 0.5d;
+    /**
+     * Max rotation power.
+     */
+    private static final double MAX_ROTATION_POWER = 0.75d;
 
+    /**
+     * rotation timeout. same value used for all transitions
+     */
+    private static final int ROTATION_TIMEOUTMS = 1000;
     /**
      * This reference will be non-null when using the speed bot
      */
@@ -105,6 +113,8 @@ public class AutonomousController implements ICraneMovementStatusListener {
     private static HashMap<String, Method> mTransition_map;
     private LinkedList<String> mTransition_queue;
 
+    private int mLastRotationAngle = 0;
+    private double mLastDriveDistance = 0d;
     private int mSequence = SEQUENCE_DRAG_FOUNDATION;
 
     /**
@@ -129,6 +139,11 @@ public class AutonomousController implements ICraneMovementStatusListener {
         mMecanumDrive = speedBot.getDrivetrain();
 
         mSpeedBot.getCrane().addCraneMovementStatusListener(this);
+
+        // Add timers to be checked
+        mStateTimers.add(mHandTimer);
+        mStateTimers.add(mHookTimer);
+
         // Now do common initializations
         init();
     }
@@ -167,21 +182,30 @@ public class AutonomousController implements ICraneMovementStatusListener {
         // Add listeners to drivetrain for callbacks in order to translate into state machine events
         mMecanumDrive.addDriveSessionStatusListener(new IDriveSessionStatusListener() {
             @Override
-            public void driveComplete() {
+            public void driveComplete(double distance) {
+                mLastDriveDistance = distance;
                 opMode.telemetry.addData("driveComplete Called","");
                 opMode.telemetry.update();
                 transition("evDriveComplete");
             }
 
             @Override
-            public void driveByEncoderTimeoutFailure() {
-                transition("evDriveFail");
+            public void driveByEncoderTimeoutFailure(double distance) {
+                mLastDriveDistance = distance;
+                transition("evDriveTimeout");
             }
         });
         mMecanumDrive.addRotationStatusListener(new IRotationStatusListener() {
             @Override
-            public void rotationComplete() {
+            public void rotationComplete(int angle) {
+                mLastRotationAngle = angle;
                 transition("evRotationComplete");
+            }
+
+            @Override
+            public void rotationTimeout(int angle) {
+                mLastRotationAngle = angle;
+                transition("evRotationTimeout");
             }
         });
 
@@ -345,10 +369,6 @@ public class AutonomousController implements ICraneMovementStatusListener {
     }
 
 
-    private void startDriveByEncoder(double speed, double linearDistance, int timeoutms){
-        mMecanumDrive.driveEncoder(speed,linearDistance,timeoutms);
-    }
-
     /**
      * start grabber turns the grab on forward or reverse.  does nothing if not using GrabberBot
      */
@@ -377,7 +397,7 @@ public class AutonomousController implements ICraneMovementStatusListener {
      *
      */
     public void linearDrive(double distance){
-        startDriveByEncoder(1.0d, distance,3000);
+        mMecanumDrive.driveEncoder(1.0d,distance,3000);
     }
 
     /**
@@ -478,7 +498,7 @@ public class AutonomousController implements ICraneMovementStatusListener {
      */
     public void openHand(){
         if (mSpeedBot != null){
-            mSpeedBot.getCrane().openHand();
+            mSpeedBot.getCrane().setHandPosition(Crane.HAND_OPEN);
         }
     }
     /**
@@ -486,18 +506,40 @@ public class AutonomousController implements ICraneMovementStatusListener {
      */
     public void closeHand(){
         if (mSpeedBot != null){
-            mSpeedBot.getCrane().closeHand();
+            mSpeedBot.getCrane().setHandPosition(Crane.HAND_CLOSED);
         }
     }
+    /**
+     * retracts the hand on the speed bot.
+     */
+    public void retractHand(){
+        if (mSpeedBot != null){
+            mSpeedBot.getCrane().setHandPosition(Crane.HAND_RETRACTED);
+        }
+    }
+
+
 
 
     /**
      * rotation by degrees.  + is ccw
      */
     public void rotate(int degrees){
-        mMecanumDrive.rotate(degrees,ROTATION_POWER);
+        mMecanumDrive.rotate(degrees, MAX_ROTATION_POWER,ROTATION_TIMEOUTMS);
     }
 
+    /**
+     * @return IMU angle reached by last rotate
+     */
+    public int getLastRotationAngle(){
+        return mLastRotationAngle;
+    }
+    /**
+     * @return distance from last encoder drive
+     */
+    public double getLastDriveDistance(){
+        return mLastDriveDistance;
+    }
     /**
      * returns true for blue, false for red.
      */
@@ -514,7 +556,9 @@ public class AutonomousController implements ICraneMovementStatusListener {
     public void startHookTimer(){
        mHookTimer.start();
     }
-
+    public void startHandTimer(){
+        mHandTimer.start();
+    }
     private void serviceTimers(){
         for(Iterator<OneShotTimer> iter = mStateTimers.iterator(); iter.hasNext();){
             OneShotTimer timer = iter.next();

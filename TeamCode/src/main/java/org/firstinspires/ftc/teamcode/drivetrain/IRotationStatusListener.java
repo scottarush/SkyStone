@@ -5,5 +5,15 @@ package org.firstinspires.ftc.teamcode.drivetrain;
  */
 public interface IRotationStatusListener {
 
-    void rotationComplete();
+    /**
+     * called when rotation successfully completed via the IMU
+     * @param angle actual angle that was reached
+     */
+    void rotationComplete(int angle);
+
+    /**
+     * Called when rotation did not complete within the supplied timeout.
+     * @param angle angle that was reached at timeout
+     */
+    void rotationTimeout(int angle);
 }

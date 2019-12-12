@@ -35,6 +35,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import org.firstinspires.ftc.teamcode.drivetrain.BaseMecanumDrive;
 import org.firstinspires.ftc.teamcode.drivetrain.GrabberBotMecanumDrive;
 import org.firstinspires.ftc.teamcode.drivetrain.IDriveSessionStatusListener;
+import org.firstinspires.ftc.teamcode.drivetrain.IRotationStatusListener;
 import org.firstinspires.ftc.teamcode.drivetrain.SpeedBotMecanumDrive;
 import org.firstinspires.ftc.teamcode.grabberbot.MecanumGrabberBot;
 import org.firstinspires.ftc.teamcode.speedbot.SpeedBot;
@@ -46,7 +47,7 @@ This class implements the equations that Marcus derived on October 3.
 
 @TeleOp(name="TestIMURotation", group="Robot")
 //@Disabled
-public class TestIMURotation extends OpMode implements IDriveSessionStatusListener {
+public class TestIMURotation extends OpMode implements IDriveSessionStatusListener, IRotationStatusListener {
     private static final int MIN_DELTA_UPDATE_TIME_MS = 100;
 
     private long mLastUpdateTime = 0L;
@@ -80,6 +81,7 @@ public class TestIMURotation extends OpMode implements IDriveSessionStatusListen
             return;
         }
         drivetrain.addDriveSessionStatusListener(this);
+        drivetrain.addRotationStatusListener(this);
         mLastUpdateTime = System.currentTimeMillis();
         // Send telemetry message to signify drivetrain waiting;
         telemetry.addData("Say", "Init Complete");
@@ -110,20 +112,40 @@ public class TestIMURotation extends OpMode implements IDriveSessionStatusListen
             mLastUpdateTime = System.currentTimeMillis();
             if (gamepad1.a) {
                 stop();
-                drivetrain.rotate(90,0.75d);
+                drivetrain.rotate(90,1.0d,3000);
             }
 
             if (gamepad1.b) {
                 stop();
-                drivetrain.rotate(-90,0.5d);
+                drivetrain.rotate(-90,1.0d,3000);
+            }
+            if (gamepad1.a) {
+                stop();
+                drivetrain.rotate(90,1.0d,3000);
             }
 
-            if (gamepad1.y) {
-                drivetrain.driveEncoder(1.0d, 12.0d, 1000);
-
-            }
             if (gamepad1.x) {
+                stop();
+                drivetrain.rotate(-45,1.0d,3000);
+            }
+            if (gamepad1.y) {
+                stop();
+                drivetrain.rotate(45,1.0d,3000);
+            }
+
+            if (gamepad1.dpad_up) {
+                drivetrain.driveEncoder(1.0d, 12.0d, 3000);
+
+            }
+            if (gamepad1.dpad_down) {
+                drivetrain.driveEncoder(1.0d, -12.0d, 3000);
+
+            }
+            if (gamepad1.dpad_right) {
                 drivetrain.strafeEncoder(1.0d, 12.0d, 1000);
+            }
+            if (gamepad1.dpad_left) {
+                drivetrain.strafeEncoder(1.0d, -12.0d, 1000);
             }
         }
         drivetrain.loop();
@@ -138,14 +160,32 @@ public class TestIMURotation extends OpMode implements IDriveSessionStatusListen
     }
 
     @Override
-    public void driveComplete() {
-        telemetry.addData("Status","drive complete");
+    public void driveComplete(double distance) {
+        int time = (int)System.currentTimeMillis();
+        telemetry.addData("Status","drive complete: time=%d, distance=%3.1f",time,distance);
         telemetry.update();
     }
 
     @Override
-    public void driveByEncoderTimeoutFailure() {
-        telemetry.addData("Status","encoder timeout");
+    public void driveByEncoderTimeoutFailure(double distance) {
+        int time = (int)System.currentTimeMillis();
+        telemetry.addData("Status","drive timeout: time=%d, distance=%3.1f",time,distance);
         telemetry.update();
+    }
+
+    @Override
+    public void rotationComplete(int angle) {
+        int time = (int)System.currentTimeMillis();
+        telemetry.addData("Status","rotation complete: time=%d, angle=%d",time,angle);
+        telemetry.update();
+
+    }
+
+    @Override
+    public void rotationTimeout(int angle) {
+        int time = (int)System.currentTimeMillis();
+        telemetry.addData("Status","rotation timeout: time=%d, angle=%d",time,angle);
+        telemetry.update();
+
     }
 }

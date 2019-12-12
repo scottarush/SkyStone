@@ -37,17 +37,16 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
  * Control layout is:
  * 1. Tank drive on both joysticks.  Gamepad 1 is primary but if both joysticks are idle,
  *    then Gamepad2 joysticks work otherwise ignored.
- * 2. left bumper on either controller closes hand
- * 3. right bumper on either controller closes hand
+ * 2. left bumper on either controller toggles front hooks
+ * 3. right bumper on either controller toggles hand between open and closed
  * 4. left trigger on either controller lowers crane
  * 5. right trigger on either controller raises crane.
- * 6. y button on either controller closes both front hooks
- * 7. a button on either controller opens both front hooks
+ * 6. a button on either controller moves hand to retracted position
  */
 @TeleOp(name="SpeedBotDualDriver", group="Robot")
 //@Disabled
 public class SpeedBotDualDriver extends OpMode{
-    private static final int MIN_DELTA_UPDATE_TIME_MS = 50;
+    private static final int MIN_BUTTON_UPDATE_TIME_MS = 200;
 
     private long mLastUpdateTime = 0L;
 
@@ -100,31 +99,65 @@ public class SpeedBotDualDriver extends OpMode{
         double xright = gamepad1.right_stick_x;
         double yright = -gamepad1.right_stick_y;
 
-        // Allow gamepad 2 if gamepad1 all zeros
-        if ((xleft == 0d) && (yleft == 0d) && (xright == 0d) && (yright == 0d)){
+        // Allow gamepad 2 is idle (i.e. gamepad1 all less than min threshold.)
+        double minThreshold = 0.01d;
+        if ((Math.abs(xleft) < minThreshold) &&
+                (Math.abs(yleft) < minThreshold) &&
+                (Math.abs(xright) < minThreshold) &&
+                (Math.abs(yright) < minThreshold)){
             xleft = gamepad2.left_stick_x;
             yleft = -gamepad2.left_stick_y;
             xright = gamepad2.right_stick_x;
             yright = -gamepad2.right_stick_y;
-
         }
+        // Now apply nonlinear joystick gain to each raw value
+        xleft = applyJoystickGain(xleft);
+        yleft = applyJoystickGain(yleft);
+        xright = applyJoystickGain(xright);
+        yright = applyJoystickGain(yright);
+
         robot.getDrivetrain().setTankDriveJoystickInput(xleft,yleft,xright,yright);
 
         // Limit update rate to the other controls
         long delta = System.currentTimeMillis() - mLastUpdateTime;
-        if (delta > MIN_DELTA_UPDATE_TIME_MS) {
+        if (delta > MIN_BUTTON_UPDATE_TIME_MS) {
             mLastUpdateTime = System.currentTimeMillis();
 
-            // Use the bumpers to open and close the hand on the crane
+            // Use the right bumper to open and close the hand
+            boolean rightBumper = gamepad1.right_bumper || gamepad2.right_bumper;
+            if (rightBumper) {
+                switch(robot.getCrane().getHandPosition()){
+                    case Crane.HAND_CLOSED:
+                        robot.getCrane().setHandPosition(Crane.HAND_OPEN);
+                        break;
+                    case Crane.HAND_OPEN:
+                        robot.getCrane().setHandPosition(Crane.HAND_CLOSED);
+                        break;
+                    case Crane.HAND_RETRACTED:
+                        robot.getCrane().setHandPosition(Crane.HAND_OPEN);
+                        break;
+                }
+            }
+            else {
+                // Check for hand retract on button a
+                boolean a = gamepad1.a || gamepad2.a;
+                if (a) {
+                    robot.getCrane().setHandPosition(Crane.HAND_RETRACTED);
+                }
+            }
+            // Use left bumper to raise and lower the front hooks
             boolean leftBumper = gamepad1.left_bumper || gamepad2.left_bumper;
-            if (leftBumper) {
-                if (robot.getCrane().isHandOpen()){
-
+            if (leftBumper){
+                if (robot.getFrontHooks().isOpen()){
+                    robot.getFrontHooks().closeHooks();
+                }
+                else{
+                    robot.getFrontHooks().openHooks();
                 }
             }
 
             // Use the triggers to raise and lower the crane.  Allow either controller to
-            // raise and lower, but if both triggers are press just stop the crane motor
+            // raise and lower, but if both triggers are pressed default to gamepad1 only
             double triggerThreshold = 0.05d;
             double leftTrigger = gamepad1.left_trigger;
             if (Math.abs(leftTrigger) < triggerThreshold) {
@@ -137,27 +170,14 @@ public class SpeedBotDualDriver extends OpMode{
             if (rightTrigger > triggerThreshold) {
                 if (leftTrigger < triggerThreshold) {
                     robot.getCrane().raiseManual(Math.abs(rightTrigger));
-                } else {
-                    robot.getCrane().stop();  // both triggers pressed
                 }
             } else if (leftTrigger > triggerThreshold) {
                 if (rightTrigger < triggerThreshold) {
                     robot.getCrane().lowerManual(Math.abs(leftTrigger));
-                } else {
-                    robot.getCrane().stop();  // both triggers pressed
                 }
             } else {
-                // Neither trigger so stop the crane
+                // Neither trigger so stop the crane in case it was moving
                 robot.getCrane().stop();
-            }
-
-            // Use the Y and A buttons to close and open the front hooks
-            boolean y = gamepad1.y || gamepad2.y;
-            boolean a = gamepad1.a || gamepad2.a;
-            if (y) {
-                robot.getFrontHooks().closeHooks();
-            } else if (a) {
-                robot.getFrontHooks().openHooks();
             }
 
 //        // Process the autoramp Crane inputs on either controller's dpad Up or Down
@@ -175,6 +195,13 @@ public class SpeedBotDualDriver extends OpMode{
         }
     }
 
+    /**
+     * helper function for control gain
+     */
+    private double applyJoystickGain(double input){
+        double output = input * input;
+        return output * Math.signum(input);
+    }
 
     /*
      * Code to run ONCE after the driver hits STOP

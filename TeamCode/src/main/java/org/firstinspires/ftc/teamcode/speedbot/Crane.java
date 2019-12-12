@@ -6,7 +6,6 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.teamcode.drivetrain.IDriveSessionStatusListener;
 import org.firstinspires.ftc.teamcode.util.OneShotTimer;
 
 import java.util.ArrayList;
@@ -17,6 +16,7 @@ import java.util.Iterator;
  *
  */
 public class Crane {
+
 
     /**
      * Core hex motor from the specification
@@ -31,11 +31,19 @@ public class Crane {
 
     public static final String CRANE_MOTOR_NAME = "crane";
     public static final String HAND_SERVO_NAME = "handservo";
-    
-    public static final double HAND_CLOSE_POSITION = 0.0d;
-    public static final double HAND_OPEN_POSITION = 1.0d;
 
-    private double mHandServoPosition = HAND_OPEN_POSITION;
+    /** enum values for hand positions. **/
+    public static final int HAND_RETRACTED = 0;
+    public static final int HAND_OPEN = 1;
+    public static final int HAND_CLOSED = 2;
+    private int mHandPosition = 0;
+
+    /** servo values for hand positions. **/
+    private static final double HAND_CLOSE_POSITION = 0.0d;
+    private static final double HAND_OPEN_POSITION = 0.5d;
+    private static final double HAND_RETRACT_POSITION = 1.0d;
+
+    private double mHandServoPosition = HAND_RETRACT_POSITION;
 
     private Servo mHandServo = null;
 
@@ -88,6 +96,7 @@ public class Crane {
 
         try {
             mHandServo = ahwMap.get(Servo.class, HAND_SERVO_NAME);
+            setHandServoPosition(HAND_RETRACT_POSITION);
         } catch (Exception e) {
             initErrString += "Claw servo err";
         }
@@ -262,30 +271,44 @@ public class Crane {
 
     }
 
-     /**
-     * closes the hand
+    /**
+     * sets the hand position
+     * @param position HAND_OPEN_POSITION, HAND_CLOSE_POSITION, or HAND_RETRACT_POSITION
      */
-    public void closeHand(){
-        setServoPosition(HAND_CLOSE_POSITION);
+    public void setHandPosition(int position){
+        switch(position){
+            case HAND_OPEN:
+                setHandServoPosition(HAND_OPEN_POSITION);
+                break;
+            case HAND_CLOSED:
+                setHandServoPosition(HAND_CLOSE_POSITION);
+                break;
+            case HAND_RETRACTED:
+                setHandServoPosition(HAND_RETRACT_POSITION);
+                break;
+        }
     }
     /**
-     * opens the hand
+     * returns hand position
      */
-    public void openHand(){
-        setServoPosition(HAND_OPEN_POSITION);
+    public int getHandPosition(){
+        return mHandPosition;
     }
 
-    public boolean isHandOpen(){
-        if (mHandServoPosition == HAND_OPEN_POSITION){
-            return true;
-        }
-        return false;
-    }
-    private void setServoPosition(double position){
+    private void setHandServoPosition(double position){
         if (mHandServo == null){
             return;
         }
         mHandServoPosition = position;
+        if (position == HAND_RETRACT_POSITION){
+            mHandPosition = HAND_RETRACTED;
+        }
+        else if (position == HAND_CLOSE_POSITION){
+            mHandPosition = HAND_CLOSED;
+        }
+        else{
+            mHandPosition = HAND_OPEN;
+        }
         mHandServo.setPosition(position);
     }
 }

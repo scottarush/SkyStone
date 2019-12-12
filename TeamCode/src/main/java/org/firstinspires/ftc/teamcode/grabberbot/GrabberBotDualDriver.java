@@ -29,6 +29,7 @@
 
 package org.firstinspires.ftc.teamcode.grabberbot;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Gamepad;
@@ -47,7 +48,7 @@ import org.firstinspires.ftc.teamcode.grabberbot.SideHook;
  * Arm up down on pad.
  */
 @TeleOp(name="GrabberBotDualDriver", group="Robot")
-//@Disabled
+@Disabled
 public class GrabberBotDualDriver extends OpMode{
 
     private MecanumGrabberBot robot  = null;

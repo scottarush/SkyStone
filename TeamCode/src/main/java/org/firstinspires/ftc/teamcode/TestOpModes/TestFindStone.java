@@ -29,6 +29,7 @@
 
 package org.firstinspires.ftc.teamcode.TestOpModes;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -51,7 +52,7 @@ This class tests using the Vuforia system to locate a stone.
   */
 
 @TeleOp(name="TestFindStone", group="Robot")
-//@Disabled
+@Disabled
 public class TestFindStone extends OpMode{
 
     private MecanumGrabberBot mGrabberBot = null;
@@ -109,22 +110,29 @@ public class TestFindStone extends OpMode{
         }
         mMecanumDrive.addDriveSessionStatusListener(new IDriveSessionStatusListener() {
             @Override
-            public void driveComplete() {
+            public void driveComplete(double distance) {
                 telemetry.addData("driveComplete Called","");
                 telemetry.update();
             }
 
             @Override
-            public void driveByEncoderTimeoutFailure() {
+            public void driveByEncoderTimeoutFailure(double distance) {
                 telemetry.addData("driveComplete Called","");
                 telemetry.update();
             }
         });
         mMecanumDrive.addRotationStatusListener(new IRotationStatusListener() {
             @Override
-            public void rotationComplete() {
+            public void rotationComplete(int angle) {
                 telemetry.addData("rotationComplete Called","");
                 telemetry.update();
+            }
+
+            @Override
+            public void rotationTimeout(int angle) {
+                telemetry.addData("rotationTimeout Called","");
+                telemetry.update();
+
             }
         });
 
@@ -207,7 +215,7 @@ public class TestFindStone extends OpMode{
 //            ((BaseMecanumDrive)mRobot.getDrivetrain()).strafeEncoder(1.0d,12.0d,3000);
 //        }
         if (gamepad1.a){
-            mMecanumDrive.rotate(90,0.5d);
+            mMecanumDrive.rotate(90,0.5d,1000);
         }
         if (gamepad1.x){
             mMecanumDrive.strafeEncoder(1.0d,xoffset,5000);

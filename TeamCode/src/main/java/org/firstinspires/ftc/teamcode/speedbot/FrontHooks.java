@@ -21,9 +21,9 @@ public class FrontHooks {
     public static final String LEFT_HOOK_SERVO_NAME = "lhook";
     public static final String RIGHT_HOOK_SERVO_NAME = "rhook";
 
-    private static final double OPEN_POSITION = 1.0d;
-    private static final double CLOSED_POSITION = 0.0d;
-
+    private static final double OPEN_POSITION = 0.0d;
+    private static final double CLOSED_POSITION = 1.0d;
+    private double mServoPosition = OPEN_POSITION;
 
     public FrontHooks(OpMode opMode){
         opMode = mOpMode;
@@ -50,21 +50,30 @@ public class FrontHooks {
         }
      }
 
-    public void openHooks(){
-        if (mLeftServo != null){
-            if (mRightServo != null){
-                mLeftServo.setPosition(OPEN_POSITION);
-                mRightServo.setPosition(OPEN_POSITION);
-            }
+     public boolean isOpen(){
+        if (mServoPosition == OPEN_POSITION){
+            return true;
         }
+        else{
+            return false;
+        }
+     }
+
+    public void openHooks(){
+        setServoPosition(OPEN_POSITION);
     }
     public void closeHooks(){
+        setServoPosition(CLOSED_POSITION);
+    }
+    private void setServoPosition(double position){
+        mServoPosition = position;
         if (mLeftServo != null){
-            if (mRightServo != null){
-                mLeftServo.setPosition(CLOSED_POSITION);
-                mRightServo.setPosition(CLOSED_POSITION);
-            }
+            mLeftServo.setPosition(mServoPosition);
+        }
+        if (mRightServo != null){
+            mRightServo.setPosition(mServoPosition);
         }
     }
- }
+
+}
 

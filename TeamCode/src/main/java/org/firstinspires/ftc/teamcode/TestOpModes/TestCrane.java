@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.TestOpModes;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -10,7 +11,7 @@ import org.firstinspires.ftc.teamcode.speedbot.Crane;
  *
  */
 @TeleOp(name="TestCrane", group="Robot")
-//@Disabled
+@Disabled
 public class TestCrane extends OpMode {
 
     private Crane mCrane = null;
@@ -36,16 +37,33 @@ public class TestCrane extends OpMode {
         long delta = System.currentTimeMillis() - mLastUpdateTime;
         if (delta > MIN_DELTA_UPDATE_TIME_MS) {
             mLastUpdateTime = System.currentTimeMillis();
-            if (gamepad1.y) {
-                mCrane.openHand();
+            // Use the right bumper to open and close the hand
+            boolean rightBumper = gamepad1.right_bumper || gamepad2.right_bumper;
+            if (rightBumper) {
+                switch(mCrane.getHandPosition()){
+                    case Crane.HAND_CLOSED:
+                        mCrane.setHandPosition(Crane.HAND_OPEN);
+                        break;
+                    case Crane.HAND_OPEN:
+                        mCrane.setHandPosition(Crane.HAND_CLOSED);
+                        break;
+                    case Crane.HAND_RETRACTED:
+                        mCrane.setHandPosition(Crane.HAND_OPEN);
+                        break;
+                }
             }
-            else if (gamepad1.a) {
-                mCrane.closeHand();
+            else {
+                // Check for hand retract on button a
+                boolean a = gamepad1.a || gamepad2.a;
+                if (a) {
+                    mCrane.setHandPosition(Crane.HAND_RETRACTED);
+                }
             }
-            double lower = gamepad1.left_trigger;
+
             double right = gamepad1.right_trigger;
-            if (lower > 0.05d) {
-                mCrane.lowerManual(lower);
+            double left = gamepad1.left_trigger;
+            if (left > 0.05d) {
+                mCrane.lowerManual(left);
             }
             else if (right > 0.05d){
                 mCrane.raiseManual(right);

@@ -30,6 +30,7 @@ public class SkystoneAutonomousOpMode {
 
     public SkystoneAutonomousOpMode(OpMode opMode, boolean isBlueTeam,int sequence){
         mOpmode = opMode;
+        mBlueAlliance = isBlueTeam;
         // lengthen init timeout to give time to initialize the IMU
         mOpmode.msStuckDetectInit = 40000;
         mSequence = sequence;

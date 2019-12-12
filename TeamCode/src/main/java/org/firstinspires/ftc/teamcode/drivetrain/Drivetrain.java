@@ -31,8 +31,8 @@ public abstract class Drivetrain {
      /** OpMode in order to access telemetry from subclasses. **/
     protected OpMode mOpMode;
     private OneShotTimer mDriveByEncoderFailTimer = null;
-
     private OneShotTimer mTimedDriveTimer = null;
+    private OneShotTimer mRotationTimeoutTimer = null;
 
     private long mLastIMUCheckTime = 0l;
 
@@ -48,11 +48,10 @@ public abstract class Drivetrain {
     protected int mRotationTargetAngle = 0;
 
     /**
-     * threshold angle delta for completion of a rotation
+     * threshold angle delta for completion of a rotation must be provided by subclasses for each
+     * drivetrain
      */
-    private static double ROTATION_COMPLETE_THRESHOLD = 5d;
-
-    private boolean mRotationActive = false;
+    protected abstract double getMinRotationCompleteAngle();
 
     private static final boolean ENABLE_LINEAR_DRIVE_CORRECTION = false;
     /**
@@ -77,26 +76,47 @@ public abstract class Drivetrain {
         mTimedDriveTimer = new OneShotTimer(1000, new OneShotTimer.IOneShotTimerCallback() {
             @Override
             public void timeoutComplete() {
+                // Get actual distance moved
+                double distance = getActualEncoderDistance();
                 stop();
                  for(Iterator<IDriveSessionStatusListener>iter=mDriveSessionStatusListeners.iterator();iter.hasNext();){
                     IDriveSessionStatusListener listener = iter.next();
-                    listener.driveComplete();
+                    listener.driveComplete(distance);
                 }
             }
         });
 
-         mDriveByEncoderFailTimer = new OneShotTimer(1000, new OneShotTimer.IOneShotTimerCallback() {
+        mDriveByEncoderFailTimer = new OneShotTimer(1000, new OneShotTimer.IOneShotTimerCallback() {
             @Override
             public void timeoutComplete() {
+                // Get actual distance moved
+                double distance = getActualEncoderDistance();
                 stop();
                 for(Iterator<IDriveSessionStatusListener>iter=mDriveSessionStatusListeners.iterator();iter.hasNext();){
                     IDriveSessionStatusListener listener = iter.next();
-                    listener.driveByEncoderTimeoutFailure();
+                    listener.driveByEncoderTimeoutFailure(distance);
                 }
             }
         });
-      }
+        mRotationTimeoutTimer = new OneShotTimer(1000, new OneShotTimer.IOneShotTimerCallback() {
+            @Override
+            public void timeoutComplete() {
+                // Get the actual angle as an integer to nearest degree
+                int angle = (int)Math.round(getAngle());
+                stop();
+                for(Iterator<IRotationStatusListener>iter=mRotationStatusListeners.iterator();iter.hasNext();){
+                    IRotationStatusListener listener = iter.next();
+                    listener.rotationTimeout(angle);
+                }
+            }
+        });
+    }
 
+    /**
+     * Must be overridden by subclasses to return the actual distance in inches moved on an
+     * encoder or strafe operation
+     */
+    protected abstract double getActualEncoderDistance();
     /**
      * Must be overridden by subclasses to return the linearMillisecondsPerInch rate.
       */
@@ -171,8 +191,11 @@ public abstract class Drivetrain {
         }
         // And service all the timers
         mDriveByEncoderFailTimer.checkTimer();
-        serviceEncoderDrive();
         mTimedDriveTimer.checkTimer();
+        mRotationTimeoutTimer.checkTimer();
+
+        // And the encoder drive
+        checkEncoderDrive();
     }
 
     /**
@@ -238,20 +261,24 @@ public abstract class Drivetrain {
      * base class function does everything except set motor power.
      * @param power 0 to 1.0
      * @param ccwDegrees Degrees to turn, - is right + is left
+     * @param timeoutms milliseconds to abort if not finished.  Triggers a rotationTimeout
      */
-    public void rotate(int ccwDegrees,double power) {
+    public void rotate(int ccwDegrees,double power,int timeoutms) {
         stop();  // case we were moving
 
         mMaxRotationPower = power;
         // restart imu movement tracking.
         resetAngle();
         mRotationTargetAngle = ccwDegrees;
-        mRotationActive = true;
-        // Call checkRotation to check imu
+
+        mRotationTimeoutTimer.setTimeout(timeoutms);
+        mRotationTimeoutTimer.start();
+
+        // Call checkRotation once to initialize imu checking
         checkRotation();
     }
     public boolean isRotationActive(){
-        return mRotationActive;
+        return mRotationTimeoutTimer.isRunning();
     }
     /**
      * Resets the cumulative angle tracking in the IMU to zero
@@ -297,7 +324,7 @@ public abstract class Drivetrain {
      * @return correction value from +/- 1.0 depending upon the error for +/- 180.
      */
     protected double checkRotation() {
-        if (!mRotationActive) {
+        if (!mRotationTimeoutTimer.isRunning()) {
             return 0.0;
         }
 
@@ -314,21 +341,22 @@ public abstract class Drivetrain {
         // more negative than the target angle
         double error = mRotationTargetAngle - angle;
         double absError = Math.abs(error);
-        if (absError < ROTATION_COMPLETE_THRESHOLD) {
+        if (absError < getMinRotationCompleteAngle()) {
              // Otherwise we are done so stop the rotation, reset the angle, and notify listeners
             // that the rotation is complete
             stop();
-            mRotationActive = false;
+            mRotationTimeoutTimer.cancel();
+             // Reset for next time
             resetAngle();
+
             for(Iterator<IRotationStatusListener>iter=mRotationStatusListeners.iterator();iter.hasNext();){
                 IRotationStatusListener listener = iter.next();
-                listener.rotationComplete();
+                listener.rotationComplete((int)(Math.round(angle)));
             }
            return 0.0d;
         }
-        // Otherwise, compute the error
 
-        // Normalize error to +/- 1.0 is +/- 180 degrees;
+        // Otherwise, normalize error to +/- 1.0 is +/- 180 degrees;
         error = error / 180d;
 
         // And multiply by the gain
@@ -379,7 +407,7 @@ public abstract class Drivetrain {
      * base class function must be called by subclasses
      */
     public void stop(){
-        mRotationActive = false;
+        mRotationTimeoutTimer.cancel();
 //        ENABLE_LINEAR_DRIVE_CORRECTION = false;
         mTimedDriveTimer.cancel();
         mDriveByEncoderFailTimer.cancel();
@@ -388,19 +416,21 @@ public abstract class Drivetrain {
     /**
      * continues a drive by encoder session.
      */
-    private void serviceEncoderDrive() {
+    private void checkEncoderDrive() {
         boolean active = mDriveByEncoderFailTimer.checkTimer();
         // Timer still active so check subclass if target position has been reached.
         if (active && isTargetPositionReached()){
+            // Get actual distance moved
+            double distance = getActualEncoderDistance();
+            stop();    // In case the motors were actually locked up within the mininum
             mDriveByEncoderFailTimer.cancel();
             // motors stopped before timeout so signal success to listeners
             for(Iterator<IDriveSessionStatusListener>iter=mDriveSessionStatusListeners.iterator();iter.hasNext();){
                 IDriveSessionStatusListener listener = iter.next();
-                listener.driveComplete();
+                listener.driveComplete(distance);
             }
         }
     }
-
 
     /**
      * adds listeners for rotation complete event.
