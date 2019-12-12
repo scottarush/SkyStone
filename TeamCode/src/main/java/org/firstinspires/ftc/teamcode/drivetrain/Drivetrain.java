@@ -35,16 +35,22 @@ public abstract class Drivetrain {
     private OneShotTimer mTimedDriveTimer = null;
 
     private long mLastIMUCheckTime = 0l;
+
     /**
-     * proportional constant for rotation angle.
+     * maximum rotation speed.
      */
-    private double mRotationKp = 4.0d;
+    private double mMaxRotationPower = 0d;
     /**
      * last angle for the imu measurement
      */
     protected Orientation mLastIMUOrientation = new Orientation();
     protected double mHeadingAngle = 0d;
     protected int mRotationTargetAngle = 0;
+
+    /**
+     * threshold angle delta for completion of a rotation
+     */
+    private static double ROTATION_COMPLETE_THRESHOLD = 5d;
 
     private boolean mRotationActive = false;
 
@@ -105,10 +111,6 @@ public abstract class Drivetrain {
      */
     public abstract double getRotationKp();
 
-    /**
-     * Must be implemented by subclasses to return the rotation Kintegral constant
-     */
-    public abstract double getRotationKi();
 
     /* Initialize standard Hardware interfaces.
      * NOTE:  This class throws Exception on any hardware initIMU error so be sure to catch and
@@ -234,11 +236,13 @@ public abstract class Drivetrain {
      * Starts IMU rotation.
      * Rotate left or right the number of degrees. Does not support turning more than 180 degrees.
      * base class function does everything except set motor power.
+     * @param power 0 to 1.0
      * @param ccwDegrees Degrees to turn, - is right + is left
      */
-    public void rotate(int ccwDegrees) {
+    public void rotate(int ccwDegrees,double power) {
         stop();  // case we were moving
 
+        mMaxRotationPower = power;
         // restart imu movement tracking.
         resetAngle();
         mRotationTargetAngle = ccwDegrees;
@@ -296,26 +300,22 @@ public abstract class Drivetrain {
         if (!mRotationActive) {
             return 0.0;
         }
-         boolean continueTurning = false;
 
         double angle = getAngle();
         // On a right turn we have to get off zero first so return
         // to keep turning.
-        if (angle == 0d) {
-            continueTurning = true;
-        }
+//        if (angle == 0d) {
+//            continueTurning = true;
+//        }
+
         // if on a left turn, then we are waiting for the angle to go
         // positive up to the rotation target angle
-        if (angle < mRotationTargetAngle) {
-            continueTurning =true;
-        }
         // if on a right turn, then we are waiting for the angle to become
         // more negative than the target angle
-        if (angle < mRotationTargetAngle) {
-            continueTurning =true;
-        }
-        if (!continueTurning){
-            // Otherwise we are done so stop the rotation, reset the angle, and notify listeners
+        double error = mRotationTargetAngle - angle;
+        double absError = Math.abs(error);
+        if (absError < ROTATION_COMPLETE_THRESHOLD) {
+             // Otherwise we are done so stop the rotation, reset the angle, and notify listeners
             // that the rotation is complete
             stop();
             mRotationActive = false;
@@ -326,13 +326,17 @@ public abstract class Drivetrain {
             }
            return 0.0d;
         }
-        // Otherwise, update the power to the motors
-        double error = mRotationTargetAngle - angle;
+        // Otherwise, compute the error
+
         // Normalize error to +/- 1.0 is +/- 180 degrees;
         error = error / 180d;
 
         // And multiply by the gain
-        error = error * mRotationKp;
+        error = error * getRotationKp();
+        // And limit to the max power
+        if (Math.abs(error) > mMaxRotationPower){
+            error = mMaxRotationPower * Math.signum(error);
+        }
         return error;
      }
 
@@ -386,8 +390,8 @@ public abstract class Drivetrain {
      */
     private void serviceEncoderDrive() {
         boolean active = mDriveByEncoderFailTimer.checkTimer();
-
-        if (active && !isMoving()){
+        // Timer still active so check subclass if target position has been reached.
+        if (active && isTargetPositionReached()){
             mDriveByEncoderFailTimer.cancel();
             // motors stopped before timeout so signal success to listeners
             for(Iterator<IDriveSessionStatusListener>iter=mDriveSessionStatusListeners.iterator();iter.hasNext();){
@@ -426,9 +430,11 @@ public abstract class Drivetrain {
     }
 
     /**
-     * @return true if the drivetrain is moving.  false if stopped.
+     * Implemented by subclasses to indicate that the target position has been reached.
+     * The reason for this is that when the motors stall, the target position is never reached
+     * and the encoder fail timeout occurs.
      */
-    public abstract boolean isMoving();
+    protected abstract boolean isTargetPositionReached();
 
 
     /**

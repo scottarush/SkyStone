@@ -5,9 +5,10 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import org.firstinspires.ftc.teamcode.speedbot.SpeedBot;
 import org.firstinspires.ftc.teamcode.grabberbot.MecanumGrabberBot;
 
-//@Autonomous(name="AutonomousMode", group="Robot")
-//@Disabled
+
 public class SkystoneAutonomousOpMode {
+
+
 
     private MecanumGrabberBot mGrabberBot = null;
     private SpeedBot mSpeedBot = null;
@@ -25,10 +26,13 @@ public class SkystoneAutonomousOpMode {
      */
     VuforiaTargetLocator mVuforia = null;
 
-    public SkystoneAutonomousOpMode(OpMode opMode, boolean isBlueTeam){
+    private int mSequence = 0;
+
+    public SkystoneAutonomousOpMode(OpMode opMode, boolean isBlueTeam,int sequence){
         mOpmode = opMode;
         // lengthen init timeout to give time to initialize the IMU
         mOpmode.msStuckDetectInit = 40000;
+        mSequence = sequence;
      }
 
     public void init() {
@@ -58,29 +62,24 @@ public class SkystoneAutonomousOpMode {
         mVuforia.activate();
         // Initialize the controller based on the bot
         if (USE_GRABBER_BOT){
-            autoController = new AutonomousController(mOpmode,mGrabberBot,mVuforia, mBlueAlliance);
+            autoController = new AutonomousController(mOpmode,mGrabberBot,mVuforia, mBlueAlliance,mSequence);
         }
         else{
-            autoController = new AutonomousController(mOpmode,mSpeedBot,mVuforia, mBlueAlliance);
+            autoController = new AutonomousController(mOpmode,mSpeedBot,mVuforia, mBlueAlliance,mSequence);
         }
 
         if (initErrs.length() == 0){
             mOpmode.telemetry.addData("Status:","Robot init complete");
             mOpmode.telemetry.update();
         }
-        else{
-            mOpmode.telemetry.addData("Init errors:",initErrs);
+        else {
+            mOpmode.telemetry.addData("Init errors:", initErrs);
             mOpmode.telemetry.update();
         }
-
-
     }
 
     public void loop() {
-         if (!autoController.isAutonomousComplete()){
-            autoController.loop();
-        }
-
+        autoController.loop();
     }
 
 /**

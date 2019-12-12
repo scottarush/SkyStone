@@ -47,6 +47,9 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 @TeleOp(name="SpeedBotDualDriver", group="Robot")
 //@Disabled
 public class SpeedBotDualDriver extends OpMode{
+    private static final int MIN_DELTA_UPDATE_TIME_MS = 50;
+
+    private long mLastUpdateTime = 0L;
 
     private SpeedBot robot  = null;
 
@@ -107,61 +110,55 @@ public class SpeedBotDualDriver extends OpMode{
         }
         robot.getDrivetrain().setTankDriveJoystickInput(xleft,yleft,xright,yright);
 
-        // Use the bumpers to open and close the hand on the crane
-        boolean leftBumper = gamepad1.left_bumper || gamepad2.left_bumper;
-        boolean rightBumper = gamepad1.right_bumper || gamepad2.right_bumper;
-        if (leftBumper) {
-            if (!rightBumper) {
-                robot.getCrane().closeHand();
-            }
-        }
-        if (rightBumper){
-            if (!leftBumper){
-                robot.getCrane().openHand();
-            }
-        }
+        // Limit update rate to the other controls
+        long delta = System.currentTimeMillis() - mLastUpdateTime;
+        if (delta > MIN_DELTA_UPDATE_TIME_MS) {
+            mLastUpdateTime = System.currentTimeMillis();
 
-        // Use the triggers to raise and lower the crane.  Allow either controller to
-        // raise and lower, but if both triggers are press just stop the crane motor
-        double triggerThreshold = 0.05d;
-        double leftTrigger = gamepad1.left_trigger;
-        if (Math.abs(leftTrigger) < triggerThreshold){
-            leftTrigger = gamepad2.left_trigger;
-        }
-        double rightTrigger = gamepad1.right_trigger;
-        if (Math.abs(rightTrigger) < triggerThreshold){
-            rightTrigger = gamepad2.right_trigger;
-        }
-        if (rightTrigger > triggerThreshold){
-            if (leftTrigger < triggerThreshold){
-                robot.getCrane().raiseManual(Math.abs(rightTrigger));
-            }
-            else{
-                robot.getCrane().stop();  // both triggers pressed
-            }
-        }
-        else if (leftTrigger > triggerThreshold){
-            if (rightTrigger < triggerThreshold){
-                robot.getCrane().lowerManual(Math.abs(leftTrigger));
-            }
-            else {
-                robot.getCrane().stop();  // both triggers pressed
-            }
-        }
-        else{
-            // Neither trigger so stop the crane
-            robot.getCrane().stop();
-        }
+            // Use the bumpers to open and close the hand on the crane
+            boolean leftBumper = gamepad1.left_bumper || gamepad2.left_bumper;
+            if (leftBumper) {
+                if (robot.getCrane().isHandOpen()){
 
-        // Use the Y and A buttons to close and open the front hooks
-        boolean y = gamepad1.y || gamepad2.y;
-        boolean a = gamepad1.a || gamepad2.a;
-        if (y) {
-            robot.getFrontHooks().closeHooks();
-        }
-        else if (a){
-            robot.getFrontHooks().openHooks();
-        }
+                }
+            }
+
+            // Use the triggers to raise and lower the crane.  Allow either controller to
+            // raise and lower, but if both triggers are press just stop the crane motor
+            double triggerThreshold = 0.05d;
+            double leftTrigger = gamepad1.left_trigger;
+            if (Math.abs(leftTrigger) < triggerThreshold) {
+                leftTrigger = gamepad2.left_trigger;
+            }
+            double rightTrigger = gamepad1.right_trigger;
+            if (Math.abs(rightTrigger) < triggerThreshold) {
+                rightTrigger = gamepad2.right_trigger;
+            }
+            if (rightTrigger > triggerThreshold) {
+                if (leftTrigger < triggerThreshold) {
+                    robot.getCrane().raiseManual(Math.abs(rightTrigger));
+                } else {
+                    robot.getCrane().stop();  // both triggers pressed
+                }
+            } else if (leftTrigger > triggerThreshold) {
+                if (rightTrigger < triggerThreshold) {
+                    robot.getCrane().lowerManual(Math.abs(leftTrigger));
+                } else {
+                    robot.getCrane().stop();  // both triggers pressed
+                }
+            } else {
+                // Neither trigger so stop the crane
+                robot.getCrane().stop();
+            }
+
+            // Use the Y and A buttons to close and open the front hooks
+            boolean y = gamepad1.y || gamepad2.y;
+            boolean a = gamepad1.a || gamepad2.a;
+            if (y) {
+                robot.getFrontHooks().closeHooks();
+            } else if (a) {
+                robot.getFrontHooks().openHooks();
+            }
 
 //        // Process the autoramp Crane inputs on either controller's dpad Up or Down
 //        boolean dpadUp = gamepad1.dpad_up || gamepad1.dpad_up;
@@ -175,6 +172,7 @@ public class SpeedBotDualDriver extends OpMode{
 //        else {
 //            robot.getCrane().stop();
 //        }
+        }
     }
 
 

@@ -16,7 +16,6 @@ public class GrabberBotMecanumDrive extends BaseMecanumDrive {
      **/
     public static final double COUNTS_PER_INCH = ENCODER_COUNTS_PER_ROTATION / MECANUM_WHEEL_CIRCUMFERENCE;
     public static final double ROTATION_KP = 4.0d;
-    public static final double ROTATION_KI  = 1.0d;
     /**
      * Approximate number of milliseconds per inch forward and rearward at full power.
      */
@@ -32,10 +31,6 @@ public class GrabberBotMecanumDrive extends BaseMecanumDrive {
         return ROTATION_KP;
     }
 
-    @Override
-    public double getRotationKi() {
-        return ROTATION_KI;
-    }
 
     @Override
     public double getLinearKp() {
@@ -45,6 +40,12 @@ public class GrabberBotMecanumDrive extends BaseMecanumDrive {
     @Override
     protected double getEncoderCountsPerInchRotation() {
         return COUNTS_PER_INCH;
+    }
+
+    @Override
+    protected int getEncoderDriveCountsMinThreshold() {
+        // Return 1/8 of a rotation
+        return ENCODER_COUNTS_PER_ROTATION / 8;
     }
 
     public GrabberBotMecanumDrive(OpMode opMode){

@@ -207,7 +207,7 @@ public class TestFindStone extends OpMode{
 //            ((BaseMecanumDrive)mRobot.getDrivetrain()).strafeEncoder(1.0d,12.0d,3000);
 //        }
         if (gamepad1.a){
-            mMecanumDrive.rotate(90);
+            mMecanumDrive.rotate(90,0.5d);
         }
         if (gamepad1.x){
             mMecanumDrive.strafeEncoder(1.0d,xoffset,5000);

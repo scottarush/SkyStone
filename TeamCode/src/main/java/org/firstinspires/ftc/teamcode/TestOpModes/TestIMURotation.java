@@ -82,7 +82,8 @@ public class TestIMURotation extends OpMode implements IDriveSessionStatusListen
         drivetrain.addDriveSessionStatusListener(this);
         mLastUpdateTime = System.currentTimeMillis();
         // Send telemetry message to signify drivetrain waiting;
-        telemetry.addData("Say", "Init Complete");    //
+        telemetry.addData("Say", "Init Complete");
+        telemetry.update();
     }
 
     /*
@@ -109,9 +110,15 @@ public class TestIMURotation extends OpMode implements IDriveSessionStatusListen
             mLastUpdateTime = System.currentTimeMillis();
             if (gamepad1.a) {
                 stop();
-                drivetrain.rotate(90);
+                drivetrain.rotate(90,0.75d);
             }
+
             if (gamepad1.b) {
+                stop();
+                drivetrain.rotate(-90,0.5d);
+            }
+
+            if (gamepad1.y) {
                 drivetrain.driveEncoder(1.0d, 12.0d, 1000);
 
             }
