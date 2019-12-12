@@ -1,0 +1,218 @@
+digraph SpeedBotAutoStateMachine {
+
+    node
+        [shape=Mrecord width=1.5];
+
+    subgraph cluster_SpeedBotAutoStateMachine {
+
+        label="SpeedBotAutoStateMachine";
+
+        //
+        // States (Nodes)
+        //
+
+        "SpeedBotAutoStateMachine::Idle"
+            [label="{Idle}"];
+
+        "%start"
+            [label="" shape=circle style=filled fillcolor=black width=0.25];
+
+        //
+        // Transitions (Edges)
+        //
+
+        "SpeedBotAutoStateMachine::Idle" -> "GetStones::Start"
+            [label="evStartDriveToStones()/\l"];
+
+        "SpeedBotAutoStateMachine::Idle" -> "DragFoundation::Start"
+            [label="evStartDragFoundation()/\l"];
+
+        "%start" -> "SpeedBotAutoStateMachine::Idle"
+    }
+
+    subgraph cluster_GetStones {
+
+        label="GetStones";
+
+        //
+        // States (Nodes)
+        //
+
+        "GetStones::Start"
+            [label="{Start|Entry/\l&nbsp;&nbsp;&nbsp;openHand();\l&nbsp;&nbsp;&nbsp;linearDrive(10d);\l|evDriveComplete()/\l&nbsp;&nbsp;&nbsp;checkStoneRecognition();\levDriveTimeout()/\l&nbsp;&nbsp;&nbsp;checkStoneRecognition();\l}"];
+
+        "GetStones::StrafeToStone"
+            [label="{StrafeToStone|Entry/\l}"];
+
+        "GetStones::DriveForwardToStone"
+            [label="{DriveForwardToStone|Entry/\l&nbsp;&nbsp;&nbsp;linearDrive(8d);\l}"];
+
+        "GetStones::GrabStone"
+            [label="{GrabStone|Entry/\l&nbsp;&nbsp;&nbsp;closeHand();\l&nbsp;&nbsp;&nbsp;startHandTimer();\l}"];
+
+        "GetStones::BackupToBeginDrag"
+            [label="{BackupToBeginDrag|Entry/\l&nbsp;&nbsp;&nbsp;linearDrive(-18d);\l}"];
+
+        "GetStones::RotateTowardBridge"
+            [label="{RotateTowardBridge}"];
+
+        "GetStones::DragStone"
+            [label="{DragStone}"];
+
+        "GetStones::ReleaseStone"
+            [label="{ReleaseStone|Entry/\l&nbsp;&nbsp;&nbsp;openHand();\l&nbsp;&nbsp;&nbsp;startHandTimer();\l&nbsp;&nbsp;&nbsp;linearDrive(-37d);\l|evHandTimeout()/\l&nbsp;&nbsp;&nbsp;closeHand();\l}"];
+
+        "GetStones::Complete"
+            [label="{Complete|Entry/\l&nbsp;&nbsp;&nbsp;stop();\l}"];
+
+        //
+        // Transitions (Edges)
+        //
+
+        "GetStones::Start" -> "GetStones::StrafeToStone"
+            [label="evSkystoneFound()/\lstrafeToSkystone(10d, 2000);\l"];
+
+        "GetStones::Start" -> "GetStones::StrafeToStone"
+            [label="evStoneFound()/\lstrafeToStone(10d, 2000);\l"];
+
+        "GetStones::Start" -> "GetStones::DriveForwardToStone"
+            [label="evNoStoneFound()/\l"];
+
+        "GetStones::StrafeToStone" -> "GetStones::DriveForwardToStone"
+            [label="evDriveComplete()/\l"];
+
+        "GetStones::StrafeToStone" -> "GetStones::DriveForwardToStone"
+            [label="evDriveTimeout()/\l"];
+
+        "GetStones::DriveForwardToStone" -> "GetStones::GrabStone"
+            [label="evDriveComplete()/\l"];
+
+        "GetStones::DriveForwardToStone" -> "GetStones::GrabStone"
+            [label="evDriveTimeout()/\l"];
+
+        "GetStones::GrabStone" -> "GetStones::BackupToBeginDrag"
+            [label="evHandTimeout()/\l"];
+
+        "GetStones::BackupToBeginDrag" -> "GetStones::RotateTowardBridge"
+            [label="evDriveComplete()\l\[ctxt.isBlueAlliance() == true\]/\lrotate(+90);\l"];
+
+        "GetStones::BackupToBeginDrag" -> "GetStones::RotateTowardBridge"
+            [label="evDriveComplete()\l\[ctxt.isBlueAlliance() == false\]/\lrotate(-90);\l"];
+
+        "GetStones::BackupToBeginDrag" -> "GetStones::RotateTowardBridge"
+            [label="evDriveTimeout()\l\[ctxt.isBlueAlliance() == true\]/\lrotate(+90);\l"];
+
+        "GetStones::BackupToBeginDrag" -> "GetStones::RotateTowardBridge"
+            [label="evDriveTimeout()\l\[ctxt.isBlueAlliance() == false\]/\lrotate(-90);\l"];
+
+        "GetStones::RotateTowardBridge" -> "GetStones::DragStone"
+            [label="evRotationComplete()/\llinearDrive(72d);\l"];
+
+        "GetStones::RotateTowardBridge" -> "GetStones::DragStone"
+            [label="evRotationTimeout()/\llinearDrive(72d);\l"];
+
+        "GetStones::DragStone" -> "GetStones::ReleaseStone"
+            [label="evDriveComplete()/\l"];
+
+        "GetStones::DragStone" -> "GetStones::ReleaseStone"
+            [label="evDriveTimeout()/\l"];
+
+        "GetStones::ReleaseStone" -> "GetStones::Complete"
+            [label="evDriveComplete()/\l"];
+
+        "GetStones::ReleaseStone" -> "GetStones::Complete"
+            [label="evDriveTimeout()/\l"];
+    }
+
+    subgraph cluster_DragFoundation {
+
+        label="DragFoundation";
+
+        //
+        // States (Nodes)
+        //
+
+        "DragFoundation::Start"
+            [label="{Start|Entry/\l&nbsp;&nbsp;&nbsp;openHook();\l&nbsp;&nbsp;&nbsp;closeHand();\l&nbsp;&nbsp;&nbsp;moveCrane(4d);\l&nbsp;&nbsp;&nbsp;linearDrive(26d);\l}"];
+
+        "DragFoundation::GrabFoundation"
+            [label="{GrabFoundation|Entry/\l&nbsp;&nbsp;&nbsp;closeHook();\l&nbsp;&nbsp;&nbsp;startHookTimer();\l}"];
+
+        "DragFoundation::DragFoundation"
+            [label="{DragFoundation|Entry/\l&nbsp;&nbsp;&nbsp;linearDrive(-20d);\l}"];
+
+        "DragFoundation::RotateFoundation"
+            [label="{RotateFoundation}"];
+
+        "DragFoundation::ReleaseFoundation"
+            [label="{ReleaseFoundation|Entry/\l&nbsp;&nbsp;&nbsp;openHook();\l&nbsp;&nbsp;&nbsp;startHookTimer();\l}"];
+
+        "DragFoundation::ReleaseAndCorrectRotation"
+            [label="{ReleaseAndCorrectRotation|Entry/\l&nbsp;&nbsp;&nbsp;openHook();\l&nbsp;&nbsp;&nbsp;startHookTimer();\l}"];
+
+        "DragFoundation::RotateToBackup"
+            [label="{RotateToBackup}"];
+
+        "DragFoundation::BackupToBridge"
+            [label="{BackupToBridge|Entry/\l&nbsp;&nbsp;&nbsp;linearDrive(-32d);\l}"];
+
+        "DragFoundation::Complete"
+            [label="{Complete}"];
+
+        //
+        // Transitions (Edges)
+        //
+
+        "DragFoundation::Start" -> "DragFoundation::GrabFoundation"
+            [label="evDriveComplete()/\l"];
+
+        "DragFoundation::Start" -> "DragFoundation::GrabFoundation"
+            [label="evDriveTimeout()/\l"];
+
+        "DragFoundation::GrabFoundation" -> "DragFoundation::DragFoundation"
+            [label="evHookTimeout()/\l"];
+
+        "DragFoundation::DragFoundation" -> "DragFoundation::RotateFoundation"
+            [label="evDriveComplete()\l\[ctxt.isBlueAlliance() == true\]/\lrotate(+45);\l"];
+
+        "DragFoundation::DragFoundation" -> "DragFoundation::RotateFoundation"
+            [label="evDriveComplete()\l\[ctxt.isBlueAlliance() == false\]/\lrotate(-45);\l"];
+
+        "DragFoundation::DragFoundation" -> "DragFoundation::RotateFoundation"
+            [label="evDriveTimeout()\l\[ctxt.isBlueAlliance() == true\]/\lrotate(+45);\l"];
+
+        "DragFoundation::DragFoundation" -> "DragFoundation::RotateFoundation"
+            [label="evDriveTimeout()\l\[ctxt.isBlueAlliance() == false\]/\lrotate(-45);\l"];
+
+        "DragFoundation::RotateFoundation" -> "DragFoundation::ReleaseAndCorrectRotation"
+            [label="evRotationTimeout()/\l"];
+
+        "DragFoundation::RotateFoundation" -> "DragFoundation::ReleaseFoundation"
+            [label="evRotationComplete()/\l"];
+
+        "DragFoundation::ReleaseFoundation" -> "DragFoundation::RotateToBackup"
+            [label="evHookTimeout()\l\[ctxt.isBlueAlliance() == true\]/\lrotate(+45);\l"];
+
+        "DragFoundation::ReleaseFoundation" -> "DragFoundation::RotateToBackup"
+            [label="evHookTimeout()\l\[ctxt.isBlueAlliance() == false\]/\lrotate(-45);\l"];
+
+        "DragFoundation::ReleaseAndCorrectRotation" -> "DragFoundation::RotateToBackup"
+            [label="evHookTimeout()\l\[ctxt.isBlueAlliance() == true\]/\lrotate(+45+(45-ctxt.getLastRotationAngle()));\l"];
+
+        "DragFoundation::ReleaseAndCorrectRotation" -> "DragFoundation::RotateToBackup"
+            [label="evHookTimeout()\l\[ctxt.isBlueAlliance() == false\]/\lrotate(-45+(-45-ctxt.getLastRotationAngle()));\l"];
+
+        "DragFoundation::RotateToBackup" -> "DragFoundation::BackupToBridge"
+            [label="evRotationComplete()/\l"];
+
+        "DragFoundation::RotateToBackup" -> "DragFoundation::BackupToBridge"
+            [label="evRotationTimeout()/\l"];
+
+        "DragFoundation::BackupToBridge" -> "DragFoundation::Complete"
+            [label="evDriveComplete()/\lstop();\l"];
+
+        "DragFoundation::BackupToBridge" -> "DragFoundation::Complete"
+            [label="evDriveTimeout()/\lstop();\l"];
+    }
+
+}
