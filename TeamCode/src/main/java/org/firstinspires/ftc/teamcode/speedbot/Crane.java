@@ -35,6 +35,8 @@ public class Crane {
     public static final double HAND_CLOSE_POSITION = 0.0d;
     public static final double HAND_OPEN_POSITION = 1.0d;
 
+    private double mHandServoPosition = HAND_OPEN_POSITION;
+
     private Servo mHandServo = null;
 
     private ElapsedTime mRampTimer = new ElapsedTime();
@@ -83,6 +85,7 @@ public class Crane {
         } catch (Exception e) {
             initErrString += "Crane motor err,";
         }
+
         try {
             mHandServo = ahwMap.get(Servo.class, HAND_SERVO_NAME);
         } catch (Exception e) {
@@ -263,19 +266,26 @@ public class Crane {
      * closes the hand
      */
     public void closeHand(){
-        if (mHandServo == null){
-            return;
-        }
-
-        mHandServo.setPosition(HAND_CLOSE_POSITION);
+        setServoPosition(HAND_CLOSE_POSITION);
     }
     /**
      * opens the hand
      */
     public void openHand(){
+        setServoPosition(HAND_OPEN_POSITION);
+    }
+
+    public boolean isHandOpen(){
+        if (mHandServoPosition == HAND_OPEN_POSITION){
+            return true;
+        }
+        return false;
+    }
+    private void setServoPosition(double position){
         if (mHandServo == null){
             return;
         }
-        mHandServo.setPosition(HAND_OPEN_POSITION);
+        mHandServoPosition = position;
+        mHandServo.setPosition(position);
     }
 }

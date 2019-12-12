@@ -1,17 +1,14 @@
 package org.firstinspires.ftc.teamcode.autonomous;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
-import org.firstinspires.ftc.teamcode.autonomous.SkystoneAutonomousOpMode;
-
-@Autonomous(name="RedAllianceAutonomousMode", group="Robot")
+@Autonomous(name="RedAllianceGetStone", group="Robot")
 //@Disabled
-public class RedAllianceAutonomousOpMode extends OpMode {
+public class AutoGetStoneRedAlliance extends OpMode {
     private SkystoneAutonomousOpMode mRealOpmode = null;
-    public RedAllianceAutonomousOpMode(){
-        mRealOpmode = new SkystoneAutonomousOpMode(this, false);
+    public AutoGetStoneRedAlliance(){
+        mRealOpmode = new SkystoneAutonomousOpMode(this, false,AutonomousController.SEQUENCE_GET_STONE);
     }
 
     @Override

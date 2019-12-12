@@ -10,8 +10,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
  */
 public class SpeedBotMecanumDrive extends BaseMecanumDrive {
 
-    public static final double ROTATION_KP = 4.0d;
-    public static final double ROTATION_KI  = 1.0d;
+    public static final double ROTATION_KP = 2.0d;
     /**
      * Approximate number of milliseconds per inch forward and rearward at full power.
      */
@@ -27,10 +26,6 @@ public class SpeedBotMecanumDrive extends BaseMecanumDrive {
         return ROTATION_KP;
     }
 
-    @Override
-    public double getRotationKi() {
-        return ROTATION_KI;
-    }
 
     @Override
     public double getLinearKp() {
@@ -54,6 +49,13 @@ public class SpeedBotMecanumDrive extends BaseMecanumDrive {
     @Override
     protected double getEncoderCountsPerInchRotation() {
         return COUNTS_PER_INCH;
+    }
+
+    public static final double ENCODER_COUNTS_MIN_THRESHOLD_FRACTION = 1/8;
+    @Override
+    protected int getEncoderDriveCountsMinThreshold() {
+        // Return 1/8 of a rotation
+        return (int)Math.round(ENCODER_COUNTS_PER_ROTATION * ENCODER_COUNTS_MIN_THRESHOLD_FRACTION);
     }
 
     /* Initialize standard Hardware interfaces.

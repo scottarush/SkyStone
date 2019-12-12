@@ -68,6 +68,13 @@ public class SpeedBot  {
         catch (Exception e){
             initErrString += e.getMessage();
         }
+        try{
+            mFrontHooks.init(mOpMode.hardwareMap);
+        }
+        catch (Exception e){
+            initErrString += e.getMessage();
+        }
+
         if (initErrString.length() > 0){
             throw new Exception(initErrString);
         }

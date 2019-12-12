@@ -21,8 +21,9 @@ public class FrontHooks {
     public static final String LEFT_HOOK_SERVO_NAME = "lhook";
     public static final String RIGHT_HOOK_SERVO_NAME = "rhook";
 
-    private static final double OPEN_POSITION = 0.0d;
-    private static final double CLOSED_POSITION = 1.0d;
+    private static final double OPEN_POSITION = 1.0d;
+    private static final double CLOSED_POSITION = 0.0d;
+
 
     public FrontHooks(OpMode opMode){
         opMode = mOpMode;

@@ -56,7 +56,7 @@ public abstract class BaseMecanumDrive extends Drivetrain{
     protected DcMotor lrMotor = null;
     protected DcMotor rrMotor = null;
 
-    /**
+     /**
      * Wheel circumference in inches
      **/
     public static final double MECANUM_WHEEL_CIRCUMFERENCE = 12.1211;
@@ -114,6 +114,7 @@ public abstract class BaseMecanumDrive extends Drivetrain{
      * subclasses must implement to return the number of encoder counts per inch of rotation
      */
     protected abstract double getEncoderCountsPerInchRotation();
+
 
     /**
      * private helper function for set target position.  Does nothing if motor pointer is
@@ -205,9 +206,13 @@ public abstract class BaseMecanumDrive extends Drivetrain{
         // Stop and reset the encoders first
         setMotorModes(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         setMotorModes(DcMotor.RunMode.RUN_USING_ENCODER);
+        // Pad the distance with the min threshold distance.  This a hack to get around the
+        // stall problem when using encoders .
+        double paddedDistance = strafeDistance +
+                getEncoderDriveMinThresholdDistance() * STRAFE_ENCODER_DISTANCE_COEFFICIENT;
 
         // Compute the number of encoder counts for each wheel to move the requested distance
-        double scaledDistance = strafeDistance * STRAFE_ENCODER_DISTANCE_COEFFICIENT;
+        double scaledDistance = paddedDistance * STRAFE_ENCODER_DISTANCE_COEFFICIENT;
         int lfDeltaCounts = (int) Math.round(scaledDistance * getEncoderCountsPerInchRotation());
         int lrDeltaCounts = (int) Math.round(-scaledDistance * getEncoderCountsPerInchRotation());
         int rfDeltaCounts = (int) Math.round(-scaledDistance * getEncoderCountsPerInchRotation());
@@ -247,11 +252,15 @@ public abstract class BaseMecanumDrive extends Drivetrain{
         setMotorModes(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         setMotorModes(DcMotor.RunMode.RUN_USING_ENCODER);
 
+        // Pad the distance with the min threshold distance.  This a hack to get around the
+        // stall problem when using encoders .
+        double paddedDistance = linearDistance + getEncoderDriveMinThresholdDistance();
+
         // Compute the number of encoder counts for each wheel to move the requested distanc
-        int lfDeltaCounts = (int) Math.round(linearDistance * getEncoderCountsPerInchRotation());
-        int rfDeltaCounts = (int) Math.round(linearDistance * getEncoderCountsPerInchRotation());
-        int lrDeltaCounts = (int) Math.round(linearDistance * getEncoderCountsPerInchRotation());
-        int rrDeltaCounts = (int) Math.round(linearDistance * getEncoderCountsPerInchRotation());
+        int lfDeltaCounts = (int) Math.round(paddedDistance * getEncoderCountsPerInchRotation());
+        int rfDeltaCounts = (int) Math.round(paddedDistance * getEncoderCountsPerInchRotation());
+        int lrDeltaCounts = (int) Math.round(paddedDistance * getEncoderCountsPerInchRotation());
+        int rrDeltaCounts = (int) Math.round(paddedDistance * getEncoderCountsPerInchRotation());
 
         // Set target counts for each motor to the above
         setTargetPosition(lfMotor,lfDeltaCounts+getCurrentPosition(lfMotor));
@@ -272,25 +281,71 @@ public abstract class BaseMecanumDrive extends Drivetrain{
     }
 
     @Override
-    public boolean isMoving() {
-        if (lfMotor != null){
-            if (lfMotor.isBusy())
-                return true;
+    protected boolean isTargetPositionReached() {
+        if (!isDriveByEncoderSessionActive()){
+            return true;
         }
-        if (rfMotor != null){
-            if (rfMotor.isBusy())
+        if (lfMotor != null){
+            int delta = lfMotor.getTargetPosition() - lfMotor.getCurrentPosition();
+            if (delta < getEncoderDriveCountsMinThreshold()){
                 return true;
+            }
         }
         if (lrMotor != null){
-            if (lrMotor.isBusy())
+            int delta = lrMotor.getTargetPosition() - lrMotor.getCurrentPosition();
+            if (delta < getEncoderDriveCountsMinThreshold()){
                 return true;
+            }
+        }
+        if (rfMotor != null){
+            int delta = rfMotor.getTargetPosition() - rfMotor.getCurrentPosition();
+            if (delta < getEncoderDriveCountsMinThreshold()){
+                return true;
+            }
         }
         if (rrMotor != null){
-            if (rrMotor.isBusy())
+            int delta = rrMotor.getTargetPosition() - rrMotor.getCurrentPosition();
+            if (delta < getEncoderDriveCountsMinThreshold()){
                 return true;
+            }
         }
         return false;
     }
+
+    /**
+     * Must be implemented by subclasses to provide the encoder counts threshold constant
+     * for finishing an encoder drive.
+     */
+    protected abstract int getEncoderDriveCountsMinThreshold();
+
+    /**
+     * s
+     * This value is used to pad driveEncoder calls.  This is a hack, but the Kp algorithm in the Rev
+     * Robotics kit stalls with the SpeedBot
+     */
+    private int getEncoderDriveMinThresholdDistance() {
+        return (int)Math.round(getEncoderCountsPerInchRotation() * getEncoderDriveCountsMinThreshold());
+    }
+
+//    public boolean isMoving() {
+//        if (lfMotor != null){
+//            if (lfMotor.isBusy())
+//                return true;
+//        }
+//        if (rfMotor != null){
+//            if (rfMotor.isBusy())
+//                return true;
+//        }
+//        if (lrMotor != null){
+//            if (lrMotor.isBusy())
+//                return true;
+//        }
+//        if (rrMotor != null){
+//            if (rrMotor.isBusy())
+//                return true;
+//        }
+//        return false;
+//    }
 
     /**
      * This is a helper function that takes input from a dual joy stick and computes the speed

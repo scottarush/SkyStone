@@ -4,13 +4,13 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
-@Autonomous(name="BlueAllianceAutonomousMode", group="Robot")
+@Autonomous(name="BlueAllianceDragFoundation", group="Robot")
 //@Disabled
-public class BlueAllianceAutonomousOpMode extends OpMode{
+public class AutoDragFoundationBlueAlliance extends OpMode{
 
     private SkystoneAutonomousOpMode mRealOpmode = null;
-    public BlueAllianceAutonomousOpMode(){
-        mRealOpmode = new SkystoneAutonomousOpMode(this, true);
+    public AutoDragFoundationBlueAlliance(){
+        mRealOpmode = new SkystoneAutonomousOpMode(this, true,AutonomousController.SEQUENCE_DRAG_FOUNDATION);
     }
 
     @Override

@@ -28,6 +28,8 @@ import statemap.FSMContext;
 import statemap.State;
 
 public class AutonomousController implements ICraneMovementStatusListener {
+    public static final int SEQUENCE_DRAG_FOUNDATION = 0;
+    public static final int SEQUENCE_GET_STONE = 1;
 
     private static boolean TELEMETRY_STATE_LOGGING_ENABLED = true;
 
@@ -37,6 +39,8 @@ public class AutonomousController implements ICraneMovementStatusListener {
     private OpMode opMode = null;
 
     private boolean mBlueAlliance = false;
+
+    private static final double ROTATION_POWER = 0.5d;
 
     /**
      * This reference will be non-null when using the speed bot
@@ -101,6 +105,8 @@ public class AutonomousController implements ICraneMovementStatusListener {
     private static HashMap<String, Method> mTransition_map;
     private LinkedList<String> mTransition_queue;
 
+    private int mSequence = SEQUENCE_DRAG_FOUNDATION;
+
     /**
      * Constructor for use with SpeedBot
      * @param opMode
@@ -108,12 +114,17 @@ public class AutonomousController implements ICraneMovementStatusListener {
      * @param vuforia
      * @param blueAlliance
      */
-    public AutonomousController(final OpMode opMode, SpeedBot speedBot, VuforiaTargetLocator vuforia, boolean blueAlliance) {
+    public AutonomousController(final OpMode opMode,
+                                SpeedBot speedBot,
+                                VuforiaTargetLocator vuforia,
+                                boolean blueAlliance,
+                                int sequence) {
         mSpeedBotAutoSM = new SpeedBotAutoStateMachineContext(this);
         this.opMode = opMode;
         this.mBlueAlliance = blueAlliance;
         mSpeedBot = speedBot;
         mVuforia = vuforia;
+        mSequence = sequence;
 
         mMecanumDrive = speedBot.getDrivetrain();
 
@@ -129,12 +140,13 @@ public class AutonomousController implements ICraneMovementStatusListener {
      * @param vuforia
      * @param blueAlliance
      */
-    public AutonomousController(final OpMode opMode, MecanumGrabberBot grabberBot, VuforiaTargetLocator vuforia, boolean blueAlliance) {
+    public AutonomousController(final OpMode opMode, MecanumGrabberBot grabberBot, VuforiaTargetLocator vuforia, boolean blueAlliance,int sequence) {
         mGrabberBotAutoSM = new GrabberBotAutoStateMachineContext(this);
         this.opMode = opMode;
         this.mBlueAlliance = blueAlliance;
         mGrabberBot = grabberBot;
         mVuforia = vuforia;
+        mSequence = sequence;
 
         mMecanumDrive = mGrabberBot.getDrivetrain();
 
@@ -299,47 +311,41 @@ public class AutonomousController implements ICraneMovementStatusListener {
     /**
      * Called from the OpMode loop until the state machine reaches Success
      */
-     public void loop(){
+    public void loop(){
         // If we haven't started then kick if off.
-         if (mGrabberBotAutoSM != null){
-             if (mGrabberBotAutoSM.getState() == GrabberBotAutoStateMachineContext.GrabberBotAutoStateMachine.Idle){
-                 transition("evStart");
-             }
-         }
-         else if (mSpeedBotAutoSM != null){
-             if (mSpeedBotAutoSM.getState() == SpeedBotAutoStateMachineContext.SpeedBotAutoStateMachine.Idle){
-                 transition("evStart");
-             }
-         }
+        boolean triggerStart = false;
+        if (mGrabberBotAutoSM != null){
+            if (mGrabberBotAutoSM.getState() == GrabberBotAutoStateMachineContext.GrabberBotAutoStateMachine.Idle) {
+                triggerStart = true;
+            }
+        }
+        else if (mSpeedBotAutoSM != null){
+            if (mSpeedBotAutoSM.getState() == SpeedBotAutoStateMachineContext.SpeedBotAutoStateMachine.Idle){
+                triggerStart = true;
+            }
+        }
+        // Start event depends upon the selected sequence
+        if (triggerStart){
+            switch(mSequence) {
+                case SEQUENCE_DRAG_FOUNDATION:
+                    transition("evStartDragFoundation");
+                    break;
+                case SEQUENCE_GET_STONE:
+                    transition("evStartDriveToStones");
+                    break;
+            }
+        }
 
         // Service all the timers in order to trigger any timeout callbacks/events
         serviceTimers();
         // Call loop method on drivetrain to support drive and rotation controls
         mMecanumDrive.loop();
         // Call loop on Crane to service automatic movement
-         mSpeedBot.getCrane().loop();
-     }
-
-    public boolean isAutonomousComplete(){
-         return false;
- /*       if (mGrabberBotAutoSM != null){
-            if (mGrabberBotAutoSM.getState() == GrabberBotAutoStateMachineContext.GrabberBotAutoStateMachine.){
-                transition("evStart");
-            }
-        }
-        else if (mSpeedBotAutoSM != null){
-            if (mSpeedBotAutoSM.getState() == SpeedBotAutoStateMachineContext.SpeedBotAutoStateMachine.Idle){
-                transition("evStart");
-            }
-        }
-**/
+        mSpeedBot.getCrane().loop();
     }
 
 
     private void startDriveByEncoder(double speed, double linearDistance, int timeoutms){
-        if (mMecanumDrive.isMoving()){
-            return;  // Already driving, this is an error, ignore
-        }
         mMecanumDrive.driveEncoder(speed,linearDistance,timeoutms);
     }
 
@@ -489,7 +495,7 @@ public class AutonomousController implements ICraneMovementStatusListener {
      * rotation by degrees.  + is ccw
      */
     public void rotate(int degrees){
-        mMecanumDrive.rotate(degrees);
+        mMecanumDrive.rotate(degrees,ROTATION_POWER);
     }
 
     /**
