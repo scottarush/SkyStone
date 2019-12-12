@@ -42,10 +42,18 @@ public class SpeedBotAutoStateMachineContext
         return;
     }
 
-    public void evDriveFail()
+    public void evDriveTimeout()
     {
-        _transition = "evDriveFail";
-        getState().evDriveFail(this);
+        _transition = "evDriveTimeout";
+        getState().evDriveTimeout(this);
+        _transition = "";
+        return;
+    }
+
+    public void evHandTimeout()
+    {
+        _transition = "evHandTimeout";
+        getState().evHandTimeout(this);
         _transition = "";
         return;
     }
@@ -62,6 +70,22 @@ public class SpeedBotAutoStateMachineContext
     {
         _transition = "evNoStoneFound";
         getState().evNoStoneFound(this);
+        _transition = "";
+        return;
+    }
+
+    public void evRotationComplete()
+    {
+        _transition = "evRotationComplete";
+        getState().evRotationComplete(this);
+        _transition = "";
+        return;
+    }
+
+    public void evRotationTimeout()
+    {
+        _transition = "evRotationTimeout";
+        getState().evRotationTimeout(this);
         _transition = "";
         return;
     }
@@ -167,7 +191,12 @@ public class SpeedBotAutoStateMachineContext
             Default(context);
         }
 
-        protected void evDriveFail(SpeedBotAutoStateMachineContext context)
+        protected void evDriveTimeout(SpeedBotAutoStateMachineContext context)
+        {
+            Default(context);
+        }
+
+        protected void evHandTimeout(SpeedBotAutoStateMachineContext context)
         {
             Default(context);
         }
@@ -178,6 +207,16 @@ public class SpeedBotAutoStateMachineContext
         }
 
         protected void evNoStoneFound(SpeedBotAutoStateMachineContext context)
+        {
+            Default(context);
+        }
+
+        protected void evRotationComplete(SpeedBotAutoStateMachineContext context)
+        {
+            Default(context);
+        }
+
+        protected void evRotationTimeout(SpeedBotAutoStateMachineContext context)
         {
             Default(context);
         }
@@ -406,12 +445,21 @@ public class SpeedBotAutoStateMachineContext
         }
 
         @Override
-        protected void evDriveFail(SpeedBotAutoStateMachineContext context)
+        protected void evDriveTimeout(SpeedBotAutoStateMachineContext context)
         {
+            AutonomousController ctxt = context.getOwner();
 
-            (context.getState()).exit(context);
-            context.setState(GetStones.DriveForwardToStone);
-            (context.getState()).entry(context);
+            AutonomousControllerState endState = context.getState();
+            context.clearState();
+            try
+            {
+                ctxt.checkStoneRecognition();
+            }
+            finally
+            {
+                context.setState(endState);
+            }
+
             return;
         }
 
@@ -498,6 +546,16 @@ public class SpeedBotAutoStateMachineContext
             return;
         }
 
+        @Override
+        protected void evDriveTimeout(SpeedBotAutoStateMachineContext context)
+        {
+
+            (context.getState()).exit(context);
+            context.setState(GetStones.DriveForwardToStone);
+            (context.getState()).entry(context);
+            return;
+        }
+
     //-------------------------------------------------------
     // Member data.
     //
@@ -540,6 +598,16 @@ public class SpeedBotAutoStateMachineContext
             return;
         }
 
+        @Override
+        protected void evDriveTimeout(SpeedBotAutoStateMachineContext context)
+        {
+
+            (context.getState()).exit(context);
+            context.setState(GetStones.GrabStone);
+            (context.getState()).entry(context);
+            return;
+        }
+
     //-------------------------------------------------------
     // Member data.
     //
@@ -569,12 +637,12 @@ public class SpeedBotAutoStateMachineContext
                 AutonomousController ctxt = context.getOwner();
 
             ctxt.closeHand();
-            ctxt.startHookTimer();
+            ctxt.startHandTimer();
             return;
         }
 
         @Override
-        protected void evHookTimeout(SpeedBotAutoStateMachineContext context)
+        protected void evHandTimeout(SpeedBotAutoStateMachineContext context)
         {
 
             (context.getState()).exit(context);
@@ -657,6 +725,48 @@ public class SpeedBotAutoStateMachineContext
             return;
         }
 
+        @Override
+        protected void evDriveTimeout(SpeedBotAutoStateMachineContext context)
+        {
+            AutonomousController ctxt = context.getOwner();
+
+            if (ctxt.isBlueAlliance() == true)
+            {
+                (context.getState()).exit(context);
+                context.clearState();
+                try
+                {
+                    ctxt.rotate(+90);
+                }
+                finally
+                {
+                    context.setState(GetStones.RotateTowardBridge);
+                    (context.getState()).entry(context);
+                }
+
+            }
+            else if (ctxt.isBlueAlliance() == false)
+            {
+                (context.getState()).exit(context);
+                context.clearState();
+                try
+                {
+                    ctxt.rotate(-90);
+                }
+                finally
+                {
+                    context.setState(GetStones.RotateTowardBridge);
+                    (context.getState()).entry(context);
+                }
+
+            }            else
+            {
+                super.evDriveTimeout(context);
+            }
+
+            return;
+        }
+
     //-------------------------------------------------------
     // Member data.
     //
@@ -681,7 +791,27 @@ public class SpeedBotAutoStateMachineContext
         }
 
         @Override
-        protected void evDriveComplete(SpeedBotAutoStateMachineContext context)
+        protected void evRotationComplete(SpeedBotAutoStateMachineContext context)
+        {
+            AutonomousController ctxt = context.getOwner();
+
+            (context.getState()).exit(context);
+            context.clearState();
+            try
+            {
+                ctxt.linearDrive(72d);
+            }
+            finally
+            {
+                context.setState(GetStones.DragStone);
+                (context.getState()).entry(context);
+            }
+
+            return;
+        }
+
+        @Override
+        protected void evRotationTimeout(SpeedBotAutoStateMachineContext context)
         {
             AutonomousController ctxt = context.getOwner();
 
@@ -733,6 +863,16 @@ public class SpeedBotAutoStateMachineContext
             return;
         }
 
+        @Override
+        protected void evDriveTimeout(SpeedBotAutoStateMachineContext context)
+        {
+
+            (context.getState()).exit(context);
+            context.setState(GetStones.ReleaseStone);
+            (context.getState()).entry(context);
+            return;
+        }
+
     //-------------------------------------------------------
     // Member data.
     //
@@ -762,6 +902,7 @@ public class SpeedBotAutoStateMachineContext
                 AutonomousController ctxt = context.getOwner();
 
             ctxt.openHand();
+            ctxt.startHandTimer();
             ctxt.linearDrive(-37d);
             return;
         }
@@ -773,6 +914,35 @@ public class SpeedBotAutoStateMachineContext
             (context.getState()).exit(context);
             context.setState(GetStones.Complete);
             (context.getState()).entry(context);
+            return;
+        }
+
+        @Override
+        protected void evDriveTimeout(SpeedBotAutoStateMachineContext context)
+        {
+
+            (context.getState()).exit(context);
+            context.setState(GetStones.Complete);
+            (context.getState()).entry(context);
+            return;
+        }
+
+        @Override
+        protected void evHandTimeout(SpeedBotAutoStateMachineContext context)
+        {
+            AutonomousController ctxt = context.getOwner();
+
+            AutonomousControllerState endState = context.getState();
+            context.clearState();
+            try
+            {
+                ctxt.closeHand();
+            }
+            finally
+            {
+                context.setState(endState);
+            }
+
             return;
         }
 
@@ -837,16 +1007,20 @@ public class SpeedBotAutoStateMachineContext
             new DragFoundation_Start("DragFoundation.Start", 10);
         public static final DragFoundation_GrabFoundation GrabFoundation =
             new DragFoundation_GrabFoundation("DragFoundation.GrabFoundation", 11);
-        public static final DragFoundation_DragFoundationBack DragFoundationBack =
-            new DragFoundation_DragFoundationBack("DragFoundation.DragFoundationBack", 12);
+        public static final DragFoundation_DragFoundation DragFoundation =
+            new DragFoundation_DragFoundation("DragFoundation.DragFoundation", 12);
         public static final DragFoundation_RotateFoundation RotateFoundation =
             new DragFoundation_RotateFoundation("DragFoundation.RotateFoundation", 13);
+        public static final DragFoundation_ReleaseFoundation ReleaseFoundation =
+            new DragFoundation_ReleaseFoundation("DragFoundation.ReleaseFoundation", 14);
+        public static final DragFoundation_ReleaseAndCorrectRotation ReleaseAndCorrectRotation =
+            new DragFoundation_ReleaseAndCorrectRotation("DragFoundation.ReleaseAndCorrectRotation", 15);
         public static final DragFoundation_RotateToBackup RotateToBackup =
-            new DragFoundation_RotateToBackup("DragFoundation.RotateToBackup", 14);
+            new DragFoundation_RotateToBackup("DragFoundation.RotateToBackup", 16);
         public static final DragFoundation_BackupToBridge BackupToBridge =
-            new DragFoundation_BackupToBridge("DragFoundation.BackupToBridge", 15);
+            new DragFoundation_BackupToBridge("DragFoundation.BackupToBridge", 17);
         public static final DragFoundation_Complete Complete =
-            new DragFoundation_Complete("DragFoundation.Complete", 16);
+            new DragFoundation_Complete("DragFoundation.Complete", 18);
     }
 
     protected static class DragFoundation_Default
@@ -890,13 +1064,24 @@ public class SpeedBotAutoStateMachineContext
                 AutonomousController ctxt = context.getOwner();
 
             ctxt.openHook();
-            ctxt.moveCrane(2d);
+            ctxt.closeHand();
+            ctxt.moveCrane(4d);
             ctxt.linearDrive(26d);
             return;
         }
 
         @Override
         protected void evDriveComplete(SpeedBotAutoStateMachineContext context)
+        {
+
+            (context.getState()).exit(context);
+            context.setState(DragFoundation.GrabFoundation);
+            (context.getState()).entry(context);
+            return;
+        }
+
+        @Override
+        protected void evDriveTimeout(SpeedBotAutoStateMachineContext context)
         {
 
             (context.getState()).exit(context);
@@ -943,7 +1128,7 @@ public class SpeedBotAutoStateMachineContext
         {
 
             (context.getState()).exit(context);
-            context.setState(DragFoundation.DragFoundationBack);
+            context.setState(DragFoundation.DragFoundation);
             (context.getState()).entry(context);
             return;
         }
@@ -959,14 +1144,14 @@ public class SpeedBotAutoStateMachineContext
         private static final long serialVersionUID = 1L;
     }
 
-    private static final class DragFoundation_DragFoundationBack
+    private static final class DragFoundation_DragFoundation
         extends DragFoundation_Default
     {
     //-------------------------------------------------------
     // Member methods.
     //
 
-        private DragFoundation_DragFoundationBack(String name, int id)
+        private DragFoundation_DragFoundation(String name, int id)
         {
             super (name, id);
         }
@@ -991,7 +1176,7 @@ public class SpeedBotAutoStateMachineContext
                 context.clearState();
                 try
                 {
-                    ctxt.rotate(+20);
+                    ctxt.rotate(+45);
                 }
                 finally
                 {
@@ -1006,7 +1191,7 @@ public class SpeedBotAutoStateMachineContext
                 context.clearState();
                 try
                 {
-                    ctxt.rotate(-20);
+                    ctxt.rotate(-45);
                 }
                 finally
                 {
@@ -1017,6 +1202,48 @@ public class SpeedBotAutoStateMachineContext
             }            else
             {
                 super.evDriveComplete(context);
+            }
+
+            return;
+        }
+
+        @Override
+        protected void evDriveTimeout(SpeedBotAutoStateMachineContext context)
+        {
+            AutonomousController ctxt = context.getOwner();
+
+            if (ctxt.isBlueAlliance() == true)
+            {
+                (context.getState()).exit(context);
+                context.clearState();
+                try
+                {
+                    ctxt.rotate(+45);
+                }
+                finally
+                {
+                    context.setState(DragFoundation.RotateFoundation);
+                    (context.getState()).entry(context);
+                }
+
+            }
+            else if (ctxt.isBlueAlliance() == false)
+            {
+                (context.getState()).exit(context);
+                context.clearState();
+                try
+                {
+                    ctxt.rotate(-45);
+                }
+                finally
+                {
+                    context.setState(DragFoundation.RotateFoundation);
+                    (context.getState()).entry(context);
+                }
+
+            }            else
+            {
+                super.evDriveTimeout(context);
             }
 
             return;
@@ -1046,22 +1273,55 @@ public class SpeedBotAutoStateMachineContext
         }
 
         @Override
-        protected void evDriveComplete(SpeedBotAutoStateMachineContext context)
+        protected void evRotationComplete(SpeedBotAutoStateMachineContext context)
         {
-            AutonomousController ctxt = context.getOwner();
 
-            AutonomousControllerState endState = context.getState();
-            context.clearState();
-            try
-            {
-                ctxt.openHook();
-                ctxt.startHookTimer();
-            }
-            finally
-            {
-                context.setState(endState);
-            }
+            (context.getState()).exit(context);
+            context.setState(DragFoundation.ReleaseFoundation);
+            (context.getState()).entry(context);
+            return;
+        }
 
+        @Override
+        protected void evRotationTimeout(SpeedBotAutoStateMachineContext context)
+        {
+
+            (context.getState()).exit(context);
+            context.setState(DragFoundation.ReleaseAndCorrectRotation);
+            (context.getState()).entry(context);
+            return;
+        }
+
+    //-------------------------------------------------------
+    // Member data.
+    //
+
+        //---------------------------------------------------
+        // Constants.
+        //
+
+        private static final long serialVersionUID = 1L;
+    }
+
+    private static final class DragFoundation_ReleaseFoundation
+        extends DragFoundation_Default
+    {
+    //-------------------------------------------------------
+    // Member methods.
+    //
+
+        private DragFoundation_ReleaseFoundation(String name, int id)
+        {
+            super (name, id);
+        }
+
+        @Override
+        protected void entry(SpeedBotAutoStateMachineContext context)
+            {
+                AutonomousController ctxt = context.getOwner();
+
+            ctxt.openHook();
+            ctxt.startHookTimer();
             return;
         }
 
@@ -1076,7 +1336,7 @@ public class SpeedBotAutoStateMachineContext
                 context.clearState();
                 try
                 {
-                    ctxt.rotate(+70);
+                    ctxt.rotate(+45);
                 }
                 finally
                 {
@@ -1091,7 +1351,82 @@ public class SpeedBotAutoStateMachineContext
                 context.clearState();
                 try
                 {
-                    ctxt.rotate(-70);
+                    ctxt.rotate(-45);
+                }
+                finally
+                {
+                    context.setState(DragFoundation.RotateToBackup);
+                    (context.getState()).entry(context);
+                }
+
+            }            else
+            {
+                super.evHookTimeout(context);
+            }
+
+            return;
+        }
+
+    //-------------------------------------------------------
+    // Member data.
+    //
+
+        //---------------------------------------------------
+        // Constants.
+        //
+
+        private static final long serialVersionUID = 1L;
+    }
+
+    private static final class DragFoundation_ReleaseAndCorrectRotation
+        extends DragFoundation_Default
+    {
+    //-------------------------------------------------------
+    // Member methods.
+    //
+
+        private DragFoundation_ReleaseAndCorrectRotation(String name, int id)
+        {
+            super (name, id);
+        }
+
+        @Override
+        protected void entry(SpeedBotAutoStateMachineContext context)
+            {
+                AutonomousController ctxt = context.getOwner();
+
+            ctxt.openHook();
+            ctxt.startHookTimer();
+            return;
+        }
+
+        @Override
+        protected void evHookTimeout(SpeedBotAutoStateMachineContext context)
+        {
+            AutonomousController ctxt = context.getOwner();
+
+            if (ctxt.isBlueAlliance() == true)
+            {
+                (context.getState()).exit(context);
+                context.clearState();
+                try
+                {
+                    ctxt.rotate(+45+(45-ctxt.getLastRotationAngle()));
+                }
+                finally
+                {
+                    context.setState(DragFoundation.RotateToBackup);
+                    (context.getState()).entry(context);
+                }
+
+            }
+            else if (ctxt.isBlueAlliance() == false)
+            {
+                (context.getState()).exit(context);
+                context.clearState();
+                try
+                {
+                    ctxt.rotate(-45+(-45-ctxt.getLastRotationAngle()));
                 }
                 finally
                 {
@@ -1131,22 +1466,22 @@ public class SpeedBotAutoStateMachineContext
         }
 
         @Override
-        protected void evDriveComplete(SpeedBotAutoStateMachineContext context)
+        protected void evRotationComplete(SpeedBotAutoStateMachineContext context)
         {
-            AutonomousController ctxt = context.getOwner();
 
             (context.getState()).exit(context);
-            context.clearState();
-            try
-            {
-                ctxt.linearDrive(-32d);
-            }
-            finally
-            {
-                context.setState(DragFoundation.BackupToBridge);
-                (context.getState()).entry(context);
-            }
+            context.setState(DragFoundation.BackupToBridge);
+            (context.getState()).entry(context);
+            return;
+        }
 
+        @Override
+        protected void evRotationTimeout(SpeedBotAutoStateMachineContext context)
+        {
+
+            (context.getState()).exit(context);
+            context.setState(DragFoundation.BackupToBridge);
+            (context.getState()).entry(context);
             return;
         }
 
@@ -1174,7 +1509,36 @@ public class SpeedBotAutoStateMachineContext
         }
 
         @Override
+        protected void entry(SpeedBotAutoStateMachineContext context)
+            {
+                AutonomousController ctxt = context.getOwner();
+
+            ctxt.linearDrive(-32d);
+            return;
+        }
+
+        @Override
         protected void evDriveComplete(SpeedBotAutoStateMachineContext context)
+        {
+            AutonomousController ctxt = context.getOwner();
+
+            (context.getState()).exit(context);
+            context.clearState();
+            try
+            {
+                ctxt.stop();
+            }
+            finally
+            {
+                context.setState(DragFoundation.Complete);
+                (context.getState()).entry(context);
+            }
+
+            return;
+        }
+
+        @Override
+        protected void evDriveTimeout(SpeedBotAutoStateMachineContext context)
         {
             AutonomousController ctxt = context.getOwner();
 

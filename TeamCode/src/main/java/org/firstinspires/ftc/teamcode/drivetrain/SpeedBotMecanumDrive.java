@@ -10,7 +10,6 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
  */
 public class SpeedBotMecanumDrive extends BaseMecanumDrive {
 
-    public static final double ROTATION_KP = 2.0d;
     /**
      * Approximate number of milliseconds per inch forward and rearward at full power.
      */
@@ -23,9 +22,13 @@ public class SpeedBotMecanumDrive extends BaseMecanumDrive {
 
     @Override
     public double getRotationKp() {
-        return ROTATION_KP;
+        return 5.0d;
     }
 
+    @Override
+    protected double getMinRotationCompleteAngle() {
+        return 3;
+    }
 
     @Override
     public double getLinearKp() {
@@ -35,11 +38,12 @@ public class SpeedBotMecanumDrive extends BaseMecanumDrive {
     /**
      * Core hex motor from the specification
      */
-    public static final int ENCODER_COUNTS_PER_ROTATION = 288;
+    public static final int ENCODER_COUNTS_PER_MOTOR_SHAFT_ROTATION = 288;
     /**
      * Number of counts per inch of direct wheel movement.
      **/
-    public static final double COUNTS_PER_INCH = ENCODER_COUNTS_PER_ROTATION / (4 * MECANUM_WHEEL_CIRCUMFERENCE);
+    public static final double COUNTS_PER_INCH = ENCODER_COUNTS_PER_MOTOR_SHAFT_ROTATION /
+            (4 * MECANUM_WHEEL_CIRCUMFERENCE);
 
 
     public SpeedBotMecanumDrive(OpMode opMode){
@@ -51,11 +55,13 @@ public class SpeedBotMecanumDrive extends BaseMecanumDrive {
         return COUNTS_PER_INCH;
     }
 
-    public static final double ENCODER_COUNTS_MIN_THRESHOLD_FRACTION = 1/8;
+    public static final double ENCODER_COUNTS_MIN_THRESHOLD_WHEEL_ROTATION_FRACTION = 0.15d;
     @Override
     protected int getEncoderDriveCountsMinThreshold() {
-        // Return 1/8 of a rotation
-        return (int)Math.round(ENCODER_COUNTS_PER_ROTATION * ENCODER_COUNTS_MIN_THRESHOLD_FRACTION);
+        // Return a fraction of a wheel rotation in counts
+        return (int)Math.round(COUNTS_PER_INCH *
+                ENCODER_COUNTS_MIN_THRESHOLD_WHEEL_ROTATION_FRACTION *
+                MECANUM_WHEEL_CIRCUMFERENCE);
     }
 
     /* Initialize standard Hardware interfaces.
@@ -70,7 +76,7 @@ public class SpeedBotMecanumDrive extends BaseMecanumDrive {
         DcMotor motor = null;
         try {
             motor = tryMapMotor("lf");
-//            lfMotor = new WrappedDCMotor(motor,ENCODER_COUNTS_PER_ROTATION, PIMOTOR_KP, PIMOTOR_KI);
+//            lfMotor = new WrappedDCMotor(motor,ENCODER_COUNTS_PER_MOTOR_SHAFT_ROTATION, PIMOTOR_KP, PIMOTOR_KI);
             lfMotor = motor;
             lfMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         }
@@ -79,7 +85,7 @@ public class SpeedBotMecanumDrive extends BaseMecanumDrive {
         }
         try {
             motor = tryMapMotor("rf");
-//            rfMotor = new WrappedDCMotor(motor,ENCODER_COUNTS_PER_ROTATION, PIMOTOR_KP, PIMOTOR_KI);
+//            rfMotor = new WrappedDCMotor(motor,ENCODER_COUNTS_PER_MOTOR_SHAFT_ROTATION, PIMOTOR_KP, PIMOTOR_KI);
             rfMotor = motor;
         }
         catch(Exception e){
@@ -87,7 +93,7 @@ public class SpeedBotMecanumDrive extends BaseMecanumDrive {
         }
         try {
             motor = tryMapMotor("lr");
-//            lrMotor = new WrappedDCMotor(motor,ENCODER_COUNTS_PER_ROTATION, PIMOTOR_KP, PIMOTOR_KI);
+//            lrMotor = new WrappedDCMotor(motor,ENCODER_COUNTS_PER_MOTOR_SHAFT_ROTATION, PIMOTOR_KP, PIMOTOR_KI);
             lrMotor = motor;
             lrMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         }
@@ -96,7 +102,7 @@ public class SpeedBotMecanumDrive extends BaseMecanumDrive {
         }
         try {
             motor = tryMapMotor("rr");
-//            rrMotor = new WrappedDCMotor(motor,ENCODER_COUNTS_PER_ROTATION, PIMOTOR_KP, PIMOTOR_KI);
+//            rrMotor = new WrappedDCMotor(motor,ENCODER_COUNTS_PER_MOTOR_SHAFT_ROTATION, PIMOTOR_KP, PIMOTOR_KI);
             rrMotor = motor;
         }
         catch(Exception e){
@@ -114,8 +120,8 @@ public class SpeedBotMecanumDrive extends BaseMecanumDrive {
         // Set all motors to zero power
         setPower(0, 0, 0, 0);
 
-        // Set all motors to run with encoders.
-        setMotorModes(DcMotor.RunMode.RUN_USING_ENCODER);
+        // Set all motors to run without encoders for maximum power
+        setMotorModes(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         if (motorInitError.length() > 0){
             throw new Exception("Motor initIMU errs: '"+motorInitError+"'");

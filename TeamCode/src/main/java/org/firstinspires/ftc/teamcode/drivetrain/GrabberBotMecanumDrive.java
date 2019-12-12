@@ -31,6 +31,10 @@ public class GrabberBotMecanumDrive extends BaseMecanumDrive {
         return ROTATION_KP;
     }
 
+    @Override
+    protected double getMinRotationCompleteAngle() {
+        return 1;
+    }
 
     @Override
     public double getLinearKp() {
@@ -64,7 +68,7 @@ public class GrabberBotMecanumDrive extends BaseMecanumDrive {
         DcMotor motor = null;
         try {
             motor = tryMapMotor("lf");
- //           lfMotor = new WrappedDCMotor(motor,ENCODER_COUNTS_PER_ROTATION, PIMOTOR_KP, PIMOTOR_KI);
+ //           lfMotor = new WrappedDCMotor(motor,ENCODER_COUNTS_PER_MOTOR_SHAFT_ROTATION, PIMOTOR_KP, PIMOTOR_KI);
             lfMotor = motor;
         }
         catch (Exception e){
@@ -72,7 +76,7 @@ public class GrabberBotMecanumDrive extends BaseMecanumDrive {
         }
         try {
             motor = tryMapMotor("rf");
-  //          rfMotor = new WrappedDCMotor(motor,ENCODER_COUNTS_PER_ROTATION, PIMOTOR_KP, PIMOTOR_KI);
+  //          rfMotor = new WrappedDCMotor(motor,ENCODER_COUNTS_PER_MOTOR_SHAFT_ROTATION, PIMOTOR_KP, PIMOTOR_KI);
             rfMotor = motor;
         }
         catch(Exception e){
@@ -80,7 +84,7 @@ public class GrabberBotMecanumDrive extends BaseMecanumDrive {
         }
         try {
             motor = tryMapMotor("lr");
-//            lrMotor = new WrappedDCMotor(motor,ENCODER_COUNTS_PER_ROTATION, PIMOTOR_KP, PIMOTOR_KI);
+//            lrMotor = new WrappedDCMotor(motor,ENCODER_COUNTS_PER_MOTOR_SHAFT_ROTATION, PIMOTOR_KP, PIMOTOR_KI);
             lrMotor = motor;
             lrMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         }
@@ -89,7 +93,7 @@ public class GrabberBotMecanumDrive extends BaseMecanumDrive {
         }
         try {
             motor = tryMapMotor("rr");
-//            rrMotor = new WrappedDCMotor(motor,ENCODER_COUNTS_PER_ROTATION, PIMOTOR_KP, PIMOTOR_KI);
+//            rrMotor = new WrappedDCMotor(motor,ENCODER_COUNTS_PER_MOTOR_SHAFT_ROTATION, PIMOTOR_KP, PIMOTOR_KI);
             rrMotor = motor;
             rrMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         }

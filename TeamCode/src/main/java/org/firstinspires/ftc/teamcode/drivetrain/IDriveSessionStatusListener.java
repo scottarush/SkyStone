@@ -5,7 +5,7 @@ package org.firstinspires.ftc.teamcode.drivetrain;
  */
 public interface IDriveSessionStatusListener {
     /** Drive session completed successfully. **/
-    void driveComplete();
+    void driveComplete(double distance);
     /** Drive session failed. **/
-    void driveByEncoderTimeoutFailure();
+    void driveByEncoderTimeoutFailure(double distance);
 }

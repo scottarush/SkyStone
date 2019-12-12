@@ -26,7 +26,7 @@
         }
     {
         evDriveComplete nil { checkStoneRecognition(); }
-        evDriveFail DriveForwardToStone {}
+        evDriveTimeout nil {  checkStoneRecognition(); }
         // Triggered by checkStoneRecognition if we found a Skystone
         evSkystoneFound StrafeToStone { strafeToSkystone(10d,2000); }
         // Triggered by checkStoneRecognition if we found a Skystone
@@ -40,6 +40,7 @@
          }
     {
         evDriveComplete DriveForwardToStone {}
+        evDriveTimeout DriveForwardToStone {}
     }
 
     DriveForwardToStone
@@ -48,6 +49,8 @@
         }
     {
         evDriveComplete GrabStone {}
+        // Give it a try anyway
+        evDriveTimeout GrabStone {}
     }
     /*
     * Stop after drive forward and check to see if we are at foundation.
@@ -56,10 +59,10 @@
         Entry{
             // close the hook and wait for it to stop so that we grab the block
             closeHand();
-            startHookTimer();
+            startHandTimer();
          }
     {
-        evHookTimeout BackupToBeginDrag { }
+        evHandTimeout BackupToBeginDrag { }
     }
     /*
     * Backup to begin the drag
@@ -77,6 +80,16 @@
             // Rotate CW toward the bridege
             rotate(-90);
         }
+        // Try it anyway
+        evDriveTimeout [ctxt.isBlueAlliance() == true] RotateTowardBridge {
+            // Rotate CCW toward the bridge
+            rotate(+90);
+        }
+        // Try it anyway
+        evDriveTimeout [ctxt.isBlueAlliance() == false] RotateTowardBridge {
+            // Rotate CW toward the bridege
+            rotate(-90);
+        }
     }
 
     /*
@@ -84,7 +97,9 @@
     */
     RotateTowardBridge
     {
-        evDriveComplete DragStone  { linearDrive(72d); }
+        evRotationComplete DragStone  { linearDrive(72d); }
+        // Try it anyway even if rotation is off.
+        evRotationTimeout DragStone  { linearDrive(72d); }
     }
     /*
     * Drags the stone back under the bridge
@@ -92,6 +107,7 @@
     DragStone
     {
         evDriveComplete ReleaseStone {}
+        evDriveTimeout ReleaseStone {}
     }
 
     /*
@@ -100,15 +116,17 @@
     ReleaseStone
         Entry {
             openHand();
+            startHandTimer();
             //  backup to the line
             linearDrive(-37d);
         }
     {
-
+        evHandTimeout nil { closeHand(); }
         evDriveComplete Complete { }
+        evDriveTimeout Complete { }
     }
     /*
-    * Final success state
+    * Final state
     */
     Complete
         Entry{
@@ -127,13 +145,16 @@
     Start
         Entry {
             openHook();
-            // Raise crane by 2 inches
-            moveCrane(2d);
+            closeHand();
+            // Raise crane by 4 inches to get clearance for dragging
+            moveCrane(4d);
             // start drive forward
             linearDrive(26d);
         }
     {
         evDriveComplete GrabFoundation {  }
+        // Give it a college try on timeout, but we may not have hooked it
+        evDriveTimeout GrabFoundation { }
      }
 
     GrabFoundation
@@ -142,48 +163,88 @@
             startHookTimer();
         }
     {
-        evHookTimeout DragFoundationBack {  }
+        evHookTimeout DragFoundation {  }
     }
 
-    DragFoundationBack
+DragFoundation
         Entry {
             linearDrive(-20d);
         }
     {
         evDriveComplete [ctxt.isBlueAlliance() == true] RotateFoundation {
             // Rotate CCW toward the blue line
-            rotate(+20);
-    }
+            rotate(+45);
+         }
         evDriveComplete [ctxt.isBlueAlliance() == false] RotateFoundation {
             // Rotate CW toward the red line
-            rotate(-20);
+            rotate(-45);
+        }
+        evDriveTimeout [ctxt.isBlueAlliance() == true] RotateFoundation {
+            // Rotate CCW toward the blue line
+            rotate(+45);
+        }
+        evDriveTimeout [ctxt.isBlueAlliance() == false] RotateFoundation {
+            // Rotate CW toward the red line
+            rotate(-45);
         }
     }
-
     RotateFoundation
     {
-        evDriveComplete nil {
+        // May not have rotated far enough release and try to correct rotation for backup
+        evRotationTimeout ReleaseAndCorrectRotation { }
+        // Rotation was good so go to release
+        evRotationComplete ReleaseFoundation { }
+    }
+
+    ReleaseFoundation
+        Entry {
             openHook();
             startHookTimer();
         }
-        evHookTimeout [ctxt.isBlueAlliance() == true] RotateToBackup {
+    {
+         evHookTimeout [ctxt.isBlueAlliance() == true] RotateToBackup {
             // Rotate CCW to line up backwards to the skybridge
-            rotate(+70);
+            rotate(+45);
         }
         evHookTimeout [ctxt.isBlueAlliance() == false] RotateToBackup {
             // Rotate CW to line up backwards to the skybridge
-            rotate(-70);
+            rotate(-45);
+        }
+    }
+    /**
+    * Corrects rotation error if we weren't able to rotate the foundation by the full amount
+    */
+    ReleaseAndCorrectRotation
+    Entry{
+        openHook();
+        startHookTimer();
+    }
+    {
+        evHookTimeout [ctxt.isBlueAlliance() == true] RotateToBackup {
+            // Rotate CCW to line up backwards to the skybridge adding the error from not being
+            // able to rotate the foundation as far
+            rotate(+45+(45-ctxt.getLastRotationAngle()));
+        }
+        evHookTimeout [ctxt.isBlueAlliance() == false] RotateToBackup {
+            // Rotate CW to line up backwards to the skybridge
+            rotate(-45+(-45-ctxt.getLastRotationAngle()));
         }
     }
 
     RotateToBackup
     {
-        evDriveComplete BackupToBridge { linearDrive(-32d); }
+        evRotationComplete BackupToBridge {  }
+        // May not have completed but give it a try anyway
+        evRotationTimeout BackupToBridge { }
 
     }
     BackupToBridge
+    Entry {
+        linearDrive(-32d);
+    }
     {
         evDriveComplete Complete { stop(); }
+        evDriveTimeout Complete { stop(); }
     }
 
     Complete
