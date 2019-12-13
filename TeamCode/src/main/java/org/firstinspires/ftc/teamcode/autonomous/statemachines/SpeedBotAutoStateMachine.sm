@@ -9,6 +9,7 @@
     {
         evStartDriveToStones jump(GetStones::Start) { }
         evStartDragFoundation jump(DragFoundation::Start) { }
+ //       evStartBridgePark jump(BridgePark::Start) { }
     }
 %%
 
@@ -25,7 +26,7 @@
             // linearDrive(22d)
             // Hack it for States just drive up to the quarry.  checkStoneRecognition
             // will automatically trigger evNoStoneFound
-            linearDrive(32d);
+            linearDrive(28d);
         }
     {
         evDriveComplete nil { checkStoneRecognition(); }
@@ -48,7 +49,7 @@
 
     DriveForwardToStone
         Entry{
-            linearDrive(10d);
+            linearDriveSlow(8d);
         }
     {
         evDriveComplete GrabStone {}
@@ -72,7 +73,7 @@
     */
     BackupToBeginDrag
         Entry{
-            linearDrive(-17d);
+            linearDrive(-20d);
          }
     {
         evDriveComplete [ctxt.isBlueAlliance() == true] RotateTowardBridge {
@@ -111,7 +112,7 @@
     */
     DragStone
         Entry {
-            linearDrive(56d);
+            linearDrive(62d);
         }
     {
         evDriveComplete ReleaseStone {}
@@ -120,7 +121,7 @@
     ReleaseStone
         Entry {
             openHand();
-            linearDrive(-6d);
+            linearDriveSlow(-6d);
         }
     {
         evDriveComplete BackupToBridgeLine {  }
@@ -134,7 +135,7 @@
         Entry {
             //  backup to the line
             closeHand();
-            linearDrive(-12d);
+            linearDriveSlow(-12d);
         }
     {
        evDriveComplete [ctxt.isBlueAlliance() == true] RotateToWall {
@@ -160,7 +161,7 @@
 
     BackupToWall
         Entry{
-        linearDrive(-15d);
+        linearDriveSlow(-15d);
     }
     {
         evDriveComplete Complete { }
@@ -198,7 +199,7 @@
     DriveToFoundation
         Entry{
             // start drive forward
-            linearDrive(26d);
+            linearDrive(32d);
     }
     {
        evDriveComplete GrabFoundation {  }
@@ -217,24 +218,24 @@
 
     DragFoundation
         Entry {
-            linearDrive(-20d);
+            linearDrive(-26d);
         }
     {
         evDriveComplete [ctxt.isBlueAlliance() == true] RotateFoundation {
             // Rotate CCW toward the blue line
-            rotate(+45);
+            rotate(+55);
          }
         evDriveComplete [ctxt.isBlueAlliance() == false] RotateFoundation {
             // Rotate CW toward the red line
-            rotate(-45);
+            rotate(-55);
         }
         evDriveTimeout [ctxt.isBlueAlliance() == true] RotateFoundation {
             // Rotate CCW toward the blue line
-            rotate(+45);
+            rotate(+55);
         }
         evDriveTimeout [ctxt.isBlueAlliance() == false] RotateFoundation {
             // Rotate CW toward the red line
-            rotate(-45);
+            rotate(-55);
         }
     }
     RotateFoundation
@@ -253,11 +254,11 @@
     {
          evHookTimeout [ctxt.isBlueAlliance() == true] RotateToBackup {
             // Rotate CCW to line up backwards to the skybridge
-            rotate(+45);
+            rotate(+40);
         }
         evHookTimeout [ctxt.isBlueAlliance() == false] RotateToBackup {
             // Rotate CW to line up backwards to the skybridge
-            rotate(-45);
+            rotate(-40);
         }
     }
     /**
@@ -272,11 +273,11 @@
         evHookTimeout [ctxt.isBlueAlliance() == true] RotateToBackup {
             // Rotate CCW to line up backwards to the skybridge adding the error from not being
             // able to rotate the foundation as far
-            rotate(+45+(45-ctxt.getLastRotationAngle()));
+            rotate(+55+(40-ctxt.getLastRotationAngle()));
         }
         evHookTimeout [ctxt.isBlueAlliance() == false] RotateToBackup {
             // Rotate CW to line up backwards to the skybridge
-            rotate(-45+(-45-ctxt.getLastRotationAngle()));
+            rotate(-55+(-40-ctxt.getLastRotationAngle()));
         }
     }
 
@@ -301,7 +302,7 @@
 
     BackupToBridge
     Entry {
-        linearDrive(-32d);
+        linearDrive(-44d);
      }
     {
         evDriveComplete Complete {  }
