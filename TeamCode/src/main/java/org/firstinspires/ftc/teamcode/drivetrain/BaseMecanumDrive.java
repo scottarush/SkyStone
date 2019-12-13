@@ -266,8 +266,8 @@ public abstract class BaseMecanumDrive extends Drivetrain{
         mWasLastMovementStrafe = false;
         // Stop and reset the encoders first
         setMotorModes(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        // Run without encoders to go as fast as possible.
-        setMotorModes(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        // Run with encoders to try to stay straight
+        setMotorModes(DcMotor.RunMode.RUN_USING_ENCODER);
 
         // Pad the distance with the min threshold distance.  This a hack to get around the
         // stall problem when using encoders .
@@ -295,8 +295,9 @@ public abstract class BaseMecanumDrive extends Drivetrain{
         double aspeed = Math.abs(speed);
         if (aspeed > 1.0)
             aspeed = 1.0;
-//        aspeed = Math.signum(linearDistance) * aspeed;
         setPower(aspeed, aspeed, aspeed, aspeed);
+ //       mOpMode.telemetry.addData("driveEncoder:","lf=%d aspeeed=%1.1f",lfDeltaCounts,aspeed);
+ //       mOpMode.telemetry.update();
     }
 
     @Override
@@ -472,7 +473,7 @@ public abstract class BaseMecanumDrive extends Drivetrain{
             return 0d;
         }
         // disables PID control in case it was set before.
-        setMotorModes(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+ //       setMotorModes(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         double rotpower = super.checkRotation();
         if (Math.abs(rotpower) > 1.0d) {
