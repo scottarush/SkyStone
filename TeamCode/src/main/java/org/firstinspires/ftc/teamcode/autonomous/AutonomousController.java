@@ -98,12 +98,20 @@ public class AutonomousController implements ICraneMovementStatusListener {
     private OneShotTimer mHandTimer = new OneShotTimer(1000, new OneShotTimer.IOneShotTimerCallback() {
         @Override
         public void timeoutComplete() {
-            if (mSpeedBot != null){
-                transition("evHandTimeout");
-            }
-
+            transition("evHandTimeout");
         }
     });
+
+    /**
+     * 1/2 second general delay timer.
+     */
+    private OneShotTimer mDelayTimer = new OneShotTimer(500, new OneShotTimer.IOneShotTimerCallback() {
+        @Override
+        public void timeoutComplete() {
+            transition("evDelayTimeout");
+        }
+    });
+
 
 
     private VuforiaTargetLocator mVuforia = null;
@@ -168,6 +176,7 @@ public class AutonomousController implements ICraneMovementStatusListener {
         // Add all the timers to the state timers so that they get service each loop
         mStateTimers.add(mHookTimer);
         mStateTimers.add(mGrabberTimer);
+        mStateTimers.add(mDelayTimer);
 
         // Now do common initializations
         init();
@@ -399,7 +408,12 @@ public class AutonomousController implements ICraneMovementStatusListener {
     public void linearDrive(double distance){
         mMecanumDrive.driveEncoder(1.0d,distance,3000);
     }
-
+    /**
+     * Strafes either right + or left -
+     */
+    public void strafeDrive(double distance){
+        mMecanumDrive.strafeEncoder(1.0d,distance,2000);
+    }
     /**
      * Reads the camera and looks for a skystone.
      * Triggers evStoneFound if a stone is found.
@@ -558,6 +572,9 @@ public class AutonomousController implements ICraneMovementStatusListener {
     }
     public void startHandTimer(){
         mHandTimer.start();
+    }
+    public void startDelayTimer(){
+        mDelayTimer.start();
     }
     private void serviceTimers(){
         for(Iterator<OneShotTimer> iter = mStateTimers.iterator(); iter.hasNext();){

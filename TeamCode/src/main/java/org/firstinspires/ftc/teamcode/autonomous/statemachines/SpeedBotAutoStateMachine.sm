@@ -21,8 +21,11 @@
     Start
         Entry {
             openHand();
-            // start drive forward
-            linearDrive(10d);
+            // start drive forward.
+            // linearDrive(22d)
+            // Hack it for States just drive up to the quarry.  checkStoneRecognition
+            // will automatically trigger evNoStoneFound
+            linearDrive(32d);
         }
     {
         evDriveComplete nil { checkStoneRecognition(); }
@@ -45,7 +48,7 @@
 
     DriveForwardToStone
         Entry{
-            linearDrive(8d);
+            linearDrive(10d);
         }
     {
         evDriveComplete GrabStone {}
@@ -69,7 +72,7 @@
     */
     BackupToBeginDrag
         Entry{
-            linearDrive(-18d);
+            linearDrive(-17d);
          }
     {
         evDriveComplete [ctxt.isBlueAlliance() == true] RotateTowardBridge {
@@ -97,9 +100,9 @@
     */
     RotateTowardBridge
     {
-        evRotationComplete DragStone  { linearDrive(72d); }
+        evRotationComplete DragStone  { linearDrive(56d); }
         // Try it anyway even if rotation is off.
-        evRotationTimeout DragStone  { linearDrive(72d); }
+        evRotationTimeout DragStone  { linearDrive(56d); }
     }
     /*
     * Drags the stone back under the bridge
@@ -118,10 +121,25 @@
             openHand();
             startHandTimer();
             //  backup to the line
-            linearDrive(-37d);
+            linearDrive(-18d);
         }
     {
         evHandTimeout nil { closeHand(); }
+        evDriveComplete [ctxt.isBlueAlliance() == true] StrafeToWall {
+            strafeDrive(-20d);
+        }
+        evDriveComplete [ctxt.isBlueAlliance() == false] StrafeToWall {
+            strafeDrive(+20d);
+        }
+        evDriveTimeout [ctxt.isBlueAlliance() == true] StrafeToWall {
+            strafeDrive(-20d);
+        }
+        evDriveTimeout [ctxt.isBlueAlliance() == false] StrafeToWall {
+            strafeDrive(+20d);
+        }
+    }
+    StrafeToWall
+    {
         evDriveComplete Complete { }
         evDriveTimeout Complete { }
     }
@@ -166,7 +184,7 @@
         evHookTimeout DragFoundation {  }
     }
 
-DragFoundation
+    DragFoundation
         Entry {
             linearDrive(-20d);
         }
@@ -233,11 +251,13 @@ DragFoundation
 
     RotateToBackup
     {
-        evRotationComplete BackupToBridge {  }
+        evRotationComplete nil { startDelayTimer(); }
         // May not have completed but give it a try anyway
-        evRotationTimeout BackupToBridge { }
-
+        evRotationTimeout nil { startDelayTimer(); }
+        // Delay for 500 ms - this is a hack because the Backup wasn't working
+        evDelayTimeout BackupToBridge { }
     }
+
     BackupToBridge
     Entry {
         linearDrive(-32d);
@@ -248,6 +268,10 @@ DragFoundation
     }
 
     Complete
+    Entry {
+        // Lower the crance back done to complete
+        moveCrane(-4d);
+    }
     {
 
     }
