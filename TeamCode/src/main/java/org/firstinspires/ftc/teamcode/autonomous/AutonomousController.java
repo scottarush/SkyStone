@@ -103,12 +103,12 @@ public class AutonomousController implements ICraneMovementStatusListener {
     });
 
     /**
-     * 1/2 second general delay timer.
+     * 3 second timer to lower the crane
      */
-    private OneShotTimer mDelayTimer = new OneShotTimer(500, new OneShotTimer.IOneShotTimerCallback() {
+    private OneShotTimer mCraneTimer = new OneShotTimer(2000, new OneShotTimer.IOneShotTimerCallback() {
         @Override
         public void timeoutComplete() {
-            transition("evDelayTimeout");
+            transition("evCraneTimeout");
         }
     });
 
@@ -151,6 +151,7 @@ public class AutonomousController implements ICraneMovementStatusListener {
         // Add timers to be checked
         mStateTimers.add(mHandTimer);
         mStateTimers.add(mHookTimer);
+        mStateTimers.add(mCraneTimer);
 
         // Now do common initializations
         init();
@@ -176,7 +177,6 @@ public class AutonomousController implements ICraneMovementStatusListener {
         // Add all the timers to the state timers so that they get service each loop
         mStateTimers.add(mHookTimer);
         mStateTimers.add(mGrabberTimer);
-        mStateTimers.add(mDelayTimer);
 
         // Now do common initializations
         init();
@@ -193,8 +193,6 @@ public class AutonomousController implements ICraneMovementStatusListener {
             @Override
             public void driveComplete(double distance) {
                 mLastDriveDistance = distance;
-                opMode.telemetry.addData("driveComplete Called","");
-                opMode.telemetry.update();
                 transition("evDriveComplete");
             }
 
@@ -402,12 +400,22 @@ public class AutonomousController implements ICraneMovementStatusListener {
             return;
         mGrabberBot.getGrabber().stop();
     }
+
+    /**
+     * This is a hack to get us through the bug blocking competition.
+     * Just does a short drive with a 500 ms timeout.
+     */
+    public void linearDriveBugUnblocker(){
+        mMecanumDrive.driveEncoder(1.0d,0.5d,500);
+    }
     /**
      *
      */
     public void linearDrive(double distance){
-        mMecanumDrive.driveEncoder(1.0d,distance,3000);
+         mMecanumDrive.driveEncoder(1.0d,distance,3000);
     }
+
+
     /**
      * Strafes either right + or left -
      */
@@ -565,6 +573,7 @@ public class AutonomousController implements ICraneMovementStatusListener {
      */
     public void stop(){
         mMecanumDrive.stop();
+        mSpeedBot.getCrane().stop();
     }
 
     public void startHookTimer(){
@@ -573,8 +582,8 @@ public class AutonomousController implements ICraneMovementStatusListener {
     public void startHandTimer(){
         mHandTimer.start();
     }
-    public void startDelayTimer(){
-        mDelayTimer.start();
+    public void startCraneTimer(){
+        mCraneTimer.start();
     }
     private void serviceTimers(){
         for(Iterator<OneShotTimer> iter = mStateTimers.iterator(); iter.hasNext();){

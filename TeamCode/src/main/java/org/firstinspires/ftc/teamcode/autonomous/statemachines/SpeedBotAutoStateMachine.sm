@@ -100,45 +100,68 @@
     */
     RotateTowardBridge
     {
-        evRotationComplete DragStone  { linearDrive(56d); }
+        evRotationComplete nil  { linearDriveBugUnblocker(); }
         // Try it anyway even if rotation is off.
-        evRotationTimeout DragStone  { linearDrive(56d); }
+        evRotationTimeout nil  { linearDriveBugUnblocker(); }
+        evDriveComplete DragStone { }
+        evDriveTimeout DragStone { }
     }
     /*
     * Drags the stone back under the bridge
     */
     DragStone
+        Entry {
+            linearDrive(56d);
+        }
     {
         evDriveComplete ReleaseStone {}
         evDriveTimeout ReleaseStone {}
+    }
+    ReleaseStone
+        Entry {
+            openHand();
+            linearDrive(-6d);
+        }
+    {
+        evDriveComplete BackupToBridgeLine {  }
+        evDriveTimeout BackupToBridgeLine { }
     }
 
     /*
     *
     */
-    ReleaseStone
+    BackupToBridgeLine
         Entry {
-            openHand();
-            startHandTimer();
             //  backup to the line
-            linearDrive(-18d);
+            closeHand();
+            linearDrive(-12d);
         }
     {
-        evHandTimeout nil { closeHand(); }
-        evDriveComplete [ctxt.isBlueAlliance() == true] StrafeToWall {
-            strafeDrive(-20d);
+       evDriveComplete [ctxt.isBlueAlliance() == true] RotateToWall {
+            rotate(-90);
         }
-        evDriveComplete [ctxt.isBlueAlliance() == false] StrafeToWall {
-            strafeDrive(+20d);
+        evDriveComplete [ctxt.isBlueAlliance() == false] RotateToWall {
+            rotate(+90);
         }
-        evDriveTimeout [ctxt.isBlueAlliance() == true] StrafeToWall {
-            strafeDrive(-20d);
+        evDriveTimeout [ctxt.isBlueAlliance() == true] RotateToWall {
+            rotate(-90);
         }
-        evDriveTimeout [ctxt.isBlueAlliance() == false] StrafeToWall {
-            strafeDrive(+20d);
+        evDriveTimeout [ctxt.isBlueAlliance() == false] RotateToWall {
+            rotate(+90);
         }
     }
-    StrafeToWall
+    RotateToWall
+    {
+        evRotationComplete nil { linearDriveBugUnblocker(); }
+        evRotationTimeout nil { linearDriveBugUnblocker(); }
+        evDriveComplete BackupToWall {  }
+        evDriveTimeout BackupToWall {  }
+    }
+
+    BackupToWall
+        Entry{
+        linearDrive(-15d);
+    }
     {
         evDriveComplete Complete { }
         evDriveTimeout Complete { }
@@ -166,14 +189,22 @@
             closeHand();
             // Raise crane by 4 inches to get clearance for dragging
             moveCrane(4d);
-            // start drive forward
-            linearDrive(26d);
+            startHookTimer();
         }
     {
-        evDriveComplete GrabFoundation {  }
+        evHookTimeout DriveToFoundation { }
+    }
+
+    DriveToFoundation
+        Entry{
+            // start drive forward
+            linearDrive(26d);
+    }
+    {
+       evDriveComplete GrabFoundation {  }
         // Give it a college try on timeout, but we may not have hooked it
         evDriveTimeout GrabFoundation { }
-     }
+    }
 
     GrabFoundation
         Entry {
@@ -251,26 +282,34 @@
 
     RotateToBackup
     {
-        evRotationComplete nil { startDelayTimer(); }
+        evRotationComplete nil { linearDriveBugUnblocker(); }
         // May not have completed but give it a try anyway
-        evRotationTimeout nil { startDelayTimer(); }
-        // Delay for 500 ms - this is a hack because the Backup wasn't working
-        evDelayTimeout BackupToBridge { }
+        evRotationTimeout nil {  linearDriveBugUnblocker(); }
+        evDriveComplete LowerCrane { }
+        evDriveTimeout LowerCrane { }
+     }
+
+    LowerCrane
+        Entry{
+            moveCrane(-4d);
+            closeHand();
+            startCraneTimer();
+        }
+    {
+        evCraneTimeout BackupToBridge { }
     }
 
     BackupToBridge
     Entry {
         linearDrive(-32d);
-    }
+     }
     {
-        evDriveComplete Complete { stop(); }
-        evDriveTimeout Complete { stop(); }
+        evDriveComplete Complete {  }
+        evDriveTimeout Complete {  }
     }
 
     Complete
     Entry {
-        // Lower the crance back done to complete
-        moveCrane(-4d);
     }
     {
 

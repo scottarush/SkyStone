@@ -188,15 +188,15 @@ public abstract class Drivetrain {
                 double correction = getHeadingCorrection();
                 correctHeading(correction);
             }
+            // And the encoder drive
+            checkEncoderDrive();
         }
         // And service all the timers
         mDriveByEncoderFailTimer.checkTimer();
         mTimedDriveTimer.checkTimer();
         mRotationTimeoutTimer.checkTimer();
 
-        // And the encoder drive
-        checkEncoderDrive();
-    }
+     }
 
     /**
      * starts a drive by encoder session.  Base class handles failure timer. Subclasses
