@@ -31,6 +31,7 @@ import statemap.State;
 public class AutonomousController implements ICraneMovementStatusListener {
     public static final int SEQUENCE_DRAG_FOUNDATION = 0;
     public static final int SEQUENCE_GET_STONE = 1;
+    public static final int SEQUENCE_BRIDGE_PARK = 2;
 
     private static boolean TELEMETRY_STATE_LOGGING_ENABLED = true;
 
@@ -73,45 +74,12 @@ public class AutonomousController implements ICraneMovementStatusListener {
     /**
      * Common timer used to open or close the hooks on either bot
      */
-    private OneShotTimer mHookTimer = new OneShotTimer(1000, new OneShotTimer.IOneShotTimerCallback() {
+    private OneShotTimer mTimer = new OneShotTimer(1000, new OneShotTimer.IOneShotTimerCallback() {
         @Override
         public void timeoutComplete() {
-            transition("evHookTimeout");
+            transition("evTimeout");
         }
     });
-
-    /**
-     * Timmer for grabber only on grabber bot
-     */
-    private OneShotTimer mGrabberTimer = new OneShotTimer(5000, new OneShotTimer.IOneShotTimerCallback() {
-        @Override
-        public void timeoutComplete() {
-            if (mGrabberBot != null)
-                mGrabberBot.getGrabber().stop();
-
-        }
-    });
-
-    /**
-     * Timmer for hand only on speed bot
-     */
-    private OneShotTimer mHandTimer = new OneShotTimer(1000, new OneShotTimer.IOneShotTimerCallback() {
-        @Override
-        public void timeoutComplete() {
-            transition("evHandTimeout");
-        }
-    });
-
-    /**
-     * 3 second timer to lower the crane
-     */
-    private OneShotTimer mCraneTimer = new OneShotTimer(2000, new OneShotTimer.IOneShotTimerCallback() {
-        @Override
-        public void timeoutComplete() {
-            transition("evCraneTimeout");
-        }
-    });
-
 
 
     private VuforiaTargetLocator mVuforia = null;
@@ -149,9 +117,7 @@ public class AutonomousController implements ICraneMovementStatusListener {
         mSpeedBot.getCrane().addCraneMovementStatusListener(this);
 
         // Add timers to be checked
-        mStateTimers.add(mHandTimer);
-        mStateTimers.add(mHookTimer);
-        mStateTimers.add(mCraneTimer);
+        mStateTimers.add(mTimer);
 
         // Now do common initializations
         init();
@@ -175,8 +141,7 @@ public class AutonomousController implements ICraneMovementStatusListener {
         mMecanumDrive = mGrabberBot.getDrivetrain();
 
         // Add all the timers to the state timers so that they get service each loop
-        mStateTimers.add(mHookTimer);
-        mStateTimers.add(mGrabberTimer);
+        mStateTimers.add(mTimer);
 
         // Now do common initializations
         init();
@@ -364,6 +329,9 @@ public class AutonomousController implements ICraneMovementStatusListener {
                 case SEQUENCE_GET_STONE:
                     transition("evStartDriveToStones");
                     break;
+                case SEQUENCE_BRIDGE_PARK:
+                    transition("evStartBridgePark");
+                    break;
             }
         }
 
@@ -390,8 +358,8 @@ public class AutonomousController implements ICraneMovementStatusListener {
             mGrabberBot.getGrabber().moveGrabber(true,true, 0.0,0.0);
 
         }
-        mGrabberTimer.setTimeout(timeoutms);
-        mGrabberTimer.start();
+        mTimer.setTimeout(timeoutms);
+        mTimer.start();
     }
 
 
@@ -582,14 +550,13 @@ public class AutonomousController implements ICraneMovementStatusListener {
         mSpeedBot.getCrane().stop();
     }
 
-    public void startHookTimer(){
-       mHookTimer.start();
-    }
-    public void startHandTimer(){
-        mHandTimer.start();
-    }
-    public void startCraneTimer(){
-        mCraneTimer.start();
+    /**
+     * Starts a timer that will fire the evTimeout event
+     * @param timeoutms
+     */
+    public void startTimer(int timeoutms){
+       mTimer.setTimeout(timeoutms);
+       mTimer.start();
     }
     private void serviceTimers(){
         for(Iterator<OneShotTimer> iter = mStateTimers.iterator(); iter.hasNext();){

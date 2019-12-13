@@ -34,14 +34,6 @@ public class SpeedBotAutoStateMachineContext
         return;
     }
 
-    public void evCraneTimeout()
-    {
-        _transition = "evCraneTimeout";
-        getState().evCraneTimeout(this);
-        _transition = "";
-        return;
-    }
-
     public void evDriveComplete()
     {
         _transition = "evDriveComplete";
@@ -54,22 +46,6 @@ public class SpeedBotAutoStateMachineContext
     {
         _transition = "evDriveTimeout";
         getState().evDriveTimeout(this);
-        _transition = "";
-        return;
-    }
-
-    public void evHandTimeout()
-    {
-        _transition = "evHandTimeout";
-        getState().evHandTimeout(this);
-        _transition = "";
-        return;
-    }
-
-    public void evHookTimeout()
-    {
-        _transition = "evHookTimeout";
-        getState().evHookTimeout(this);
         _transition = "";
         return;
     }
@@ -106,6 +82,14 @@ public class SpeedBotAutoStateMachineContext
         return;
     }
 
+    public void evStartBridgePark()
+    {
+        _transition = "evStartBridgePark";
+        getState().evStartBridgePark(this);
+        _transition = "";
+        return;
+    }
+
     public void evStartDragFoundation()
     {
         _transition = "evStartDragFoundation";
@@ -126,6 +110,14 @@ public class SpeedBotAutoStateMachineContext
     {
         _transition = "evStoneFound";
         getState().evStoneFound(this);
+        _transition = "";
+        return;
+    }
+
+    public void evTimeout()
+    {
+        _transition = "evTimeout";
+        getState().evTimeout(this);
         _transition = "";
         return;
     }
@@ -194,27 +186,12 @@ public class SpeedBotAutoStateMachineContext
         protected void entry(SpeedBotAutoStateMachineContext context) {}
         protected void exit(SpeedBotAutoStateMachineContext context) {}
 
-        protected void evCraneTimeout(SpeedBotAutoStateMachineContext context)
-        {
-            Default(context);
-        }
-
         protected void evDriveComplete(SpeedBotAutoStateMachineContext context)
         {
             Default(context);
         }
 
         protected void evDriveTimeout(SpeedBotAutoStateMachineContext context)
-        {
-            Default(context);
-        }
-
-        protected void evHandTimeout(SpeedBotAutoStateMachineContext context)
-        {
-            Default(context);
-        }
-
-        protected void evHookTimeout(SpeedBotAutoStateMachineContext context)
         {
             Default(context);
         }
@@ -239,6 +216,11 @@ public class SpeedBotAutoStateMachineContext
             Default(context);
         }
 
+        protected void evStartBridgePark(SpeedBotAutoStateMachineContext context)
+        {
+            Default(context);
+        }
+
         protected void evStartDragFoundation(SpeedBotAutoStateMachineContext context)
         {
             Default(context);
@@ -250,6 +232,11 @@ public class SpeedBotAutoStateMachineContext
         }
 
         protected void evStoneFound(SpeedBotAutoStateMachineContext context)
+        {
+            Default(context);
+        }
+
+        protected void evTimeout(SpeedBotAutoStateMachineContext context)
         {
             Default(context);
         }
@@ -326,6 +313,16 @@ public class SpeedBotAutoStateMachineContext
         private SpeedBotAutoStateMachine_Idle(String name, int id)
         {
             super (name, id);
+        }
+
+        @Override
+        protected void evStartBridgePark(SpeedBotAutoStateMachineContext context)
+        {
+
+            (context.getState()).exit(context);
+            context.setState(BridgePark.Start);
+            (context.getState()).entry(context);
+            return;
         }
 
         @Override
@@ -656,12 +653,12 @@ public class SpeedBotAutoStateMachineContext
                 AutonomousController ctxt = context.getOwner();
 
             ctxt.closeHand();
-            ctxt.startHandTimer();
+            ctxt.startTimer(1000);
             return;
         }
 
         @Override
-        protected void evHandTimeout(SpeedBotAutoStateMachineContext context)
+        protected void evTimeout(SpeedBotAutoStateMachineContext context)
         {
 
             (context.getState()).exit(context);
@@ -1346,12 +1343,12 @@ public class SpeedBotAutoStateMachineContext
             ctxt.openHook();
             ctxt.closeHand();
             ctxt.moveCrane(4d);
-            ctxt.startHookTimer();
+            ctxt.startTimer(1000);
             return;
         }
 
         @Override
-        protected void evHookTimeout(SpeedBotAutoStateMachineContext context)
+        protected void evTimeout(SpeedBotAutoStateMachineContext context)
         {
 
             (context.getState()).exit(context);
@@ -1441,12 +1438,12 @@ public class SpeedBotAutoStateMachineContext
                 AutonomousController ctxt = context.getOwner();
 
             ctxt.closeHook();
-            ctxt.startHookTimer();
+            ctxt.startTimer(2000);
             return;
         }
 
         @Override
-        protected void evHookTimeout(SpeedBotAutoStateMachineContext context)
+        protected void evTimeout(SpeedBotAutoStateMachineContext context)
         {
 
             (context.getState()).exit(context);
@@ -1643,12 +1640,12 @@ public class SpeedBotAutoStateMachineContext
                 AutonomousController ctxt = context.getOwner();
 
             ctxt.openHook();
-            ctxt.startHookTimer();
+            ctxt.startTimer(1500);
             return;
         }
 
         @Override
-        protected void evHookTimeout(SpeedBotAutoStateMachineContext context)
+        protected void evTimeout(SpeedBotAutoStateMachineContext context)
         {
             AutonomousController ctxt = context.getOwner();
 
@@ -1683,7 +1680,7 @@ public class SpeedBotAutoStateMachineContext
 
             }            else
             {
-                super.evHookTimeout(context);
+                super.evTimeout(context);
             }
 
             return;
@@ -1718,12 +1715,12 @@ public class SpeedBotAutoStateMachineContext
                 AutonomousController ctxt = context.getOwner();
 
             ctxt.openHook();
-            ctxt.startHookTimer();
+            ctxt.startTimer(1500);
             return;
         }
 
         @Override
-        protected void evHookTimeout(SpeedBotAutoStateMachineContext context)
+        protected void evTimeout(SpeedBotAutoStateMachineContext context)
         {
             AutonomousController ctxt = context.getOwner();
 
@@ -1758,7 +1755,7 @@ public class SpeedBotAutoStateMachineContext
 
             }            else
             {
-                super.evHookTimeout(context);
+                super.evTimeout(context);
             }
 
             return;
@@ -1875,12 +1872,12 @@ public class SpeedBotAutoStateMachineContext
 
             ctxt.moveCrane(-4d);
             ctxt.closeHand();
-            ctxt.startCraneTimer();
+            ctxt.startTimer(2000);
             return;
         }
 
         @Override
-        protected void evCraneTimeout(SpeedBotAutoStateMachineContext context)
+        protected void evTimeout(SpeedBotAutoStateMachineContext context)
         {
 
             (context.getState()).exit(context);
@@ -1962,6 +1959,391 @@ public class SpeedBotAutoStateMachineContext
         private DragFoundation_Complete(String name, int id)
         {
             super (name, id);
+        }
+
+    //-------------------------------------------------------
+    // Member data.
+    //
+
+        //---------------------------------------------------
+        // Constants.
+        //
+
+        private static final long serialVersionUID = 1L;
+    }
+
+    /* package */ static abstract class BridgePark
+    {
+    //-----------------------------------------------------------
+    // Member methods.
+    //
+
+    //-----------------------------------------------------------
+    // Member data.
+    //
+
+        //-------------------------------------------------------
+        // Constants.
+        //
+
+        public static final BridgePark_Start Start =
+            new BridgePark_Start("BridgePark.Start", 24);
+        public static final BridgePark_Drive Drive =
+            new BridgePark_Drive("BridgePark.Drive", 25);
+        public static final BridgePark_RotateToBridge RotateToBridge =
+            new BridgePark_RotateToBridge("BridgePark.RotateToBridge", 26);
+        public static final BridgePark_DriveToBridge DriveToBridge =
+            new BridgePark_DriveToBridge("BridgePark.DriveToBridge", 27);
+        public static final BridgePark_Complete Complete =
+            new BridgePark_Complete("BridgePark.Complete", 28);
+    }
+
+    protected static class BridgePark_Default
+        extends AutonomousControllerState
+    {
+    //-----------------------------------------------------------
+    // Member methods.
+    //
+
+        protected BridgePark_Default(String name, int id)
+        {
+            super (name, id);
+        }
+
+    //-----------------------------------------------------------
+    // Member data.
+    //
+
+        //---------------------------------------------------
+        // Constants.
+        //
+
+        private static final long serialVersionUID = 1L;
+    }
+
+    private static final class BridgePark_Start
+        extends BridgePark_Default
+    {
+    //-------------------------------------------------------
+    // Member methods.
+    //
+
+        private BridgePark_Start(String name, int id)
+        {
+            super (name, id);
+        }
+
+        @Override
+        protected void entry(SpeedBotAutoStateMachineContext context)
+            {
+                AutonomousController ctxt = context.getOwner();
+
+            ctxt.startTimer(15000);
+            return;
+        }
+
+        @Override
+        protected void evTimeout(SpeedBotAutoStateMachineContext context)
+        {
+
+            (context.getState()).exit(context);
+            context.setState(BridgePark.Drive);
+            (context.getState()).entry(context);
+            return;
+        }
+
+    //-------------------------------------------------------
+    // Member data.
+    //
+
+        //---------------------------------------------------
+        // Constants.
+        //
+
+        private static final long serialVersionUID = 1L;
+    }
+
+    private static final class BridgePark_Drive
+        extends BridgePark_Default
+    {
+    //-------------------------------------------------------
+    // Member methods.
+    //
+
+        private BridgePark_Drive(String name, int id)
+        {
+            super (name, id);
+        }
+
+        @Override
+        protected void entry(SpeedBotAutoStateMachineContext context)
+            {
+                AutonomousController ctxt = context.getOwner();
+
+            ctxt.openHook();
+            ctxt.closeHand();
+            ctxt.linearDrive(18);
+            return;
+        }
+
+        @Override
+        protected void evDriveComplete(SpeedBotAutoStateMachineContext context)
+        {
+            AutonomousController ctxt = context.getOwner();
+
+            if (ctxt.isBlueAlliance() == true)
+            {
+                (context.getState()).exit(context);
+                context.clearState();
+                try
+                {
+                    ctxt.rotate(+90);
+                }
+                finally
+                {
+                    context.setState(BridgePark.RotateToBridge);
+                    (context.getState()).entry(context);
+                }
+
+            }
+            else if (ctxt.isBlueAlliance() == false)
+            {
+                (context.getState()).exit(context);
+                context.clearState();
+                try
+                {
+                    ctxt.rotate(-90);
+                }
+                finally
+                {
+                    context.setState(BridgePark.RotateToBridge);
+                    (context.getState()).entry(context);
+                }
+
+            }            else
+            {
+                super.evDriveComplete(context);
+            }
+
+            return;
+        }
+
+        @Override
+        protected void evDriveTimeout(SpeedBotAutoStateMachineContext context)
+        {
+            AutonomousController ctxt = context.getOwner();
+
+            if (ctxt.isBlueAlliance() == true)
+            {
+                (context.getState()).exit(context);
+                context.clearState();
+                try
+                {
+                    ctxt.rotate(+90);
+                }
+                finally
+                {
+                    context.setState(BridgePark.RotateToBridge);
+                    (context.getState()).entry(context);
+                }
+
+            }
+            else if (ctxt.isBlueAlliance() == false)
+            {
+                (context.getState()).exit(context);
+                context.clearState();
+                try
+                {
+                    ctxt.rotate(-90);
+                }
+                finally
+                {
+                    context.setState(BridgePark.RotateToBridge);
+                    (context.getState()).entry(context);
+                }
+
+            }            else
+            {
+                super.evDriveTimeout(context);
+            }
+
+            return;
+        }
+
+    //-------------------------------------------------------
+    // Member data.
+    //
+
+        //---------------------------------------------------
+        // Constants.
+        //
+
+        private static final long serialVersionUID = 1L;
+    }
+
+    private static final class BridgePark_RotateToBridge
+        extends BridgePark_Default
+    {
+    //-------------------------------------------------------
+    // Member methods.
+    //
+
+        private BridgePark_RotateToBridge(String name, int id)
+        {
+            super (name, id);
+        }
+
+        @Override
+        protected void evDriveComplete(SpeedBotAutoStateMachineContext context)
+        {
+            AutonomousController ctxt = context.getOwner();
+
+            (context.getState()).exit(context);
+            context.clearState();
+            try
+            {
+                ctxt.linearDriveSlow(44d);
+            }
+            finally
+            {
+                context.setState(BridgePark.DriveToBridge);
+                (context.getState()).entry(context);
+            }
+
+            return;
+        }
+
+        @Override
+        protected void evDriveTimeout(SpeedBotAutoStateMachineContext context)
+        {
+            AutonomousController ctxt = context.getOwner();
+
+            (context.getState()).exit(context);
+            context.clearState();
+            try
+            {
+                ctxt.linearDriveSlow(44d);
+            }
+            finally
+            {
+                context.setState(BridgePark.DriveToBridge);
+                (context.getState()).entry(context);
+            }
+
+            return;
+        }
+
+        @Override
+        protected void evRotationComplete(SpeedBotAutoStateMachineContext context)
+        {
+            AutonomousController ctxt = context.getOwner();
+
+            AutonomousControllerState endState = context.getState();
+            context.clearState();
+            try
+            {
+                ctxt.linearDriveBugUnblocker();
+            }
+            finally
+            {
+                context.setState(endState);
+            }
+
+            return;
+        }
+
+        @Override
+        protected void evRotationTimeout(SpeedBotAutoStateMachineContext context)
+        {
+            AutonomousController ctxt = context.getOwner();
+
+            AutonomousControllerState endState = context.getState();
+            context.clearState();
+            try
+            {
+                ctxt.linearDriveBugUnblocker();
+            }
+            finally
+            {
+                context.setState(endState);
+            }
+
+            return;
+        }
+
+    //-------------------------------------------------------
+    // Member data.
+    //
+
+        //---------------------------------------------------
+        // Constants.
+        //
+
+        private static final long serialVersionUID = 1L;
+    }
+
+    private static final class BridgePark_DriveToBridge
+        extends BridgePark_Default
+    {
+    //-------------------------------------------------------
+    // Member methods.
+    //
+
+        private BridgePark_DriveToBridge(String name, int id)
+        {
+            super (name, id);
+        }
+
+        @Override
+        protected void evDriveComplete(SpeedBotAutoStateMachineContext context)
+        {
+
+            (context.getState()).exit(context);
+            context.setState(BridgePark.Complete);
+            (context.getState()).entry(context);
+            return;
+        }
+
+        @Override
+        protected void evDriveTimeout(SpeedBotAutoStateMachineContext context)
+        {
+
+            (context.getState()).exit(context);
+            context.setState(BridgePark.Complete);
+            (context.getState()).entry(context);
+            return;
+        }
+
+    //-------------------------------------------------------
+    // Member data.
+    //
+
+        //---------------------------------------------------
+        // Constants.
+        //
+
+        private static final long serialVersionUID = 1L;
+    }
+
+    private static final class BridgePark_Complete
+        extends BridgePark_Default
+    {
+    //-------------------------------------------------------
+    // Member methods.
+    //
+
+        private BridgePark_Complete(String name, int id)
+        {
+            super (name, id);
+        }
+
+        @Override
+        protected void entry(SpeedBotAutoStateMachineContext context)
+            {
+                AutonomousController ctxt = context.getOwner();
+
+            ctxt.stop();
+            return;
         }
 
     //-------------------------------------------------------

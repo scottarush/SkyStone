@@ -28,6 +28,12 @@ public class SkystoneAutonomousOpMode {
 
     private int mSequence = 0;
 
+    /**
+     *
+     * @param opMode
+     * @param isBlueTeam
+     * @param sequence
+     */
     public SkystoneAutonomousOpMode(OpMode opMode, boolean isBlueTeam,int sequence){
         mOpmode = opMode;
         mBlueAlliance = isBlueTeam;

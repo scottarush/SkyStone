@@ -584,7 +584,7 @@ public class GrabberBotAutoStateMachineContext
                 AutonomousController ctxt = context.getOwner();
 
             ctxt.closeHook();
-            ctxt.startHookTimer();
+            ctxt.startTimer(1000);
             ctxt.startGrabber(true, 1000);
             return;
         }
