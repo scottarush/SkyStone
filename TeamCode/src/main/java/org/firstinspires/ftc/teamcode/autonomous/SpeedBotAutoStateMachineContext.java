@@ -440,7 +440,7 @@ public class SpeedBotAutoStateMachineContext
                 AutonomousController ctxt = context.getOwner();
 
             ctxt.openHand();
-            ctxt.linearDrive(32d);
+            ctxt.linearDrive(28d);
             return;
         }
 
@@ -603,7 +603,7 @@ public class SpeedBotAutoStateMachineContext
             {
                 AutonomousController ctxt = context.getOwner();
 
-            ctxt.linearDrive(10d);
+            ctxt.linearDriveSlow(8d);
             return;
         }
 
@@ -698,7 +698,7 @@ public class SpeedBotAutoStateMachineContext
             {
                 AutonomousController ctxt = context.getOwner();
 
-            ctxt.linearDrive(-17d);
+            ctxt.linearDrive(-20d);
             return;
         }
 
@@ -895,7 +895,7 @@ public class SpeedBotAutoStateMachineContext
             {
                 AutonomousController ctxt = context.getOwner();
 
-            ctxt.linearDrive(56d);
+            ctxt.linearDrive(62d);
             return;
         }
 
@@ -948,7 +948,7 @@ public class SpeedBotAutoStateMachineContext
                 AutonomousController ctxt = context.getOwner();
 
             ctxt.openHand();
-            ctxt.linearDrive(-6d);
+            ctxt.linearDriveSlow(-6d);
             return;
         }
 
@@ -1001,7 +1001,7 @@ public class SpeedBotAutoStateMachineContext
                 AutonomousController ctxt = context.getOwner();
 
             ctxt.closeHand();
-            ctxt.linearDrive(-12d);
+            ctxt.linearDriveSlow(-12d);
             return;
         }
 
@@ -1198,7 +1198,7 @@ public class SpeedBotAutoStateMachineContext
             {
                 AutonomousController ctxt = context.getOwner();
 
-            ctxt.linearDrive(-15d);
+            ctxt.linearDriveSlow(-15d);
             return;
         }
 
@@ -1388,7 +1388,7 @@ public class SpeedBotAutoStateMachineContext
             {
                 AutonomousController ctxt = context.getOwner();
 
-            ctxt.linearDrive(26d);
+            ctxt.linearDrive(32d);
             return;
         }
 
@@ -1483,7 +1483,7 @@ public class SpeedBotAutoStateMachineContext
             {
                 AutonomousController ctxt = context.getOwner();
 
-            ctxt.linearDrive(-20d);
+            ctxt.linearDrive(-26d);
             return;
         }
 
@@ -1498,7 +1498,7 @@ public class SpeedBotAutoStateMachineContext
                 context.clearState();
                 try
                 {
-                    ctxt.rotate(+45);
+                    ctxt.rotate(+55);
                 }
                 finally
                 {
@@ -1513,7 +1513,7 @@ public class SpeedBotAutoStateMachineContext
                 context.clearState();
                 try
                 {
-                    ctxt.rotate(-45);
+                    ctxt.rotate(-55);
                 }
                 finally
                 {
@@ -1540,7 +1540,7 @@ public class SpeedBotAutoStateMachineContext
                 context.clearState();
                 try
                 {
-                    ctxt.rotate(+45);
+                    ctxt.rotate(+55);
                 }
                 finally
                 {
@@ -1555,7 +1555,7 @@ public class SpeedBotAutoStateMachineContext
                 context.clearState();
                 try
                 {
-                    ctxt.rotate(-45);
+                    ctxt.rotate(-55);
                 }
                 finally
                 {
@@ -1658,7 +1658,7 @@ public class SpeedBotAutoStateMachineContext
                 context.clearState();
                 try
                 {
-                    ctxt.rotate(+45);
+                    ctxt.rotate(+40);
                 }
                 finally
                 {
@@ -1673,7 +1673,7 @@ public class SpeedBotAutoStateMachineContext
                 context.clearState();
                 try
                 {
-                    ctxt.rotate(-45);
+                    ctxt.rotate(-40);
                 }
                 finally
                 {
@@ -1733,7 +1733,7 @@ public class SpeedBotAutoStateMachineContext
                 context.clearState();
                 try
                 {
-                    ctxt.rotate(+45+(45-ctxt.getLastRotationAngle()));
+                    ctxt.rotate(+55+(40-ctxt.getLastRotationAngle()));
                 }
                 finally
                 {
@@ -1748,7 +1748,7 @@ public class SpeedBotAutoStateMachineContext
                 context.clearState();
                 try
                 {
-                    ctxt.rotate(-45+(-45-ctxt.getLastRotationAngle()));
+                    ctxt.rotate(-55+(-40-ctxt.getLastRotationAngle()));
                 }
                 finally
                 {
@@ -1917,7 +1917,7 @@ public class SpeedBotAutoStateMachineContext
             {
                 AutonomousController ctxt = context.getOwner();
 
-            ctxt.linearDrive(-32d);
+            ctxt.linearDrive(-44d);
             return;
         }
 

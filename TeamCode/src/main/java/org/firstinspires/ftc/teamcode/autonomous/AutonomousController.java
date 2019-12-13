@@ -409,12 +409,18 @@ public class AutonomousController implements ICraneMovementStatusListener {
         mMecanumDrive.driveEncoder(1.0d,0.5d,500);
     }
     /**
-     *
+     * drives forward at full speed
      */
     public void linearDrive(double distance){
-         mMecanumDrive.driveEncoder(1.0d,distance,3000);
+         mMecanumDrive.driveEncoder(1.0d,distance,2000);
     }
 
+    /**
+     * drives forward at 1/2 speed
+     */
+    public void linearDriveSlow(double distance){
+        mMecanumDrive.driveEncoder(0.5d,distance,2000);
+    }
 
     /**
      * Strafes either right + or left -
