@@ -41,7 +41,7 @@ public class Crane {
     /** servo values for hand positions. **/
     private static final double HAND_CLOSE_POSITION = 0.0d;
     private static final double HAND_OPEN_POSITION = 0.5d;
-    private static final double HAND_RETRACT_POSITION = 1.0d;
+    private static final double HAND_RETRACT_POSITION = 0.98d;
 
     private double mHandServoPosition = HAND_RETRACT_POSITION;
 
