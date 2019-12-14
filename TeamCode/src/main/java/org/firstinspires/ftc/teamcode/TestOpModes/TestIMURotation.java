@@ -29,6 +29,7 @@
 
 package org.firstinspires.ftc.teamcode.TestOpModes;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -46,7 +47,7 @@ This class implements the equations that Marcus derived on October 3.
   */
 
 @TeleOp(name="TestIMURotation", group="Robot")
-//@Disabled
+@Disabled
 public class TestIMURotation extends OpMode implements IDriveSessionStatusListener, IRotationStatusListener {
     private static final int MIN_DELTA_UPDATE_TIME_MS = 100;
 

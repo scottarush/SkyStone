@@ -40,7 +40,7 @@ public class Crane {
 
     /** servo values for hand positions. **/
     private static final double HAND_CLOSE_POSITION = 0.0d;
-    private static final double HAND_OPEN_POSITION = 0.5d;
+    private static final double HAND_OPEN_POSITION = 0.4d;
     private static final double HAND_RETRACT_POSITION = 0.98d;
 
     private double mHandServoPosition = HAND_RETRACT_POSITION;
@@ -96,7 +96,7 @@ public class Crane {
 
         try {
             mHandServo = ahwMap.get(Servo.class, HAND_SERVO_NAME);
-            setHandServoPosition(HAND_RETRACT_POSITION);
+            setHandServoPosition(HAND_CLOSED);
         } catch (Exception e) {
             initErrString += "Claw servo err";
         }

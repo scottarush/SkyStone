@@ -9,7 +9,8 @@
     {
         evStartDriveToStones jump(GetStones::Start) { }
         evStartDragFoundation jump(DragFoundation::Start) { }
-        evStartBridgePark jump(BridgePark::Start) { }
+        evStartTechnoLogicsBridgePark jump(TechnoLogicsBridgePark::Start) { }
+        evStartNerdBotsBridgePark jump (NerdBotsBridgePark::Start) { }
     }
 %%
 
@@ -26,7 +27,7 @@
             // linearDrive(22d)
             // Hack it for States just drive up to the quarry.  checkStoneRecognition
             // will automatically trigger evNoStoneFound
-            linearDrive(28d);
+            linearDriveSlow(28d);
         }
     {
         evDriveComplete nil { checkStoneRecognition(); }
@@ -73,7 +74,7 @@
     */
     BackupToBeginDrag
         Entry{
-            linearDrive(-20d);
+            linearDriveSlow(-12d);
          }
     {
         evDriveComplete [ctxt.isBlueAlliance() == true] RotateTowardBridge {
@@ -112,7 +113,7 @@
     */
     DragStone
         Entry {
-            linearDrive(62d);
+            linearDriveSlow(68d);
         }
     {
         evDriveComplete ReleaseStone {}
@@ -135,36 +136,10 @@
         Entry {
             //  backup to the line
             closeHand();
-            linearDriveSlow(-12d);
+            linearDriveSlow(-10d);
         }
     {
-       evDriveComplete [ctxt.isBlueAlliance() == true] RotateToWall {
-            rotate(-90);
-        }
-        evDriveComplete [ctxt.isBlueAlliance() == false] RotateToWall {
-            rotate(+90);
-        }
-        evDriveTimeout [ctxt.isBlueAlliance() == true] RotateToWall {
-            rotate(-90);
-        }
-        evDriveTimeout [ctxt.isBlueAlliance() == false] RotateToWall {
-            rotate(+90);
-        }
-    }
-    RotateToWall
-    {
-        evRotationComplete nil { linearDriveBugUnblocker(); }
-        evRotationTimeout nil { linearDriveBugUnblocker(); }
-        evDriveComplete BackupToWall {  }
-        evDriveTimeout BackupToWall {  }
-    }
-
-    BackupToWall
-        Entry{
-        linearDriveSlow(-15d);
-    }
-    {
-        evDriveComplete Complete { }
+       evDriveComplete Complete {  }
         evDriveTimeout Complete { }
     }
     /*
@@ -172,13 +147,15 @@
     */
     Complete
         Entry{
+            closeHand();
             stop();
         }
     {
 
     }
 %%
-// StateMachine for DragFoundation sequence
+// StateMachine for DragFoundation sequence.  Bot must be center on the 21"  line off of the
+// back wall.
 %map DragFoundation
 %%
     /*
@@ -189,7 +166,7 @@
             openHook();
             closeHand();
             // Raise crane by 4 inches to get clearance for dragging
-            moveCrane(4d);
+            moveCrane(6d);
             startTimer(1000);
         }
     {
@@ -199,7 +176,7 @@
     DriveToFoundation
         Entry{
             // start drive forward
-            linearDrive(32d);
+            linearDriveSlow(35d);
     }
     {
        evDriveComplete GrabFoundation {  }
@@ -218,32 +195,11 @@
 
     DragFoundation
         Entry {
-            linearDrive(-26d);
+            linearDrive(-50d);
         }
     {
-        evDriveComplete [ctxt.isBlueAlliance() == true] RotateFoundation {
-            // Rotate CCW toward the blue line
-            rotate(+55);
-         }
-        evDriveComplete [ctxt.isBlueAlliance() == false] RotateFoundation {
-            // Rotate CW toward the red line
-            rotate(-55);
-        }
-        evDriveTimeout [ctxt.isBlueAlliance() == true] RotateFoundation {
-            // Rotate CCW toward the blue line
-            rotate(+55);
-        }
-        evDriveTimeout [ctxt.isBlueAlliance() == false] RotateFoundation {
-            // Rotate CW toward the red line
-            rotate(-55);
-        }
-    }
-    RotateFoundation
-    {
-        // May not have rotated far enough release and try to correct rotation for backup
-        evRotationTimeout ReleaseAndCorrectRotation { }
-        // Rotation was good so go to release
-        evRotationComplete ReleaseFoundation { }
+        evDriveComplete ReleaseFoundation {        }
+        evDriveTimeout ReleaseFoundation {        }
     }
 
     ReleaseFoundation
@@ -252,65 +208,37 @@
             startTimer(1500);
         }
     {
-        evTimeout [ctxt.isBlueAlliance() == true] RotateToBackup {
-            // Rotate CCW to line up backwards to the skybridge
-            rotate(+40);
+        evTimeout [ctxt.isBlueAlliance() == true] nil {
+            // Rotate to the right
+            rotate(-90);
         }
-        evTimeout [ctxt.isBlueAlliance() == false] RotateToBackup {
-            // Rotate CW to line up backwards to the skybridge
-            rotate(-40);
+        evTimeout [ctxt.isBlueAlliance() == false] nil {
+            // rotate to the left
+            rotate(+90);
         }
-    }
-    /**
-    * Corrects rotation error if we weren't able to rotate the foundation by the full amount
-    */
-    ReleaseAndCorrectRotation
-    Entry{
-        openHook();
-        startTimer(1500);
-    }
-    {
-        evTimeout [ctxt.isBlueAlliance() == true] RotateToBackup {
-            // Rotate CCW to line up backwards to the skybridge adding the error from not being
-            // able to rotate the foundation as far
-            rotate(+55+(40-ctxt.getLastRotationAngle()));
-        }
-        evTimeout [ctxt.isBlueAlliance() == false] RotateToBackup {
-            // Rotate CW to line up backwards to the skybridge
-            rotate(-55+(-40-ctxt.getLastRotationAngle()));
-        }
+        evRotationComplete LowerCrane { }
+        evRotationTimeout LowerCrane { }
     }
 
-    RotateToBackup
-    {
-        evRotationComplete nil { linearDriveBugUnblocker(); }
-        // May not have completed but give it a try anyway
-        evRotationTimeout nil {  linearDriveBugUnblocker(); }
-        evDriveComplete LowerCrane { }
-        evDriveTimeout LowerCrane { }
-     }
 
     LowerCrane
         Entry{
-            moveCrane(-4d);
-            closeHand();
-            startTimer(2000);
+            // Lower the crane to clear the bridge
+            moveCrane(-6d);
+            startTimer(3000);
         }
     {
-        evTimeout BackupToBridge { }
-    }
-
-    BackupToBridge
-    Entry {
-        linearDrive(-44d);
+        evTimeout nil {
+            linearDriveSlow(56d);
+        }
+        evDriveComplete Complete {}
+        evDriveTimeout Complete {}
      }
-    {
-        evDriveComplete Complete {  }
-        evDriveTimeout Complete {  }
-    }
+
 
     Complete
     Entry {
+        stop();
     }
     {
 
@@ -318,27 +246,16 @@
 %%
 
 /*
-* Does a basic park from the bridge from teh quarry side.
+* Does a basic park from the bridge from teh quarry side for
+* collaboration with Technologics
 * Assume the robot is starting with the side of the robot at
 * the edge of the depot color
 */
-%map BridgePark
+%map TechnoLogicsBridgePark
 %%
     Start
         Entry {
-            startTimer(15000);
-        }
-    {
-        evTimeout Drive { }
-    }
-    /*
-    * drive forward 15 inches
-    */
-    Drive
-        Entry {
-            openHook();
-            closeHand();
-            linearDrive(18);
+            linearDrive(+24d);
         }
     {
         evDriveComplete [ctxt.isBlueAlliance() == true] RotateToBridge {
@@ -346,7 +263,7 @@
             rotate(+90);
         }
         evDriveComplete [ctxt.isBlueAlliance() == false] RotateToBridge {
-            // Rotate CW toward the bridge
+            // Rotate CW toward the bridge/
             rotate(-90);
         }
         evDriveTimeout [ctxt.isBlueAlliance() == true] RotateToBridge {
@@ -354,9 +271,10 @@
             rotate(+90);
         }
         evDriveTimeout [ctxt.isBlueAlliance() == false] RotateToBridge {
-            // Rotate CW toward the bridge
+          // Rotate CW toward the bridge
             rotate(-90);
-        }
+       }
+
    }
     RotateToBridge
     {
@@ -368,6 +286,49 @@
     }
     DriveToBridge
     {
+        evDriveComplete Complete { }
+        evDriveTimeout Complete { }
+    }
+
+    Complete
+        Entry {
+            stop();
+        }
+    {
+    }
+
+%%
+
+
+/*
+* Delays and then moves rearward this is for the NerdBot colllaboration
+*/
+%map NerdBotsBridgePark
+%%
+    Start
+        Entry {
+            startTimer(10000);
+        }
+    {
+        evTimeout CloseHand { }
+    }
+    CloseHand
+        Entry {
+            closeHand();
+            startTimer(10000);
+        }
+    {
+        evTimeout Drive { }
+    }
+/*
+    * drive backward 10 inches
+    */
+    Drive
+        Entry {
+        linearDrive(-10d);
+    }
+    {
+
         evDriveComplete Complete { }
         evDriveTimeout Complete { }
     }

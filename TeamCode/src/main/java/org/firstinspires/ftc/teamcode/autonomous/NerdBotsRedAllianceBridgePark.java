@@ -1,15 +1,16 @@
 package org.firstinspires.ftc.teamcode.autonomous;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
-@Autonomous(name="RedAllianceBridgePark", group="Robot")
-//@Disabled
-public class BridgeParkRedAlliance extends OpMode{
+@Autonomous(name="NerdBotsRedAllianceBridgePark", group="Robot")
+@Disabled
+public class NerdBotsRedAllianceBridgePark extends OpMode{
 
     private SkystoneAutonomousOpMode mRealOpmode = null;
-    public BridgeParkRedAlliance(){
-        mRealOpmode = new SkystoneAutonomousOpMode(this, false,AutonomousController.SEQUENCE_BRIDGE_PARK);
+    public NerdBotsRedAllianceBridgePark(){
+        mRealOpmode = new SkystoneAutonomousOpMode(this, false,AutonomousController.SEQUENCE_NERDBOTS_BRIDGE_PARK);
     }
 
     @Override
