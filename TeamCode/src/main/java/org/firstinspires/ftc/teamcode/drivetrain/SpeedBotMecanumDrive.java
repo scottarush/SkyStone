@@ -22,7 +22,7 @@ public class SpeedBotMecanumDrive extends BaseMecanumDrive {
 
     @Override
     public double getRotationKp() {
-        return 2.0d;
+        return 1.8d;
     }
 
     @Override
