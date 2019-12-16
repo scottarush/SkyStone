@@ -98,10 +98,10 @@ public class SpeedBotAutoStateMachineContext
         return;
     }
 
-    public void evStartNerdBotsBridgePark()
+    public void evStartPiGearsBridgePark()
     {
-        _transition = "evStartNerdBotsBridgePark";
-        getState().evStartNerdBotsBridgePark(this);
+        _transition = "evStartPiGearsBridgePark";
+        getState().evStartPiGearsBridgePark(this);
         _transition = "";
         return;
     }
@@ -234,7 +234,7 @@ public class SpeedBotAutoStateMachineContext
             Default(context);
         }
 
-        protected void evStartNerdBotsBridgePark(SpeedBotAutoStateMachineContext context)
+        protected void evStartPiGearsBridgePark(SpeedBotAutoStateMachineContext context)
         {
             Default(context);
         }
@@ -349,11 +349,11 @@ public class SpeedBotAutoStateMachineContext
         }
 
         @Override
-        protected void evStartNerdBotsBridgePark(SpeedBotAutoStateMachineContext context)
+        protected void evStartPiGearsBridgePark(SpeedBotAutoStateMachineContext context)
         {
 
             (context.getState()).exit(context);
-            context.setState(NerdBotsBridgePark.Start);
+            context.setState(PiGearsBridgePark.Start);
             (context.getState()).entry(context);
             return;
         }
@@ -714,7 +714,7 @@ public class SpeedBotAutoStateMachineContext
             {
                 AutonomousController ctxt = context.getOwner();
 
-            ctxt.linearDriveSlow(-12d);
+            ctxt.linearDriveSlow(-16d);
             return;
         }
 
@@ -1017,7 +1017,7 @@ public class SpeedBotAutoStateMachineContext
                 AutonomousController ctxt = context.getOwner();
 
             ctxt.closeHand();
-            ctxt.linearDriveSlow(-10d);
+            ctxt.linearDriveSlow(-4d);
             return;
         }
 
@@ -1107,12 +1107,14 @@ public class SpeedBotAutoStateMachineContext
             new DragFoundation_GrabFoundation("DragFoundation.GrabFoundation", 13);
         public static final DragFoundation_DragFoundation DragFoundation =
             new DragFoundation_DragFoundation("DragFoundation.DragFoundation", 14);
-        public static final DragFoundation_ReleaseFoundation ReleaseFoundation =
-            new DragFoundation_ReleaseFoundation("DragFoundation.ReleaseFoundation", 15);
+        public static final DragFoundation_RotateFoundation RotateFoundation =
+            new DragFoundation_RotateFoundation("DragFoundation.RotateFoundation", 15);
+        public static final DragFoundation_BackupUpToWall BackupUpToWall =
+            new DragFoundation_BackupUpToWall("DragFoundation.BackupUpToWall", 16);
         public static final DragFoundation_LowerCrane LowerCrane =
-            new DragFoundation_LowerCrane("DragFoundation.LowerCrane", 16);
+            new DragFoundation_LowerCrane("DragFoundation.LowerCrane", 17);
         public static final DragFoundation_Complete Complete =
-            new DragFoundation_Complete("DragFoundation.Complete", 17);
+            new DragFoundation_Complete("DragFoundation.Complete", 18);
     }
 
     protected static class DragFoundation_Default
@@ -1295,7 +1297,7 @@ public class SpeedBotAutoStateMachineContext
             {
                 AutonomousController ctxt = context.getOwner();
 
-            ctxt.linearDrive(-50d);
+            ctxt.linearDrive(-54d);
             return;
         }
 
@@ -1304,7 +1306,7 @@ public class SpeedBotAutoStateMachineContext
         {
 
             (context.getState()).exit(context);
-            context.setState(DragFoundation.ReleaseFoundation);
+            context.setState(DragFoundation.RotateFoundation);
             (context.getState()).entry(context);
             return;
         }
@@ -1314,7 +1316,7 @@ public class SpeedBotAutoStateMachineContext
         {
 
             (context.getState()).exit(context);
-            context.setState(DragFoundation.ReleaseFoundation);
+            context.setState(DragFoundation.RotateFoundation);
             (context.getState()).entry(context);
             return;
         }
@@ -1330,14 +1332,14 @@ public class SpeedBotAutoStateMachineContext
         private static final long serialVersionUID = 1L;
     }
 
-    private static final class DragFoundation_ReleaseFoundation
+    private static final class DragFoundation_RotateFoundation
         extends DragFoundation_Default
     {
     //-------------------------------------------------------
     // Member methods.
     //
 
-        private DragFoundation_ReleaseFoundation(String name, int id)
+        private DragFoundation_RotateFoundation(String name, int id)
         {
             super (name, id);
         }
@@ -1357,7 +1359,7 @@ public class SpeedBotAutoStateMachineContext
         {
 
             (context.getState()).exit(context);
-            context.setState(DragFoundation.LowerCrane);
+            context.setState(DragFoundation.BackupUpToWall);
             (context.getState()).entry(context);
             return;
         }
@@ -1367,7 +1369,7 @@ public class SpeedBotAutoStateMachineContext
         {
 
             (context.getState()).exit(context);
-            context.setState(DragFoundation.LowerCrane);
+            context.setState(DragFoundation.BackupUpToWall);
             (context.getState()).entry(context);
             return;
         }
@@ -1383,7 +1385,7 @@ public class SpeedBotAutoStateMachineContext
                 context.clearState();
                 try
                 {
-                    ctxt.rotate(-90);
+                    ctxt.rotate(+45);
                 }
                 finally
                 {
@@ -1397,7 +1399,7 @@ public class SpeedBotAutoStateMachineContext
                 context.clearState();
                 try
                 {
-                    ctxt.rotate(+90);
+                    ctxt.rotate(-45);
                 }
                 finally
                 {
@@ -1407,6 +1409,78 @@ public class SpeedBotAutoStateMachineContext
             }            else
             {
                 super.evTimeout(context);
+            }
+
+            return;
+        }
+
+    //-------------------------------------------------------
+    // Member data.
+    //
+
+        //---------------------------------------------------
+        // Constants.
+        //
+
+        private static final long serialVersionUID = 1L;
+    }
+
+    private static final class DragFoundation_BackupUpToWall
+        extends DragFoundation_Default
+    {
+    //-------------------------------------------------------
+    // Member methods.
+    //
+
+        private DragFoundation_BackupUpToWall(String name, int id)
+        {
+            super (name, id);
+        }
+
+        @Override
+        protected void entry(SpeedBotAutoStateMachineContext context)
+            {
+                AutonomousController ctxt = context.getOwner();
+
+            ctxt.openHook();
+            ctxt.startTimer(2000);
+            return;
+        }
+
+        @Override
+        protected void evDriveComplete(SpeedBotAutoStateMachineContext context)
+        {
+
+            (context.getState()).exit(context);
+            context.setState(DragFoundation.Complete);
+            (context.getState()).entry(context);
+            return;
+        }
+
+        @Override
+        protected void evDriveTimeout(SpeedBotAutoStateMachineContext context)
+        {
+
+            (context.getState()).exit(context);
+            context.setState(DragFoundation.Complete);
+            (context.getState()).entry(context);
+            return;
+        }
+
+        @Override
+        protected void evTimeout(SpeedBotAutoStateMachineContext context)
+        {
+            AutonomousController ctxt = context.getOwner();
+
+            AutonomousControllerState endState = context.getState();
+            context.clearState();
+            try
+            {
+                ctxt.linearDrive(-10d);
+            }
+            finally
+            {
+                context.setState(endState);
             }
 
             return;
@@ -1542,13 +1616,13 @@ public class SpeedBotAutoStateMachineContext
         //
 
         public static final TechnoLogicsBridgePark_Start Start =
-            new TechnoLogicsBridgePark_Start("TechnoLogicsBridgePark.Start", 18);
+            new TechnoLogicsBridgePark_Start("TechnoLogicsBridgePark.Start", 19);
         public static final TechnoLogicsBridgePark_RotateToBridge RotateToBridge =
-            new TechnoLogicsBridgePark_RotateToBridge("TechnoLogicsBridgePark.RotateToBridge", 19);
+            new TechnoLogicsBridgePark_RotateToBridge("TechnoLogicsBridgePark.RotateToBridge", 20);
         public static final TechnoLogicsBridgePark_DriveToBridge DriveToBridge =
-            new TechnoLogicsBridgePark_DriveToBridge("TechnoLogicsBridgePark.DriveToBridge", 20);
+            new TechnoLogicsBridgePark_DriveToBridge("TechnoLogicsBridgePark.DriveToBridge", 21);
         public static final TechnoLogicsBridgePark_Complete Complete =
-            new TechnoLogicsBridgePark_Complete("TechnoLogicsBridgePark.Complete", 21);
+            new TechnoLogicsBridgePark_Complete("TechnoLogicsBridgePark.Complete", 22);
     }
 
     protected static class TechnoLogicsBridgePark_Default
@@ -1866,7 +1940,7 @@ public class SpeedBotAutoStateMachineContext
         private static final long serialVersionUID = 1L;
     }
 
-    /* package */ static abstract class NerdBotsBridgePark
+    /* package */ static abstract class PiGearsBridgePark
     {
     //-----------------------------------------------------------
     // Member methods.
@@ -1880,24 +1954,20 @@ public class SpeedBotAutoStateMachineContext
         // Constants.
         //
 
-        public static final NerdBotsBridgePark_Start Start =
-            new NerdBotsBridgePark_Start("NerdBotsBridgePark.Start", 22);
-        public static final NerdBotsBridgePark_CloseHand CloseHand =
-            new NerdBotsBridgePark_CloseHand("NerdBotsBridgePark.CloseHand", 23);
-        public static final NerdBotsBridgePark_Drive Drive =
-            new NerdBotsBridgePark_Drive("NerdBotsBridgePark.Drive", 24);
-        public static final NerdBotsBridgePark_Complete Complete =
-            new NerdBotsBridgePark_Complete("NerdBotsBridgePark.Complete", 25);
+        public static final PiGearsBridgePark_Start Start =
+            new PiGearsBridgePark_Start("PiGearsBridgePark.Start", 23);
+        public static final PiGearsBridgePark_Complete Complete =
+            new PiGearsBridgePark_Complete("PiGearsBridgePark.Complete", 24);
     }
 
-    protected static class NerdBotsBridgePark_Default
+    protected static class PiGearsBridgePark_Default
         extends AutonomousControllerState
     {
     //-----------------------------------------------------------
     // Member methods.
     //
 
-        protected NerdBotsBridgePark_Default(String name, int id)
+        protected PiGearsBridgePark_Default(String name, int id)
         {
             super (name, id);
         }
@@ -1913,56 +1983,14 @@ public class SpeedBotAutoStateMachineContext
         private static final long serialVersionUID = 1L;
     }
 
-    private static final class NerdBotsBridgePark_Start
-        extends NerdBotsBridgePark_Default
+    private static final class PiGearsBridgePark_Start
+        extends PiGearsBridgePark_Default
     {
     //-------------------------------------------------------
     // Member methods.
     //
 
-        private NerdBotsBridgePark_Start(String name, int id)
-        {
-            super (name, id);
-        }
-
-        @Override
-        protected void entry(SpeedBotAutoStateMachineContext context)
-            {
-                AutonomousController ctxt = context.getOwner();
-
-            ctxt.startTimer(10000);
-            return;
-        }
-
-        @Override
-        protected void evTimeout(SpeedBotAutoStateMachineContext context)
-        {
-
-            (context.getState()).exit(context);
-            context.setState(NerdBotsBridgePark.CloseHand);
-            (context.getState()).entry(context);
-            return;
-        }
-
-    //-------------------------------------------------------
-    // Member data.
-    //
-
-        //---------------------------------------------------
-        // Constants.
-        //
-
-        private static final long serialVersionUID = 1L;
-    }
-
-    private static final class NerdBotsBridgePark_CloseHand
-        extends NerdBotsBridgePark_Default
-    {
-    //-------------------------------------------------------
-    // Member methods.
-    //
-
-        private NerdBotsBridgePark_CloseHand(String name, int id)
+        private PiGearsBridgePark_Start(String name, int id)
         {
             super (name, id);
         }
@@ -1973,49 +2001,7 @@ public class SpeedBotAutoStateMachineContext
                 AutonomousController ctxt = context.getOwner();
 
             ctxt.closeHand();
-            ctxt.startTimer(10000);
-            return;
-        }
-
-        @Override
-        protected void evTimeout(SpeedBotAutoStateMachineContext context)
-        {
-
-            (context.getState()).exit(context);
-            context.setState(NerdBotsBridgePark.Drive);
-            (context.getState()).entry(context);
-            return;
-        }
-
-    //-------------------------------------------------------
-    // Member data.
-    //
-
-        //---------------------------------------------------
-        // Constants.
-        //
-
-        private static final long serialVersionUID = 1L;
-    }
-
-    private static final class NerdBotsBridgePark_Drive
-        extends NerdBotsBridgePark_Default
-    {
-    //-------------------------------------------------------
-    // Member methods.
-    //
-
-        private NerdBotsBridgePark_Drive(String name, int id)
-        {
-            super (name, id);
-        }
-
-        @Override
-        protected void entry(SpeedBotAutoStateMachineContext context)
-            {
-                AutonomousController ctxt = context.getOwner();
-
-            ctxt.linearDrive(-10d);
+            ctxt.linearDrive(-12d);
             return;
         }
 
@@ -2024,7 +2010,7 @@ public class SpeedBotAutoStateMachineContext
         {
 
             (context.getState()).exit(context);
-            context.setState(NerdBotsBridgePark.Complete);
+            context.setState(PiGearsBridgePark.Complete);
             (context.getState()).entry(context);
             return;
         }
@@ -2034,7 +2020,7 @@ public class SpeedBotAutoStateMachineContext
         {
 
             (context.getState()).exit(context);
-            context.setState(NerdBotsBridgePark.Complete);
+            context.setState(PiGearsBridgePark.Complete);
             (context.getState()).entry(context);
             return;
         }
@@ -2050,14 +2036,14 @@ public class SpeedBotAutoStateMachineContext
         private static final long serialVersionUID = 1L;
     }
 
-    private static final class NerdBotsBridgePark_Complete
-        extends NerdBotsBridgePark_Default
+    private static final class PiGearsBridgePark_Complete
+        extends PiGearsBridgePark_Default
     {
     //-------------------------------------------------------
     // Member methods.
     //
 
-        private NerdBotsBridgePark_Complete(String name, int id)
+        private PiGearsBridgePark_Complete(String name, int id)
         {
             super (name, id);
         }
