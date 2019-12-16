@@ -32,7 +32,7 @@ public class AutonomousController implements ICraneMovementStatusListener {
     public static final int SEQUENCE_DRAG_FOUNDATION = 0;
     public static final int SEQUENCE_GET_STONE = 1;
     public static final int SEQUENCE_ROTATE_TO_BRIDGE_PARK = 2;
-    public static final int SEQUENCE_NERDBOTS_BRIDGE_PARK = 3;
+    public static final int SEQUENCE_PIBOTS_BRIDGE_PARK = 3;
     public static final int SEQUENCE_TECHNOLOGIC_BRIDGE_PARK = 4;
 
     private static boolean TELEMETRY_STATE_LOGGING_ENABLED = true;
@@ -333,8 +333,8 @@ public class AutonomousController implements ICraneMovementStatusListener {
                 case SEQUENCE_GET_STONE:
                     transition("evStartDriveToStones");
                     break;
-                case SEQUENCE_NERDBOTS_BRIDGE_PARK:
-                    transition("evStartNerdBotsBridgePark");
+                case SEQUENCE_PIBOTS_BRIDGE_PARK:
+                    transition("evStartPiGearsBridgePark");
                     break;
                 case SEQUENCE_TECHNOLOGIC_BRIDGE_PARK:
                     transition("evStartTechnoLogicsBridgePark");

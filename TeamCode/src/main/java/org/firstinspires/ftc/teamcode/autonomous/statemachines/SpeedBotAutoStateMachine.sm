@@ -10,7 +10,7 @@
         evStartDriveToStones jump(GetStones::Start) { }
         evStartDragFoundation jump(DragFoundation::Start) { }
         evStartTechnoLogicsBridgePark jump(TechnoLogicsBridgePark::Start) { }
-        evStartNerdBotsBridgePark jump (NerdBotsBridgePark::Start) { }
+        evStartPiGearsBridgePark jump (PiGearsBridgePark::Start) { }
     }
 %%
 
@@ -74,7 +74,7 @@
     */
     BackupToBeginDrag
         Entry{
-            linearDriveSlow(-12d);
+            linearDriveSlow(-16d);
          }
     {
         evDriveComplete [ctxt.isBlueAlliance() == true] RotateTowardBridge {
@@ -136,7 +136,7 @@
         Entry {
             //  backup to the line
             closeHand();
-            linearDriveSlow(-10d);
+            linearDriveSlow(-4d);
         }
     {
        evDriveComplete Complete {  }
@@ -170,6 +170,7 @@
             startTimer(1000);
         }
     {
+        // Strafe left for blue
         evTimeout DriveToFoundation { }
     }
 
@@ -195,14 +196,14 @@
 
     DragFoundation
         Entry {
-            linearDrive(-50d);
+            linearDrive(-54d);
         }
     {
-        evDriveComplete ReleaseFoundation {        }
-        evDriveTimeout ReleaseFoundation {        }
+        evDriveComplete RotateFoundation {        }
+        evDriveTimeout RotateFoundation {        }
     }
 
-    ReleaseFoundation
+    RotateFoundation
         Entry {
             openHook();
             startTimer(1500);
@@ -210,16 +211,26 @@
     {
         evTimeout [ctxt.isBlueAlliance() == true] nil {
             // Rotate to the right
-            rotate(-90);
+            rotate(+45);
         }
         evTimeout [ctxt.isBlueAlliance() == false] nil {
-            // rotate to the left
-            rotate(+90);
+            // rotate to the right
+            rotate(-45);
         }
-        evRotationComplete LowerCrane { }
-        evRotationTimeout LowerCrane { }
+        evRotationComplete BackupUpToWall { }
+        evRotationTimeout BackupUpToWall { }
     }
 
+    BackupUpToWall
+    Entry {
+    openHook();
+    startTimer(2000);
+    }
+    {
+        evTimeout nil { linearDrive(-10d); }
+        evDriveComplete Complete { }
+        evDriveTimeout Complete { }
+    }
 
     LowerCrane
         Entry{
@@ -303,29 +314,12 @@
 /*
 * Delays and then moves rearward this is for the NerdBot colllaboration
 */
-%map NerdBotsBridgePark
+%map PiGearsBridgePark
 %%
     Start
         Entry {
-            startTimer(10000);
-        }
-    {
-        evTimeout CloseHand { }
-    }
-    CloseHand
-        Entry {
             closeHand();
-            startTimer(10000);
-        }
-    {
-        evTimeout Drive { }
-    }
-/*
-    * drive backward 10 inches
-    */
-    Drive
-        Entry {
-        linearDrive(-10d);
+            linearDrive(-12d);
     }
     {
 
