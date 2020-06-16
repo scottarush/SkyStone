@@ -15,6 +15,9 @@ import java.util.Vector;
  *
  * When position or heading is known from additional inputs, call the
  * setKnownXXX functions to update the estimate.
+ *
+ * Measurement vector z=[vx,vy,w_zw,ax,ay,w_zi]^T
+ * Estimate vector xhat=[px,vx,vy,ax,ay,w_z,theta]^T
  */
 public class MecanumKalmanEstimator {
 
@@ -40,39 +43,17 @@ public class MecanumKalmanEstimator {
     private DMatrixRMaj A = new DMatrixRMaj(8,8);
     // Process noise covariance matrix
     private DMatrixRMaj Q = new DMatrixRMaj(8,8);
-    // Covariance matrix
-    private DMatrixRMaj P = new DMatrixRMaj(8,8);
     // Measurment noise covariance matrix
     private DMatrixRMaj R = new DMatrixRMaj(6,6);
     // Measurement matrix
     private DMatrixRMaj H = new DMatrixRMaj(6,8);
-    //-------------------------------------------------------------
-    // Measurement vector z
-    //      vx
-    //      vy
-    //      ω_zw
-    //      ax
-    //      ay
-    //      ω_zi
-    private DMatrixRMaj z = new DMatrixRMaj(6,1);
 
-    //-------------------------------------------------------------
-    // Estimate vector xhat
-    //      px
-    //      py
-    //      vx
-    //      vy
-    //      ax
-    //      ay
-    //      ω_z
-    //      θ
-    private DMatrixRMaj xhat = new DMatrixRMaj(8,1);
 
     private double lx;
     private double ly;
     private double radius_wheel;
 
-  public MecanumKalmanEstimator(){
+    public MecanumKalmanEstimator(){
 
     }
 
@@ -153,14 +134,19 @@ public class MecanumKalmanEstimator {
         Q.set(Q_MATRIX);
         H.set(H_MATRIX);
 
-        // initialize the filter
+        // configure the filter
         mFilter.configure(A,Q,H);
 
-        // Initialize P to the process noise covariance matrix
-        P.set(Q_MATRIX);
+        //------------------------------
+        // Now initialize the state
+        //------------------------------
 
         // Initialize the state estimate vector to the supplied position and orientation
-        xhat.set(new double[][] {{px0},{py0},{0d},{0d},{0d},{0d},{0d},{theta0}});
+        DMatrixRMaj xhat = new DMatrixRMaj(new double[][] {{px0},{py0},{0d},{0d},{0d},{0d},{0d},{theta0}});
+        // Initialize P to the process noise covariance matrix
+        DMatrixRMaj p = new DMatrixRMaj(Q_MATRIX);
+
+        mFilter.setState(xhat,p);
     }
 
     /**
@@ -184,7 +170,7 @@ public class MecanumKalmanEstimator {
         double vx = rover4*(w_lf+w_rf-w_lr-w_rr);
         double vy = rover4*(w_lf+w_rf+w_lr+w_rr);
         double wzw = rover4*(w_lf+w_rf+w_lr+w_rr)/(lx+ly);
-        z.set(new double[][] {{vx},{vy},{wzw},{ax_imu},{ay_imu},{wz_imu}});
+        DMatrixRMaj z = new DMatrixRMaj(new double[][] {{vx},{vy},{wzw},{ax_imu},{ay_imu},{wz_imu}});
 
         // Do Kalman predict step
         mFilter.predict();
@@ -207,8 +193,7 @@ public class MecanumKalmanEstimator {
         return mFilter.getState().get(XHAT_THETA_INDEX,0);
     }
     /**
-     * Called to update the position x coordinate when additional measurements
-     * are available to reset the tracked position.
+     * Called to set the position x coordinate when known from objects in the field
      * @param px updated x position
      */
     public void setKnownXPosition(double px){
@@ -220,8 +205,7 @@ public class MecanumKalmanEstimator {
         mFilter.setState(xhat,p);
     }
     /**
-     * Called to update the position y coordinate when additional measurements
-     * are available to reset the tracked position.
+     * Called to update the position y coordinate when known from objects in the field
      * @param py updated y position
      */
     public void setKnownYPosition(double py){
@@ -233,8 +217,7 @@ public class MecanumKalmanEstimator {
         mFilter.setState(xhat,p);
     }
     /**
-     * Called to update the heading when additional measurements
-     * are available to reset the heading angle
+     * Called to update the heading when detected from objects in the field
      * @param theta updated heading angle
      */
     public void setKnownHeading(double theta){
