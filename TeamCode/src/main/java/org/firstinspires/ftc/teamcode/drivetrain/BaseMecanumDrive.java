@@ -56,6 +56,7 @@ public abstract class BaseMecanumDrive extends Drivetrain{
     protected DcMotor lrMotor = null;
     protected DcMotor rrMotor = null;
 
+
      /**
      * Wheel circumference in inches
      **/
@@ -65,6 +66,7 @@ public abstract class BaseMecanumDrive extends Drivetrain{
      * scale factor for strafe lateral distance.
      */
     public static final double STRAFE_ENCODER_DISTANCE_COEFFICIENT = 1.08d;
+
 
     private boolean mWasLastMovementStrafe = false;
 

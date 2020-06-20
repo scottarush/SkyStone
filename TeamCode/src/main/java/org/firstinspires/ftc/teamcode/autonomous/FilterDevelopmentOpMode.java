@@ -3,15 +3,15 @@ package org.firstinspires.ftc.teamcode.autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.firstinspires.ftc.teamcode.grabberbot.MecanumGrabberBot;
+import org.firstinspires.ftc.teamcode.speedbot.BaseSpeedBot;
 import org.firstinspires.ftc.teamcode.speedbot.CraneSpeedBot;
 
 
-public class FilterDevelopmentOpMode {
+public class FilterDevelopmentOpMode  extends  OpMode{
 
 
 
-    private MecanumGrabberBot mGrabberBot = null;
-    private CraneSpeedBot mSpeedBot = null;
+    private BaseSpeedBot mSpeedBot = null;
 
     private static final boolean USE_GRABBER_BOT = false;
 
@@ -41,14 +41,8 @@ public class FilterDevelopmentOpMode {
     public void init() {
         String initErrs = "";
         try {
-            if (USE_GRABBER_BOT){
-                mGrabberBot = new MecanumGrabberBot(mOpmode, true);
-                mGrabberBot.init();
-            }
-            else{
-                mSpeedBot = new CraneSpeedBot(mOpmode, true);
+                 mSpeedBot = new BaseSpeedBot(mOpmode, true);
                 mSpeedBot.init();
-            }
         }
         catch(Exception e){
             initErrs += ","+e.getMessage();

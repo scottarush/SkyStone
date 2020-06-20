@@ -129,10 +129,10 @@ public class MecanumKalmanEstimator {
 
 
         // Initialize constant matrices
-        A.set(A_MATRIX);
-        R.set(R_MATRIX);
-        Q.set(Q_MATRIX);
-        H.set(H_MATRIX);
+        A = new DMatrixRMaj(A_MATRIX);
+        R = new DMatrixRMaj(R_MATRIX);
+        Q = new DMatrixRMaj(Q_MATRIX);
+        H = new DMatrixRMaj(H_MATRIX);
 
         // configure the filter
         mFilter.configure(A,Q,H);
@@ -148,6 +148,7 @@ public class MecanumKalmanEstimator {
 
         mFilter.setState(xhat,p);
     }
+
 
     /**
      * Called at the sampling rate T to update the filter with a new measurement.
