@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode.drivetrain;
 
-import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -24,8 +23,21 @@ public abstract class Drivetrain {
      *
      */
     public abstract void correctHeading(double correction);
+    /**
+     * Implemented by subclasses to indicate that the target position has been reached.
+     * The reason for this is that when the motors stall, the target position is never reached
+     * and the encoder fail timeout occurs.
+     */
+    protected abstract boolean isTargetPositionReached();
 
-     /** OpMode in order to access telemetry from subclasses. **/
+    /**
+     * threshold angle delta for completion of a rotation must be provided by subclasses for each
+     * drivetrain
+     */
+    protected abstract double getMinRotationCompleteAngle();
+
+
+    /** OpMode in order to access telemetry from subclasses. **/
     protected OpMode mOpMode;
     private OneShotTimer mDriveByEncoderFailTimer = null;
     private OneShotTimer mTimedDriveTimer = null;
@@ -44,11 +56,8 @@ public abstract class Drivetrain {
     protected double mHeadingAngle = 0d;
     protected int mRotationTargetAngle = 0;
 
-    /**
-     * threshold angle delta for completion of a rotation must be provided by subclasses for each
-     * drivetrain
-     */
-    protected abstract double getMinRotationCompleteAngle();
+
+    protected IMU mIMU;
 
     private static final boolean ENABLE_LINEAR_DRIVE_CORRECTION = false;
     /**
@@ -56,20 +65,19 @@ public abstract class Drivetrain {
      */
     protected double mLinearDrivePower = 1.0d;
 
-    /**
-     * IMU inside REV hub
-     */
-    private BNO055IMU mIMU = null;
-    private boolean mIMUInitialized = false;
 
 
     private ArrayList<IDriveSessionStatusListener> mDriveSessionStatusListeners = new ArrayList<>();
     private ArrayList<IRotationStatusListener> mRotationStatusListeners = new ArrayList<>();
 
 
-    public Drivetrain(OpMode opMode){
-        this.mOpMode = opMode;
+    public Drivetrain(OpMode opMode, IMU imu) {
+        init(opMode);
+        mIMU = imu;
+    }
 
+    private void init(OpMode opMode){
+        this.mOpMode = opMode;
         mTimedDriveTimer = new OneShotTimer(1000, new OneShotTimer.IOneShotTimerCallback() {
             @Override
             public void timeoutComplete() {
@@ -132,41 +140,9 @@ public abstract class Drivetrain {
     /* Initialize standard Hardware interfaces.
      * NOTE:  This class throws Exception on any hardware initIMU error so be sure to catch and
      * report to Telemetry in your initialization. */
-    public abstract void init(HardwareMap ahwMap,boolean initIMU) throws Exception;
-
-        /**
-         *
-         * IMPORTANT:  IMU can take a long time to initialize
-         */
-    protected void initIMU(HardwareMap hwMap) throws Exception {
-        this.mHWMap = hwMap;
-        try{
-            // Initialize the IMU
-            BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
-
-            parameters.mode                = BNO055IMU.SensorMode.IMU;
-            parameters.angleUnit           = BNO055IMU.AngleUnit.DEGREES;
-            parameters.accelUnit           = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
-            parameters.loggingEnabled      = false;
-
-            // Retrieve and initialize the IMU. We expect the IMU to be attached to an I2C port
-            // on a Core Device Interface Module, configured to be a sensor of type "AdaFruit IMU",
-            // and named "imu".
-            mIMU = mHWMap.get(BNO055IMU.class, "imu");
-            mIMU.initialize(parameters);
+    public abstract void init(HardwareMap ahwMap) throws Exception;
 
 
-            mIMUInitialized = true;
-        }
-        catch(Exception e){
-            throw new Exception(e);
-        }
-        mIMUInitialized = true;
-    }
-
-    public boolean isIMUInitialized(){
-        return mIMUInitialized;
-    }
 
     /**
      * Must be called from the OpMode service loop to service rotation and encoder timers
@@ -282,9 +258,12 @@ public abstract class Drivetrain {
      */
     protected void resetAngle()
     {
-        if (!mIMUInitialized)
-            return;
-        mLastIMUOrientation = mIMU.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+        if (mIMU != null) {
+            if (!mIMU.isIMUInitialized())
+                return ;
+        }
+
+        mLastIMUOrientation = mIMU.getBNO055IMU().getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
 
         mHeadingAngle = 0;
     }
@@ -293,14 +272,16 @@ public abstract class Drivetrain {
      * @return Angle in degrees. + = left, - = right.
      */
     protected double getAngle() {
-        if (!mIMUInitialized)
-            return 0d;
+        if (mIMU != null) {
+            if (!mIMU.isIMUInitialized())
+                return 0d;
+        }
         // We experimentally determined the Z axis is the axis we want to use for heading angle.
         // We have to process the angle because the imu works in euler angles so the Z axis is
         // returned as 0 to +180 or 0 to -180 rolling back to -179 or +179 when rotation passes
         // 180 degrees. We detect this transition and track the total cumulative angle of rotation.
 
-        Orientation angles = mIMU.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+        Orientation angles = mIMU.getBNO055IMU().getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
 
         double deltaAngle = angles.firstAngle - mLastIMUOrientation.firstAngle;
 
@@ -456,15 +437,7 @@ public abstract class Drivetrain {
         return mDriveByEncoderFailTimer.isRunning();
     }
 
-    /**
-     * Implemented by subclasses to indicate that the target position has been reached.
-     * The reason for this is that when the motors stall, the target position is never reached
-     * and the encoder fail timeout occurs.
-     */
-    protected abstract boolean isTargetPositionReached();
-
-
-    /**
+     /**
          *  Utility function to handle motor initialization.  initIMU must have been called
          *  with a non-null mHWMap or exception will be thrown.
          *

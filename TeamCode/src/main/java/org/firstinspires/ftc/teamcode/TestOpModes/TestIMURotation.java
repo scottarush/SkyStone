@@ -67,11 +67,11 @@ public class TestIMURotation extends OpMode implements IDriveSessionStatusListen
         try {
             if (USE_GRABBER_BOT){
                 drivetrain = new GrabberBotMecanumDrive(this);
-                drivetrain.init(hardwareMap,true);
+                drivetrain.init(hardwareMap);
             }
             else{
-                drivetrain = new SpeedBotMecanumDrive(this);
-                drivetrain.init(hardwareMap,true);
+                drivetrain = new SpeedBotMecanumDrive(this,null);
+                drivetrain.init(hardwareMap);
             }
          }
         catch(Exception e){

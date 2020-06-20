@@ -41,10 +41,8 @@ public class MecanumGrabberBot  {
 
     private GrabberBotMecanumDrive mDrivetrain = null;
 
-    private boolean mEnableIMU = false;
 
     public MecanumGrabberBot(OpMode opMode, boolean enableIMU){
-        mEnableIMU = enableIMU;
         mOpMode = opMode;
 
         mDrivetrain = new GrabberBotMecanumDrive(mOpMode);
@@ -71,7 +69,7 @@ public class MecanumGrabberBot  {
     public void init() throws Exception {
         String initErrString = "";
         try{
-           mDrivetrain.init(mOpMode.hardwareMap,mEnableIMU);
+           mDrivetrain.init(mOpMode.hardwareMap);
         }
         catch(Exception e){
             initErrString += e.getMessage();

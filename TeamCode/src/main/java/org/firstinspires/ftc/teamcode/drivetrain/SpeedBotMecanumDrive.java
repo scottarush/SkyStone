@@ -20,6 +20,14 @@ public class SpeedBotMecanumDrive extends BaseMecanumDrive {
         return LINEAR_MILLISECONDS_PER_INCH;
     }
 
+    /*
+    * With core hex motors there are 72 counts/axle rotation x 1:4 gear output ratio
+     */
+    @Override
+    protected int getEncoderCountsPerRev() {
+        return 288;
+    }
+
     @Override
     public double getRotationKp() {
         return 1.8d;
@@ -46,8 +54,8 @@ public class SpeedBotMecanumDrive extends BaseMecanumDrive {
             (4 * MECANUM_WHEEL_CIRCUMFERENCE);
 
 
-    public SpeedBotMecanumDrive(OpMode opMode){
-        super(opMode);
+    public SpeedBotMecanumDrive(OpMode opMode,IMU imu){
+        super(opMode,imu);
     }
 
     @Override
@@ -67,7 +75,7 @@ public class SpeedBotMecanumDrive extends BaseMecanumDrive {
     /* Initialize standard Hardware interfaces.
      * NOTE:  This class throws Exception on any hardware initIMU error so be sure to catch and
      * report to Telemetry in your initialization. */
-    public void init(HardwareMap ahwMap,boolean initIMU) throws Exception {
+    public void init(HardwareMap ahwMap) throws Exception {
         // Save reference to Hardware map
         mHWMap = ahwMap;
 
@@ -107,14 +115,6 @@ public class SpeedBotMecanumDrive extends BaseMecanumDrive {
         }
         catch(Exception e){
             motorInitError += "rr,";
-        }
-        if (initIMU) {
-            try {
-                initIMU(ahwMap);
-            } catch (Exception e) {
-                // This exception can't actually happen but change in the future to catch this somehow
-                motorInitError += "IMU initIMU";
-            }
         }
 
         // Set all motors to zero power

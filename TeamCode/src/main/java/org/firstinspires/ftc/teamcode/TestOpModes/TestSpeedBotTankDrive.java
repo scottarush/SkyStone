@@ -55,7 +55,7 @@ public class TestSpeedBotTankDrive extends OpMode{
     @Override
     public void init() {
         try{
-           drivetrain = new SpeedBotMecanumDrive(this);
+           drivetrain = new SpeedBotMecanumDrive(this,null);
          }
         catch(Exception e){
             telemetry.addData("Robot Init Error","%s",e.getMessage());

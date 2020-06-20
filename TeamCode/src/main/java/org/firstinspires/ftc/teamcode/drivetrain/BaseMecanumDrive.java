@@ -81,9 +81,9 @@ public abstract class BaseMecanumDrive extends Drivetrain{
     private double mWheelSpeeds[] = new double[4];
 
 
-    private boolean mWheelSpeedsInited = false;
+    private boolean mFirstLoopInit = false;
 
-    private long mLastWheelSpeedCountTime = 0;
+    private long mLastLoopTime = 0;
     /**
      * Wheel circumference in inches
      **/
@@ -100,8 +100,8 @@ public abstract class BaseMecanumDrive extends Drivetrain{
     /**
      * @param
      **/
-    public BaseMecanumDrive(OpMode opMode) {
-        super(opMode);
+    public BaseMecanumDrive(OpMode opMode,IMU imu) {
+        super(opMode,imu);
     }
 
     /**
@@ -115,23 +115,34 @@ public abstract class BaseMecanumDrive extends Drivetrain{
     protected abstract int getEncoderDriveCountsMinThreshold();
 
     /**
-     * Must be implemented by subclasses to provide the number of counts per revolution
+     * Must be implemented by subclasses to provide the number of counts per wheel revolution
      */
     protected abstract int getEncoderCountsPerRev();
+
     /**
      * Overridden to compute wheel speeds.  Must call base class function too.
      */
     @Override
     public void loop() {
         super.loop();
-        computeWheelSpeeds();
-     }
+        long newtime = System.nanoTime();
+        if (mFirstLoopInit) {
+            mLastLoopTime = newtime;
+            computeWheelSpeeds(0d);
+            mFirstLoopInit = true;
+            return;
+        }
+
+        double deltat = (mLastLoopTime)*1e-9d;
+        computeWheelSpeeds(deltat);
+
+    }
 
     /**
      * helper to compute wheel speeds called from loop
      */
-    private void computeWheelSpeeds(){
-        if (!mWheelSpeedsInited){
+    private void computeWheelSpeeds(double deltaT){
+        if (!mFirstLoopInit){
             // This is the first call so initialize everything
             mMotorList.add(mLFMotor);
             mMotorList.add(mRFMotor);
@@ -142,26 +153,23 @@ public abstract class BaseMecanumDrive extends Drivetrain{
             for(int i=0;i < mMotorList.size();i++){
                 mMotorPositions[i] = getCurrentPosition(mMotorList.get(i));
                 mWheelSpeeds[i] = 0d;
-                mLastWheelSpeedCountTime = System.nanoTime();
             }
-            mWheelSpeedsInited = true;
             return;
         }
         // Otherwise compute the angular velocities
         int newPositions[] = new int[4];
         long newtime = System.nanoTime();
         // Compute delta t since last computation
-        double deltat = (newtime-mLastWheelSpeedCountTime)*1e-9d;
-        mLastWheelSpeedCountTime = newtime;  // save for next time
+        mLastLoopTime = newtime;  // save for next time
         // and loop through and get the speeds.
         for(int i=0;i < mMotorList.size();i++){
             int newpos = getCurrentPosition(mMotorList.get(i));
             double angle = (newpos - mMotorPositions[i])/ getEncoderCountsPerRev() * 2*Math.PI;
-            mWheelSpeeds[i] = angle /deltat;
+            mWheelSpeeds[i] = angle /deltaT;
             mMotorPositions[i] = newpos;  // Transfer to current pos array for next time
         }
-
     }
+
     /**
      * returns array list of wheel angular speeds in radians/sec
      * array order is:  {LF,RF,LR,RR}

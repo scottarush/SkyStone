@@ -14,26 +14,17 @@ public class FilterDevelopmentOpMode  extends  OpMode{
 
     private BaseSpeedBot mSpeedBot = null;
 
-    private static final boolean USE_GRABBER_BOT = false;
-
-    private AutonomousController autoController = null;
-
-
     private OpMode mOpmode = null;
-
-    private boolean mBlueAlliance = false;
 
     private int mSequence = 0;
 
     /**
      *
      * @param opMode
-     * @param isBlueTeam
      * @param sequence
      */
-    public FilterDevelopmentOpMode(OpMode opMode, boolean isBlueTeam, int sequence){
+    public FilterDevelopmentOpMode(OpMode opMode, int sequence){
         mOpmode = opMode;
-        mBlueAlliance = isBlueTeam;
         // lengthen init timeout to give time to initialize the IMU
         mOpmode.msStuckDetectInit = 40000;
         mSequence = sequence;
@@ -42,14 +33,12 @@ public class FilterDevelopmentOpMode  extends  OpMode{
     public void init() {
         String initErrs = "";
         try {
-                 mSpeedBot = new BaseSpeedBot(mOpmode, true);
-                mSpeedBot.init();
+            mSpeedBot = new BaseSpeedBot(mOpmode, true);
+            mSpeedBot.init();
         }
         catch(Exception e){
             initErrs += ","+e.getMessage();
         }
-            autoController = new AutonomousController(mOpmode,mSpeedBot, mBlueAlliance,mSequence);
-
 
         if (initErrs.length() == 0){
             mOpmode.telemetry.addData("Status:","Robot init complete");

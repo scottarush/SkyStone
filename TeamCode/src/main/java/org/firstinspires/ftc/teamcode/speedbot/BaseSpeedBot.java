@@ -3,7 +3,9 @@ package org.firstinspires.ftc.teamcode.speedbot;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.firstinspires.ftc.teamcode.drivetrain.BaseMecanumDrive;
+import org.firstinspires.ftc.teamcode.drivetrain.IMU;
 import org.firstinspires.ftc.teamcode.drivetrain.SpeedBotMecanumDrive;
+import org.firstinspires.ftc.teamcode.filter.KalmanTracker;
 
 /**
  * This is the Speed Bot Chassis version used for development of the autonomous filter
@@ -24,9 +26,14 @@ public class BaseSpeedBot {
 
     private  FrontHooks mFrontHooks = null;
 
+    private IMU mIMU = null;
+
     public BaseSpeedBot(OpMode opMode, boolean enableIMU){
         this.mOpMode = opMode;
-         mDrivetrain = new SpeedBotMecanumDrive(opMode);
+        if (enableIMU){
+            mIMU = new IMU();
+        }
+        mDrivetrain = new SpeedBotMecanumDrive(opMode,mIMU);
 
         mFrontHooks = new FrontHooks(opMode);
     }
@@ -45,8 +52,16 @@ public class BaseSpeedBot {
      */
     public void init() throws Exception {
         String initErrString = "";
+        if (mIMU != null){
+            try {
+                mIMU.initIMU(mOpMode.hardwareMap);
+            }
+            catch(Exception e){
+                initErrString += e.getMessage();
+            }
+        }
         try {
-            mDrivetrain.init(mOpMode.hardwareMap,false);
+            mDrivetrain.init(mOpMode.hardwareMap);
 
         }
         catch (Exception e){
@@ -62,6 +77,7 @@ public class BaseSpeedBot {
         if (initErrString.length() > 0){
             throw new Exception(initErrString);
         }
+
     }
 
 }

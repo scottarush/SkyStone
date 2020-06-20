@@ -53,13 +53,20 @@ public class GrabberBotMecanumDrive extends BaseMecanumDrive {
     }
 
     public GrabberBotMecanumDrive(OpMode opMode){
-        super(opMode);
+        super(opMode,null);
+    }
+    /*
+     * With core hex motors there are 72 counts/axle rotation x 1:1 gear output ratio
+     */
+    @Override
+    protected int getEncoderCountsPerRev() {
+        return 72;
     }
 
     /* Initialize standard Hardware interfaces.
      * NOTE:  This class throws Exception on any hardware initIMU error so be sure to catch and
      * report to Telemetry in your initialization. */
-    public void init(HardwareMap ahwMap,boolean initIMU) throws Exception {
+    public void init(HardwareMap ahwMap) throws Exception {
         // Save reference to Hardware map
         mHWMap = ahwMap;
 
@@ -99,16 +106,6 @@ public class GrabberBotMecanumDrive extends BaseMecanumDrive {
         }
         catch(Exception e){
             motorInitError += "rr,";
-        }
-        // Initialize the IMU if enabled
-        if (initIMU){
-            try {
-                initIMU(mOpMode.hardwareMap);
-
-            } catch (Exception e) {
-                motorInitError += e.getMessage();
-            }
-
         }
 
         // Set all motors to zero power
