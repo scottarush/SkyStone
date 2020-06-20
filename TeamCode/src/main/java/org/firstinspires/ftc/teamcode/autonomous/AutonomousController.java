@@ -14,6 +14,7 @@ import org.firstinspires.ftc.teamcode.grabberbot.MecanumGrabberBot;
 import org.firstinspires.ftc.teamcode.speedbot.Crane;
 import org.firstinspires.ftc.teamcode.speedbot.ICraneMovementStatusListener;
 import org.firstinspires.ftc.teamcode.speedbot.SpeedBot;
+import org.firstinspires.ftc.teamcode.speedbot.SpeedBotChassis;
 import org.firstinspires.ftc.teamcode.util.OneShotTimer;
 
 import java.beans.PropertyChangeEvent;
@@ -58,9 +59,9 @@ public class AutonomousController implements ICraneMovementStatusListener {
      */
     private SpeedBot mSpeedBot = null;
     /**
-     * This reference will be non-null when using the grabber bot
+     * This reference will be non-null when using the speed bot
      */
-    private MecanumGrabberBot mGrabberBot = null;
+    private SpeedBotChassis mSpeedBotChassis = null;
 
     /**
      * Common reference used for the MecanumDrive on either bot
@@ -84,7 +85,6 @@ public class AutonomousController implements ICraneMovementStatusListener {
     });
 
 
-    private VuforiaTargetLocator mVuforia = null;
     /***
      * Needed to queue events into the state machine
      */
@@ -99,20 +99,17 @@ public class AutonomousController implements ICraneMovementStatusListener {
      * Constructor for use with SpeedBot
      * @param opMode
      * @param speedBot
-     * @param vuforia
      * @param blueAlliance
      */
     public AutonomousController(final OpMode opMode,
                                 SpeedBot speedBot,
-                                VuforiaTargetLocator vuforia,
                                 boolean blueAlliance,
                                 int sequence) {
         mSpeedBotAutoSM = new SpeedBotAutoStateMachineContext(this);
         this.opMode = opMode;
         this.mBlueAlliance = blueAlliance;
         mSpeedBot = speedBot;
-        mVuforia = vuforia;
-        mSequence = sequence;
+         mSequence = sequence;
 
         mMecanumDrive = speedBot.getDrivetrain();
 
@@ -128,21 +125,19 @@ public class AutonomousController implements ICraneMovementStatusListener {
     }
 
     /**
-     * Constructor for use with MecanumGrabberBot
+     * Constructor for use with SpeedBotChassis
      * @param opMode
-     * @param grabberBot
-     * @param vuforia
+     * @param speedBotChassis
      * @param blueAlliance
      */
-    public AutonomousController(final OpMode opMode, MecanumGrabberBot grabberBot, VuforiaTargetLocator vuforia, boolean blueAlliance,int sequence) {
+    public AutonomousController(final OpMode opMode, SpeedBotChassis speedBotChassis, boolean blueAlliance,int sequence) {
         mGrabberBotAutoSM = new GrabberBotAutoStateMachineContext(this);
         this.opMode = opMode;
         this.mBlueAlliance = blueAlliance;
-        mGrabberBot = grabberBot;
-        mVuforia = vuforia;
-        mSequence = sequence;
+        mSpeedBotChassis = speedBotChassis;
+         mSequence = sequence;
 
-        mMecanumDrive = mGrabberBot.getDrivetrain();
+        mMecanumDrive = mSpeedBotChassis.getDrivetrain();
 
         // Add all the timers to the state timers so that they get service each loop
         mStateTimers.add(mTimer);
@@ -350,32 +345,6 @@ public class AutonomousController implements ICraneMovementStatusListener {
         mSpeedBot.getCrane().loop();
     }
 
-
-    /**
-     * start grabber turns the grab on forward or reverse.  does nothing if not using GrabberBot
-     */
-    public void startGrabber(boolean intake, int timeoutms){
-        if (mGrabberBot == null)
-            return;
-        if (intake){
-            mGrabberBot.getGrabber().moveGrabber(false,false, 1.0,1.0);
-        }
-        else{
-            // Spit it out
-            mGrabberBot.getGrabber().moveGrabber(true,true, 0.0,0.0);
-
-        }
-        mTimer.setTimeout(timeoutms);
-        mTimer.start();
-    }
-
-
-    public void stopGrabber(){
-        if (mGrabberBot == null)
-            return;
-        mGrabberBot.getGrabber().stop();
-    }
-
     /**
      * This is a hack to get us through the bug blocking competition.
      * Just does a short drive with a 500 ms timeout.
@@ -404,13 +373,11 @@ public class AutonomousController implements ICraneMovementStatusListener {
         mMecanumDrive.strafeEncoder(1.0d,distance,2000);
     }
     /**
-     * Reads the camera and looks for a skystone.
-     * Triggers evStoneFound if a stone is found.
-     *          evSkystoneFound if a Skystone is found.
-     *          evNoStone if no stone currently in view
+     * Reads the color sensor to check if we have found a skystone in
+     * front of us
      */
     public void checkStoneRecognition(){
-        List<Recognition> list = mVuforia.getRecognitions();
+ /**       List<Recognition> list = mVuforia.getRecognitions();
         if (list == null){
             transition("evNoStoneFound");
             return;
@@ -439,6 +406,7 @@ public class AutonomousController implements ICraneMovementStatusListener {
         mSkystoneRecognition = null;
         mStoneRecognition = null;
         transition("evNoStoneFound");
+  **/
     }
 
     /**
@@ -477,7 +445,7 @@ public class AutonomousController implements ICraneMovementStatusListener {
      * Called from state machine to open the hook(s) on either supported bot
      */
     public void openHook(){
-        if (mGrabberBot != null) {
+        if (mS != null) {
             mGrabberBot.getHook().setPosition(Hook.OPEN);
         }
         if (mSpeedBot != null){

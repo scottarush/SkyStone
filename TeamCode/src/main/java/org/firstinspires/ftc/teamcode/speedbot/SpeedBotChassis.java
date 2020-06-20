@@ -6,7 +6,7 @@ import org.firstinspires.ftc.teamcode.drivetrain.BaseMecanumDrive;
 import org.firstinspires.ftc.teamcode.drivetrain.SpeedBotMecanumDrive;
 
 /**
- * This is the Speed Bot
+ * This is the Speed Bot Chassis version used for development of the autonomous filter
  * -------------------------------------------------
  * HUB Layout:
  * -------------------------------------------------
@@ -15,24 +15,18 @@ import org.firstinspires.ftc.teamcode.drivetrain.SpeedBotMecanumDrive;
  * Port2:  left rear wheel hex motor "lr"
  * Port3:  right rear wheel hex motor "rr"
  *
- * Camera is "webcam"
  */
 public class SpeedBotChassis {
 
     protected OpMode mOpMode;
 
     private SpeedBotMecanumDrive mDrivetrain = null;
-    private boolean mEnableIMU = false;
-
-    private Crane mCrane = null;
 
     private  FrontHooks mFrontHooks = null;
 
     public SpeedBotChassis(OpMode opMode, boolean enableIMU){
         this.mOpMode = opMode;
-        this.mEnableIMU = enableIMU;
-        mDrivetrain = new SpeedBotMecanumDrive(opMode);
-        mCrane = new Crane(opMode);
+         mDrivetrain = new SpeedBotMecanumDrive(opMode);
 
         mFrontHooks = new FrontHooks(opMode);
     }
@@ -41,9 +35,6 @@ public class SpeedBotChassis {
         return mDrivetrain;
     }
 
-    public Crane getCrane(){
-        return  mCrane;
-    }
 
     public FrontHooks getFrontHooks(){
         return mFrontHooks;
@@ -55,19 +46,13 @@ public class SpeedBotChassis {
     public void init() throws Exception {
         String initErrString = "";
         try {
-            mDrivetrain.init(mOpMode.hardwareMap,mEnableIMU);
+            mDrivetrain.init(mOpMode.hardwareMap,false);
 
         }
         catch (Exception e){
             initErrString += e.getMessage();
         }
-        try{
-            mCrane.init(mOpMode.hardwareMap);
-        }
-        catch (Exception e){
-            initErrString += e.getMessage();
-        }
-        try{
+         try{
             mFrontHooks.init(mOpMode.hardwareMap);
         }
         catch (Exception e){
