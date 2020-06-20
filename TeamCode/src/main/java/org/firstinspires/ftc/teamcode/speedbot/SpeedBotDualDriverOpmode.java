@@ -50,14 +50,14 @@ public class SpeedBotDualDriverOpmode extends OpMode{
 
     private long mLastUpdateTime = 0L;
 
-    private SpeedBot robot  = null;
+    private CraneSpeedBot robot  = null;
 
     /*
      * Code to run ONCE when the driver hits INIT
      */
     @Override
     public void init() {
-        robot = new SpeedBot(this,false);
+        robot = new CraneSpeedBot(this,false);
         /*
          * Initialize the robot.  Be sure to catch exception and dump out as
          * the exception string will have details of what didn't initialize and

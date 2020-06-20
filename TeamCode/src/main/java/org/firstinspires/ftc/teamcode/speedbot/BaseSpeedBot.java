@@ -16,15 +16,15 @@ import org.firstinspires.ftc.teamcode.drivetrain.SpeedBotMecanumDrive;
  * Port3:  right rear wheel hex motor "rr"
  *
  */
-public class SpeedBotChassis {
+public class BaseSpeedBot {
 
     protected OpMode mOpMode;
 
-    private SpeedBotMecanumDrive mDrivetrain = null;
+    protected SpeedBotMecanumDrive mDrivetrain = null;
 
     private  FrontHooks mFrontHooks = null;
 
-    public SpeedBotChassis(OpMode opMode, boolean enableIMU){
+    public BaseSpeedBot(OpMode opMode, boolean enableIMU){
         this.mOpMode = opMode;
          mDrivetrain = new SpeedBotMecanumDrive(opMode);
 

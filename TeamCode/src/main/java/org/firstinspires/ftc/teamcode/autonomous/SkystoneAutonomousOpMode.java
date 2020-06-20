@@ -2,7 +2,7 @@ package org.firstinspires.ftc.teamcode.autonomous;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
-import org.firstinspires.ftc.teamcode.speedbot.SpeedBot;
+import org.firstinspires.ftc.teamcode.speedbot.CraneSpeedBot;
 import org.firstinspires.ftc.teamcode.grabberbot.MecanumGrabberBot;
 
 
@@ -10,10 +10,7 @@ public class SkystoneAutonomousOpMode {
 
 
 
-    private MecanumGrabberBot mGrabberBot = null;
-    private SpeedBot mSpeedBot = null;
-
-    private static final boolean USE_GRABBER_BOT = false;
+    private CraneSpeedBot mSpeedBot = null;
 
     private AutonomousController autoController = null;
 
@@ -21,10 +18,6 @@ public class SkystoneAutonomousOpMode {
     private OpMode mOpmode = null;
 
     private boolean mBlueAlliance = false;
-    /**
-     * Reference to VuforiaTensorFlowObjectDetector utilities
-     */
-    VuforiaTargetLocator mVuforia = null;
 
     private int mSequence = 0;
 
@@ -40,40 +33,24 @@ public class SkystoneAutonomousOpMode {
         // lengthen init timeout to give time to initialize the IMU
         mOpmode.msStuckDetectInit = 40000;
         mSequence = sequence;
-     }
+    }
 
     public void init() {
         String initErrs = "";
         try {
-            if (USE_GRABBER_BOT){
-                mGrabberBot = new MecanumGrabberBot(mOpmode, true);
-                mGrabberBot.init();
-            }
-            else{
-                mSpeedBot = new SpeedBot(mOpmode, true);
-                mSpeedBot.init();
-            }
+
+            mSpeedBot = new CraneSpeedBot(mOpmode, true);
+            mSpeedBot.init();
+
         }
         catch(Exception e){
             initErrs += ","+e.getMessage();
         }
-        // Initialize Vuforia
-        mVuforia = new VuforiaTargetLocator();
-        try{
-            mVuforia.init(mOpmode);
-        }
-        catch(Exception e){
-            initErrs += ", Vuforia init error";
-        }
-        // Activate vuforia
-        mVuforia.activate();
+
         // Initialize the controller based on the bot
-        if (USE_GRABBER_BOT){
-            autoController = new AutonomousController(mOpmode,mGrabberBot,mVuforia, mBlueAlliance,mSequence);
-        }
-        else{
-            autoController = new AutonomousController(mOpmode,mSpeedBot,mVuforia, mBlueAlliance,mSequence);
-        }
+
+        autoController = new AutonomousController(mOpmode,mSpeedBot, mBlueAlliance,mSequence);
+
 
         if (initErrs.length() == 0){
             mOpmode.telemetry.addData("Status:","Robot init complete");
@@ -90,12 +67,12 @@ public class SkystoneAutonomousOpMode {
     }
 
 /**
-    public static void main(String[] args) {
-        SkystoneAutonomousOpMode mode = new SkystoneAutonomousOpMode();
-        mOpmode.mode.gamepad1 = new Gamepad();
-        mOpmode.mode.telemetry = new TelemetryImpl(mode);
-        mode.init_loop();
-    }
-**/
+ public static void main(String[] args) {
+ SkystoneAutonomousOpMode mode = new SkystoneAutonomousOpMode();
+ mOpmode.mode.gamepad1 = new Gamepad();
+ mOpmode.mode.telemetry = new TelemetryImpl(mode);
+ mode.init_loop();
+ }
+ **/
 
 }

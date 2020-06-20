@@ -14,10 +14,6 @@
 // Include common definitions from above.
 apply from: '../build.common.gradle'
 
-repositories {
-    maven { url = "https://dl.bintray.com/first-tech-challenge/ftcsdk/" }
-}
-
-dependencies {
-    annotationProcessor files('lib/OpModeAnnotationProcessor.jar')
+dependencies{
+    implementation 'org.ejml:ejml-all:0.39'
 }

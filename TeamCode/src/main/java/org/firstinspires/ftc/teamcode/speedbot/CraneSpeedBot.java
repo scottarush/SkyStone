@@ -2,12 +2,8 @@ package org.firstinspires.ftc.teamcode.speedbot;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
-import org.firstinspires.ftc.teamcode.drivetrain.BaseMecanumDrive;
-import org.firstinspires.ftc.teamcode.drivetrain.Drivetrain;
-import org.firstinspires.ftc.teamcode.drivetrain.SpeedBotMecanumDrive;
-
 /**
- * This is the Speed Bot
+ * This is the Speed Bot that includes the crane
  * -------------------------------------------------
  * HUB Layout:
  * -------------------------------------------------
@@ -18,46 +14,32 @@ import org.firstinspires.ftc.teamcode.drivetrain.SpeedBotMecanumDrive;
  *
  * Camera is "webcam"
  */
-public class SpeedBot  {
+public class CraneSpeedBot extends BaseSpeedBot {
 
     protected OpMode mOpMode;
 
-    private SpeedBotMecanumDrive mDrivetrain = null;
     private boolean mEnableIMU = false;
 
     private Crane mCrane = null;
 
-    private  FrontHooks mFrontHooks = null;
 
-    public SpeedBot(OpMode opMode,boolean enableIMU){
-        this.mOpMode = opMode;
-        this.mEnableIMU = enableIMU;
-        mDrivetrain = new SpeedBotMecanumDrive(opMode);
-        mCrane = new Crane(opMode);
-
-        mFrontHooks = new FrontHooks(opMode);
-    }
-
-    public BaseMecanumDrive getDrivetrain(){
-        return mDrivetrain;
-    }
+    public CraneSpeedBot(OpMode opMode, boolean enableIMU){
+        super(opMode, enableIMU);
+         mCrane = new Crane(opMode);
+     }
 
     public Crane getCrane(){
         return  mCrane;
     }
 
-    public FrontHooks getFrontHooks(){
-        return mFrontHooks;
-    }
-    /**
+     /**
      *
      * @throws Exception
      */
     public void init() throws Exception {
         String initErrString = "";
         try {
-            mDrivetrain.init(mOpMode.hardwareMap,mEnableIMU);
-
+           super.init();
         }
         catch (Exception e){
             initErrString += e.getMessage();
@@ -68,13 +50,6 @@ public class SpeedBot  {
         catch (Exception e){
             initErrString += e.getMessage();
         }
-        try{
-            mFrontHooks.init(mOpMode.hardwareMap);
-        }
-        catch (Exception e){
-            initErrString += e.getMessage();
-        }
-
         if (initErrString.length() > 0){
             throw new Exception(initErrString);
         }

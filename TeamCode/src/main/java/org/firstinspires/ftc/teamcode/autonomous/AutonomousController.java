@@ -4,17 +4,13 @@ import android.util.Log;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
-import org.firstinspires.ftc.teamcode.grabberbot.Hook;
 import org.firstinspires.ftc.teamcode.drivetrain.BaseMecanumDrive;
 import org.firstinspires.ftc.teamcode.drivetrain.IDriveSessionStatusListener;
 import org.firstinspires.ftc.teamcode.drivetrain.IRotationStatusListener;
-import org.firstinspires.ftc.teamcode.grabberbot.MecanumGrabberBot;
 import org.firstinspires.ftc.teamcode.speedbot.Crane;
+import org.firstinspires.ftc.teamcode.speedbot.CraneSpeedBot;
 import org.firstinspires.ftc.teamcode.speedbot.ICraneMovementStatusListener;
-import org.firstinspires.ftc.teamcode.speedbot.SpeedBot;
-import org.firstinspires.ftc.teamcode.speedbot.SpeedBotChassis;
+import org.firstinspires.ftc.teamcode.speedbot.BaseSpeedBot;
 import org.firstinspires.ftc.teamcode.util.OneShotTimer;
 
 import java.beans.PropertyChangeEvent;
@@ -24,7 +20,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
 
 import statemap.FSMContext;
 import statemap.State;
@@ -38,7 +33,6 @@ public class AutonomousController implements ICraneMovementStatusListener {
 
     private static boolean TELEMETRY_STATE_LOGGING_ENABLED = true;
 
-    private GrabberBotAutoStateMachineContext mGrabberBotAutoSM = null;
     private SpeedBotAutoStateMachineContext mSpeedBotAutoSM = null;
 
     private OpMode opMode = null;
@@ -57,20 +51,12 @@ public class AutonomousController implements ICraneMovementStatusListener {
     /**
      * This reference will be non-null when using the speed bot
      */
-    private SpeedBot mSpeedBot = null;
-    /**
-     * This reference will be non-null when using the speed bot
-     */
-    private SpeedBotChassis mSpeedBotChassis = null;
+    private BaseSpeedBot mSpeedBot = null;
 
     /**
      * Common reference used for the MecanumDrive on either bot
      */
     private BaseMecanumDrive mMecanumDrive = null;
-
-    private Recognition mSkystoneRecognition = null;
-
-    private Recognition mStoneRecognition = null;
 
     private ArrayList<OneShotTimer> mStateTimers = new ArrayList<>();
 
@@ -96,13 +82,13 @@ public class AutonomousController implements ICraneMovementStatusListener {
     private int mSequence = SEQUENCE_DRAG_FOUNDATION;
 
     /**
-     * Constructor for use with SpeedBot
+     * Constructor
      * @param opMode
      * @param speedBot
      * @param blueAlliance
      */
     public AutonomousController(final OpMode opMode,
-                                SpeedBot speedBot,
+                                BaseSpeedBot speedBot,
                                 boolean blueAlliance,
                                 int sequence) {
         mSpeedBotAutoSM = new SpeedBotAutoStateMachineContext(this);
@@ -113,7 +99,9 @@ public class AutonomousController implements ICraneMovementStatusListener {
 
         mMecanumDrive = speedBot.getDrivetrain();
 
-        mSpeedBot.getCrane().addCraneMovementStatusListener(this);
+        if (speedBot instanceof CraneSpeedBot) {
+            ((CraneSpeedBot)mSpeedBot).getCrane().addCraneMovementStatusListener(this);
+        }
 
         // Add timers to be checked
         mStateTimers.add(mTimer);
@@ -124,27 +112,6 @@ public class AutonomousController implements ICraneMovementStatusListener {
         init();
     }
 
-    /**
-     * Constructor for use with SpeedBotChassis
-     * @param opMode
-     * @param speedBotChassis
-     * @param blueAlliance
-     */
-    public AutonomousController(final OpMode opMode, SpeedBotChassis speedBotChassis, boolean blueAlliance,int sequence) {
-        mGrabberBotAutoSM = new GrabberBotAutoStateMachineContext(this);
-        this.opMode = opMode;
-        this.mBlueAlliance = blueAlliance;
-        mSpeedBotChassis = speedBotChassis;
-         mSequence = sequence;
-
-        mMecanumDrive = mSpeedBotChassis.getDrivetrain();
-
-        // Add all the timers to the state timers so that they get service each loop
-        mStateTimers.add(mTimer);
-
-        // Now do common initializations
-        init();
-    }
 
     /**
      * Does initializations common to both robots.
@@ -182,7 +149,7 @@ public class AutonomousController implements ICraneMovementStatusListener {
 
 
         // And add a listener to the state machine to send the state transitions to telemtry
-        getFSMContext().addStateChangeListener(new PropertyChangeListener() {
+        mSpeedBotAutoSM.addStateChangeListener(new PropertyChangeListener() {
             @Override
             public void propertyChange(PropertyChangeEvent event) {
                 FSMContext fsm = (FSMContext) event.getSource();
@@ -197,19 +164,6 @@ public class AutonomousController implements ICraneMovementStatusListener {
         });
     }
 
-    /**
-     * helper function returns the valid FSMContext based on which robot was initialized
-     */
-    private FSMContext getFSMContext(){
-        FSMContext context = null;
-        if (mGrabberBotAutoSM != null){
-            context = mGrabberBotAutoSM;
-        }
-        else if (mSpeedBotAutoSM != null){
-            context = mSpeedBotAutoSM;
-        }
-        return context;
-    }
 
     /**
      * helper method to build the transition table so that we can trigger events from
@@ -220,7 +174,7 @@ public class AutonomousController implements ICraneMovementStatusListener {
         mTransition_map = new HashMap<>();
         try
         {
-            Class context = getFSMContext().getClass();
+            Class context = mSpeedBotAutoSM.getClass();
             Method[] transitions = context.getDeclaredMethods();
             String name;
             int i;
@@ -258,8 +212,8 @@ public class AutonomousController implements ICraneMovementStatusListener {
      * Raises or lowers the crane.
      */
     public void moveCrane(double height){
-        if (mSpeedBot != null){
-            mSpeedBot.getCrane().moveByEncoder(1.0d,height);
+        if (mSpeedBot instanceof CraneSpeedBot){
+            ((CraneSpeedBot)mSpeedBot).getCrane().moveByEncoder(1.0d,height);
         }
     }
 
@@ -274,7 +228,7 @@ public class AutonomousController implements ICraneMovementStatusListener {
 
         // Only if a transition is not in progress should a
         // transition be issued.
-        if (getFSMContext().isInTransition() == false)
+        if (mSpeedBotAutoSM.isInTransition() == false)
         {
             String name;
             Method transition;
@@ -286,7 +240,7 @@ public class AutonomousController implements ICraneMovementStatusListener {
                 transition = (Method) mTransition_map.get(name);
                 try
                 {
-                    transition.invoke(getFSMContext(), args);
+                    transition.invoke(mSpeedBotAutoSM, args);
                 }
                 catch (Exception ex)
                 {
@@ -309,12 +263,7 @@ public class AutonomousController implements ICraneMovementStatusListener {
     public void loop(){
         // If we haven't started then kick if off.
         boolean triggerStart = false;
-        if (mGrabberBotAutoSM != null){
-            if (mGrabberBotAutoSM.getState() == GrabberBotAutoStateMachineContext.GrabberBotAutoStateMachine.Idle) {
-                triggerStart = true;
-            }
-        }
-        else if (mSpeedBotAutoSM != null){
+        if (mSpeedBotAutoSM != null){
             if (mSpeedBotAutoSM.getState() == SpeedBotAutoStateMachineContext.SpeedBotAutoStateMachine.Idle){
                 triggerStart = true;
             }
@@ -341,8 +290,6 @@ public class AutonomousController implements ICraneMovementStatusListener {
         serviceTimers();
         // Call loop method on drivetrain to support drive and rotation controls
         mMecanumDrive.loop();
-        // Call loop on Crane to service automatic movement
-        mSpeedBot.getCrane().loop();
     }
 
     /**
@@ -409,45 +356,11 @@ public class AutonomousController implements ICraneMovementStatusListener {
   **/
     }
 
-    /**
-     * Strafes sideways to a Skystone based only on recognition.
-     * triggers:
-     * evDriveComplete when the drive is finished.
-     * @param linearDistance  straight y distance to candidate skystone
-     * @param timeoutms timeout in ms
-     */
-    public void strafeToSkystone(double linearDistance,int timeoutms){
-        if (mSkystoneRecognition == null){
-            transition("evDriveComplete");
-        }
-        double angle = mSkystoneRecognition.estimateAngleToObject(AngleUnit.RADIANS);
-        double strafeDistance = linearDistance /Math.tan(angle);
-        mMecanumDrive.strafeEncoder(1.0d,strafeDistance,timeoutms);
-    }
-
-    /**
-     * Strafes sideways to a Skystone based only on recognition.
-     * triggers:
-     * evDriveComplete when the drive is finished.
-     * @param linearDistance straight y distance to candidate stone
-     * @param timeoutms timeout in ms
-     */
-    public void strafeToStone(double linearDistance,int timeoutms){
-        if (mStoneRecognition == null){
-            transition("evDriveComplete");
-        }
-        double angle = mStoneRecognition.estimateAngleToObject(AngleUnit.RADIANS);
-        double strafeDistance = linearDistance /Math.tan(angle);
-        mMecanumDrive.strafeEncoder(1.0d,strafeDistance,timeoutms);
-    }
 
     /**
      * Called from state machine to open the hook(s) on either supported bot
      */
     public void openHook(){
-        if (mS != null) {
-            mGrabberBot.getHook().setPosition(Hook.OPEN);
-        }
         if (mSpeedBot != null){
             mSpeedBot.getFrontHooks().openHooks();
         }
@@ -456,9 +369,6 @@ public class AutonomousController implements ICraneMovementStatusListener {
      * Called from state machine to close the hook(s) on either supported bot
      */
     public void closeHook(){
-        if (mGrabberBot != null) {
-            mGrabberBot.getHook().setPosition(Hook.CLOSED);
-        }
         if (mSpeedBot != null){
             mSpeedBot.getFrontHooks().closeHooks();
         }
@@ -469,7 +379,9 @@ public class AutonomousController implements ICraneMovementStatusListener {
      */
     public void openHand(){
         if (mSpeedBot != null){
-            mSpeedBot.getCrane().setHandPosition(Crane.HAND_OPEN);
+            if (mSpeedBot instanceof CraneSpeedBot) {
+                ((CraneSpeedBot)mSpeedBot).getCrane().setHandPosition(Crane.HAND_OPEN);
+            }
         }
     }
     /**
@@ -477,7 +389,9 @@ public class AutonomousController implements ICraneMovementStatusListener {
      */
     public void closeHand(){
         if (mSpeedBot != null){
-            mSpeedBot.getCrane().setHandPosition(Crane.HAND_CLOSED);
+            if (mSpeedBot instanceof CraneSpeedBot) {
+                ((CraneSpeedBot)mSpeedBot).getCrane().setHandPosition(Crane.HAND_CLOSED);
+            }
         }
     }
     /**
@@ -485,7 +399,9 @@ public class AutonomousController implements ICraneMovementStatusListener {
      */
     public void retractHand(){
         if (mSpeedBot != null){
-            mSpeedBot.getCrane().setHandPosition(Crane.HAND_RETRACTED);
+            if (mSpeedBot instanceof CraneSpeedBot) {
+                ((CraneSpeedBot)mSpeedBot).getCrane().setHandPosition(Crane.HAND_RETRACTED);
+            }
         }
     }
 
@@ -522,7 +438,9 @@ public class AutonomousController implements ICraneMovementStatusListener {
      */
     public void stop(){
         mMecanumDrive.stop();
-        mSpeedBot.getCrane().stop();
+        if (mSpeedBot instanceof CraneSpeedBot) {
+            ((CraneSpeedBot) mSpeedBot).getCrane().stop();
+        }
     }
 
     /**

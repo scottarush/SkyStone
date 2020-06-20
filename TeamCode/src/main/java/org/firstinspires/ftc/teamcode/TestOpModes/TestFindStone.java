@@ -35,10 +35,9 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
-import org.firstinspires.ftc.teamcode.speedbot.SpeedBot;
+import org.firstinspires.ftc.teamcode.speedbot.CraneSpeedBot;
 import org.firstinspires.ftc.teamcode.grabberbot.MecanumGrabberBot;
 import org.firstinspires.ftc.teamcode.autonomous.TargetPosition;
-import org.firstinspires.ftc.teamcode.autonomous.VuforiaTargetLocator;
 import org.firstinspires.ftc.teamcode.drivetrain.BaseMecanumDrive;
 import org.firstinspires.ftc.teamcode.drivetrain.IDriveSessionStatusListener;
 import org.firstinspires.ftc.teamcode.drivetrain.IRotationStatusListener;
@@ -56,7 +55,7 @@ This class tests using the Vuforia system to locate a stone.
 public class TestFindStone extends OpMode{
 
     private MecanumGrabberBot mGrabberBot = null;
-    private SpeedBot mSpeedBot = null;
+    private CraneSpeedBot mSpeedBot = null;
 
     private BaseMecanumDrive mMecanumDrive = null;
 
@@ -85,7 +84,7 @@ public class TestFindStone extends OpMode{
                 mMecanumDrive = mGrabberBot.getDrivetrain();
             }
             else{
-                mSpeedBot = new SpeedBot(this, true);
+                mSpeedBot = new CraneSpeedBot(this, true);
                 mSpeedBot.init();
                 mMecanumDrive = mSpeedBot.getDrivetrain();
             }

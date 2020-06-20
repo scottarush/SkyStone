@@ -3,7 +3,7 @@ package org.firstinspires.ftc.teamcode.autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.firstinspires.ftc.teamcode.grabberbot.MecanumGrabberBot;
-import org.firstinspires.ftc.teamcode.speedbot.SpeedBot;
+import org.firstinspires.ftc.teamcode.speedbot.CraneSpeedBot;
 
 
 public class FilterDevelopmentOpMode {
@@ -11,7 +11,7 @@ public class FilterDevelopmentOpMode {
 
 
     private MecanumGrabberBot mGrabberBot = null;
-    private SpeedBot mSpeedBot = null;
+    private CraneSpeedBot mSpeedBot = null;
 
     private static final boolean USE_GRABBER_BOT = false;
 
@@ -46,7 +46,7 @@ public class FilterDevelopmentOpMode {
                 mGrabberBot.init();
             }
             else{
-                mSpeedBot = new SpeedBot(mOpmode, true);
+                mSpeedBot = new CraneSpeedBot(mOpmode, true);
                 mSpeedBot.init();
             }
         }
