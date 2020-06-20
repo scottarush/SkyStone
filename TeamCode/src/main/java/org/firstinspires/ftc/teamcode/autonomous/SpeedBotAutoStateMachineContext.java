@@ -511,7 +511,7 @@ public class SpeedBotAutoStateMachineContext
         @Override
         protected void evSkystoneFound(SpeedBotAutoStateMachineContext context)
         {
-            AutonomousController ctxt = context.getOwner();
+ /**           AutonomousController ctxt = context.getOwner();
 
             (context.getState()).exit(context);
             context.clearState();
@@ -524,14 +524,14 @@ public class SpeedBotAutoStateMachineContext
                 context.setState(GetStones.StrafeToStone);
                 (context.getState()).entry(context);
             }
-
+**/
             return;
         }
 
         @Override
         protected void evStoneFound(SpeedBotAutoStateMachineContext context)
         {
-            AutonomousController ctxt = context.getOwner();
+  /**          AutonomousController ctxt = context.getOwner();
 
             (context.getState()).exit(context);
             context.clearState();
@@ -544,7 +544,7 @@ public class SpeedBotAutoStateMachineContext
                 context.setState(GetStones.StrafeToStone);
                 (context.getState()).entry(context);
             }
-
+**/
             return;
         }
 
