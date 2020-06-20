@@ -40,13 +40,13 @@ public class MecanumKalmanEstimator {
     private KalmanFilterOperations mFilter = null;
 
     // Process matrix
-    private DMatrixRMaj A = new DMatrixRMaj(8,8);
+    private DMatrixRMaj A;
     // Process noise covariance matrix
-    private DMatrixRMaj Q = new DMatrixRMaj(8,8);
+    private DMatrixRMaj Q;
     // Measurment noise covariance matrix
-    private DMatrixRMaj R = new DMatrixRMaj(6,6);
+    private DMatrixRMaj R;
     // Measurement matrix
-    private DMatrixRMaj H = new DMatrixRMaj(6,8);
+    private DMatrixRMaj H;
 
 
     private double lx;
@@ -149,13 +149,12 @@ public class MecanumKalmanEstimator {
         mFilter.setState(xhat,p);
     }
 
-
     /**
      * Called at the sampling rate T to update the filter with a new measurement.
-     * @param w_lf angular velocity of LF wheel
-     * @param w_lr angular velocity of LR wheel
-     * @param w_rf angular velocity of RF wheel
-     * @param w_rr angular velocity of RR wheel
+     * @param w_lf angular velocity of LF wheel in radians/sec
+     * @param w_lr angular velocity of LR wheel in radians/sec
+     * @param w_rf angular velocity of RF wheel in radians/sec
+     * @param w_rr angular velocity of RR wheel in radians/sec
      * @param ax_imu x coordinate of imu measured acceleration
      * @param ay_imu y coordinate of imu measured acceleration
      * @param wz_imu z coordinate of imu measured angular velocity

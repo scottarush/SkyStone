@@ -77,8 +77,8 @@ public class SpeedBotMecanumDrive extends BaseMecanumDrive {
         try {
             motor = tryMapMotor("lf");
 //            lfMotor = new WrappedDCMotor(motor,ENCODER_COUNTS_PER_MOTOR_SHAFT_ROTATION, PIMOTOR_KP, PIMOTOR_KI);
-            lfMotor = motor;
-            lfMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+            mLFMotor = motor;
+            mLFMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         }
         catch (Exception e){
             motorInitError += "lf,";
@@ -86,7 +86,7 @@ public class SpeedBotMecanumDrive extends BaseMecanumDrive {
         try {
             motor = tryMapMotor("rf");
 //            rfMotor = new WrappedDCMotor(motor,ENCODER_COUNTS_PER_MOTOR_SHAFT_ROTATION, PIMOTOR_KP, PIMOTOR_KI);
-            rfMotor = motor;
+            mRFMotor = motor;
         }
         catch(Exception e){
             motorInitError += "rf,";
@@ -94,8 +94,8 @@ public class SpeedBotMecanumDrive extends BaseMecanumDrive {
         try {
             motor = tryMapMotor("lr");
 //            lrMotor = new WrappedDCMotor(motor,ENCODER_COUNTS_PER_MOTOR_SHAFT_ROTATION, PIMOTOR_KP, PIMOTOR_KI);
-            lrMotor = motor;
-            lrMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+            mLRMotor = motor;
+            mLRMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         }
         catch(Exception e){
             motorInitError += "lr,";
@@ -103,7 +103,7 @@ public class SpeedBotMecanumDrive extends BaseMecanumDrive {
         try {
             motor = tryMapMotor("rr");
 //            rrMotor = new WrappedDCMotor(motor,ENCODER_COUNTS_PER_MOTOR_SHAFT_ROTATION, PIMOTOR_KP, PIMOTOR_KI);
-            rrMotor = motor;
+            mRRMotor = motor;
         }
         catch(Exception e){
             motorInitError += "rr,";

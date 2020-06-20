@@ -32,6 +32,8 @@ package org.firstinspires.ftc.teamcode.drivetrain;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
+import java.util.ArrayList;
+
 /**
  * This is NOT an opmode.
  *
@@ -51,13 +53,38 @@ import com.qualcomm.robotcore.hardware.DcMotor;
  */
 public abstract class BaseMecanumDrive extends Drivetrain{
 
-    protected DcMotor lfMotor = null;
-    protected DcMotor rfMotor = null;
-    protected DcMotor lrMotor = null;
-    protected DcMotor rrMotor = null;
+    protected DcMotor mLFMotor = null;
+    protected DcMotor mRFMotor = null;
+    protected DcMotor mLRMotor = null;
+    protected DcMotor mRRMotor = null;
+
+    private ArrayList<DcMotor> mMotorList = new ArrayList<>();
+
+    /**
+     * Index of LF wheel in returned wheel speed array.
+     */
+    public static int LF_WHEEL_ARRAY_INDEX = 0;
+    /**
+     * Index of RF wheel in returned wheel speed array.
+     */
+    public static int RF_WHEEL_ARRAY_INDEX = 1;
+    /**
+     * Index of LR wheel in returned wheel speed array.
+     */
+    public static int LR_WHEEL_ARRAY_INDEX = 2;
+    /**
+     * Index of RR wheel in returned wheel speed array.
+     */
+    public static int RR_WHEEL_ARRAY_INDEX = 3;
+
+    private int mMotorPositions[] = new int[4];
+    private double mWheelSpeeds[] = new double[4];
 
 
-     /**
+    private boolean mWheelSpeedsInited = false;
+
+    private long mLastWheelSpeedCountTime = 0;
+    /**
      * Wheel circumference in inches
      **/
     public static final double MECANUM_WHEEL_CIRCUMFERENCE = 12.1211;
@@ -78,55 +105,74 @@ public abstract class BaseMecanumDrive extends Drivetrain{
     }
 
     /**
-     * Helper function to set power to the wheel drive motors
-     *
-     * @param lf left front motor power
-     * @param rf right front motor power
-     * @param lr left rear motor power
-     * @param rr right rear motor power
-     */
-    @Override
-    public void setPower(double lf, double rf, double lr, double rr) {
-        if (lfMotor != null)
-            lfMotor.setPower(lf);
-        if (rfMotor != null)
-            rfMotor.setPower(rf);
-        if (lrMotor != null)
-            lrMotor.setPower(lr);
-        if (rrMotor != null)
-            rrMotor.setPower(rr);
-     }
-
-    /**
-     * Helper function sets all motor modes to the same mode
-     *
-     * @param mode
-     */
-    @Override
-    public void setMotorModes(DcMotor.RunMode mode) {
-        if (lfMotor != null)
-            lfMotor.setMode(mode);
-        if (rfMotor != null)
-            rfMotor.setMode(mode);
-        if (lrMotor != null)
-            lrMotor.setMode(mode);
-        if (rrMotor != null)
-            rrMotor.setMode(mode);
-    }
-
-    /**
-     * helper function to set the mode on an individual motor.
-     */
-    public void setMode(DcMotor motor, DcMotor.RunMode mode){
-        if (motor != null){
-            motor.setMode(mode);
-        }
-    }
-    /**
      * subclasses must implement to return the number of encoder counts per inch of rotation
      */
     protected abstract double getEncoderCountsPerInchRotation();
+    /**
+     * Must be implemented by subclasses to provide the encoder counts threshold constant
+     * for finishing an encoder drive.
+     */
+    protected abstract int getEncoderDriveCountsMinThreshold();
 
+    /**
+     * Must be implemented by subclasses to provide the number of counts per revolution
+     */
+    protected abstract int getEncoderCountsPerRev();
+    /**
+     * Overridden to compute wheel speeds.  Must call base class function too.
+     */
+    @Override
+    public void loop() {
+        super.loop();
+        computeWheelSpeeds();
+     }
+
+    /**
+     * helper to compute wheel speeds called from loop
+     */
+    private void computeWheelSpeeds(){
+        if (!mWheelSpeedsInited){
+            // This is the first call so initialize everything
+            mMotorList.add(mLFMotor);
+            mMotorList.add(mRFMotor);
+            mMotorList.add(mLRMotor);
+            mMotorList.add(mRRMotor);
+
+            // so just pull the positions from the motors
+            for(int i=0;i < mMotorList.size();i++){
+                mMotorPositions[i] = getCurrentPosition(mMotorList.get(i));
+                mWheelSpeeds[i] = 0d;
+                mLastWheelSpeedCountTime = System.nanoTime();
+            }
+            mWheelSpeedsInited = true;
+            return;
+        }
+        // Otherwise compute the angular velocities
+        int newPositions[] = new int[4];
+        long newtime = System.nanoTime();
+        // Compute delta t since last computation
+        double deltat = (newtime-mLastWheelSpeedCountTime)*1e-9d;
+        mLastWheelSpeedCountTime = newtime;  // save for next time
+        // and loop through and get the speeds.
+        for(int i=0;i < mMotorList.size();i++){
+            int newpos = getCurrentPosition(mMotorList.get(i));
+            double angle = (newpos - mMotorPositions[i])/ getEncoderCountsPerRev() * 2*Math.PI;
+            mWheelSpeeds[i] = angle /deltat;
+            mMotorPositions[i] = newpos;  // Transfer to current pos array for next time
+        }
+
+    }
+    /**
+     * returns array list of wheel angular speeds in radians/sec
+     * array order is:  {LF,RF,LR,RR}
+     */
+    public double[] getWheelSpeeds(){
+        double speeds[] = new double[4];
+        for(int i=0;i < mWheelSpeeds.length;i++){
+            speeds[i] = mWheelSpeeds[i];
+        }
+        return speeds;
+    }
 
     /**
      * private helper function for set target position.  Does nothing if motor pointer is
@@ -189,10 +235,10 @@ public abstract class BaseMecanumDrive extends Drivetrain{
         int rrDeltaCounts = (int) Math.round(scaledDistance * getEncoderCountsPerInchRotation());
 
         // Set target counts for each motor to the above
-        setTargetPosition(lfMotor,lfDeltaCounts+getCurrentPosition(lfMotor));
-        setTargetPosition(rfMotor,rfDeltaCounts+getCurrentPosition(rfMotor));
-        setTargetPosition(lrMotor,lrDeltaCounts+getCurrentPosition(lrMotor));
-        setTargetPosition(rrMotor,rrDeltaCounts+getCurrentPosition(rrMotor));
+        setTargetPosition(mLFMotor,lfDeltaCounts+getCurrentPosition(mLFMotor));
+        setTargetPosition(mRFMotor,rfDeltaCounts+getCurrentPosition(mRFMotor));
+        setTargetPosition(mLRMotor,lrDeltaCounts+getCurrentPosition(mLRMotor));
+        setTargetPosition(mRRMotor,rrDeltaCounts+getCurrentPosition(mRRMotor));
         //       mOpMode.telemetry.addData("counts","lf="+lfDeltaCounts+",rf="+rfDeltaCounts+",lr="+lrDeltaCounts+",rr="+rrDeltaCounts);
         //     mOpMode.telemetry.update();
         // Set mode to run to position
@@ -236,10 +282,10 @@ public abstract class BaseMecanumDrive extends Drivetrain{
         int rrDeltaCounts = (int) Math.round(paddedCounts);
 
         // Set target counts for each motor to the above
-        setTargetPosition(lfMotor,lfDeltaCounts+getCurrentPosition(lfMotor));
-        setTargetPosition(rfMotor,rfDeltaCounts+getCurrentPosition(rfMotor));
-        setTargetPosition(lrMotor,lrDeltaCounts+getCurrentPosition(lrMotor));
-        setTargetPosition(rrMotor,rrDeltaCounts+getCurrentPosition(rrMotor));
+        setTargetPosition(mLFMotor,lfDeltaCounts+getCurrentPosition(mLFMotor));
+        setTargetPosition(mRFMotor,rfDeltaCounts+getCurrentPosition(mRFMotor));
+        setTargetPosition(mLRMotor,lrDeltaCounts+getCurrentPosition(mLRMotor));
+        setTargetPosition(mRRMotor,rrDeltaCounts+getCurrentPosition(mRRMotor));
 
         //       mOpMode.telemetry.addData("counts","lf="+lfDeltaCounts+",rf="+rfDeltaCounts+",lr="+lrDeltaCounts+",rr="+rrDeltaCounts);
         //     mOpMode.telemetry.update();
@@ -283,10 +329,10 @@ public abstract class BaseMecanumDrive extends Drivetrain{
         int rrDeltaCounts = (int) Math.round(paddedCounts);
 
         // Set target counts for each motor to the above
-        setTargetPosition(lfMotor,lfDeltaCounts+getCurrentPosition(lfMotor));
-        setTargetPosition(rfMotor,rfDeltaCounts+getCurrentPosition(rfMotor));
-        setTargetPosition(lrMotor,lrDeltaCounts+getCurrentPosition(lrMotor));
-        setTargetPosition(rrMotor,rrDeltaCounts+getCurrentPosition(rrMotor));
+        setTargetPosition(mLFMotor,lfDeltaCounts+getCurrentPosition(mLFMotor));
+        setTargetPosition(mRFMotor,rfDeltaCounts+getCurrentPosition(mRFMotor));
+        setTargetPosition(mLRMotor,lrDeltaCounts+getCurrentPosition(mLRMotor));
+        setTargetPosition(mRRMotor,rrDeltaCounts+getCurrentPosition(mRRMotor));
 
  //       mOpMode.telemetry.addData("counts","lf="+lfDeltaCounts+",rf="+rfDeltaCounts+",lr="+lrDeltaCounts+",rr="+rrDeltaCounts);
  //       mOpMode.telemetry.update();
@@ -307,26 +353,26 @@ public abstract class BaseMecanumDrive extends Drivetrain{
         if (!isDriveByEncoderSessionActive()){
             return true;
         }
-        if (lfMotor != null){
-            int delta = Math.abs(lfMotor.getTargetPosition() - lfMotor.getCurrentPosition());
+        if (mLFMotor != null){
+            int delta = Math.abs(mLFMotor.getTargetPosition() - mLFMotor.getCurrentPosition());
             if (delta > getEncoderDriveCountsMinThreshold()){
                 return false;
             }
         }
-        if (lrMotor != null){
-            int delta = Math.abs(lrMotor.getTargetPosition() - lrMotor.getCurrentPosition());
+        if (mLRMotor != null){
+            int delta = Math.abs(mLRMotor.getTargetPosition() - mLRMotor.getCurrentPosition());
             if (delta > getEncoderDriveCountsMinThreshold()){
                 return false;
             }
         }
-        if (rfMotor != null){
-            int delta = Math.abs(rfMotor.getTargetPosition() - rfMotor.getCurrentPosition());
+        if (mRFMotor != null){
+            int delta = Math.abs(mRFMotor.getTargetPosition() - mRFMotor.getCurrentPosition());
             if (delta > getEncoderDriveCountsMinThreshold()){
                 return false;
             }
         }
-        if (rrMotor != null){
-            int delta = Math.abs(rrMotor.getTargetPosition() - rrMotor.getCurrentPosition());
+        if (mRRMotor != null){
+            int delta = Math.abs(mRRMotor.getTargetPosition() - mRRMotor.getCurrentPosition());
             if (delta > getEncoderDriveCountsMinThreshold()){
                 return false;
             }
@@ -337,17 +383,17 @@ public abstract class BaseMecanumDrive extends Drivetrain{
     @Override
     protected double getActualEncoderDistance() {
         if (mWasLastMovementStrafe){
-            double avg = (getStrafeMovement(lfMotor) +
-                        getStrafeMovement(lrMotor)+
-                        getStrafeMovement(rrMotor)+
-                        getStrafeMovement(rfMotor))/4;
+            double avg = (getStrafeMovement(mLFMotor) +
+                        getStrafeMovement(mLRMotor)+
+                        getStrafeMovement(mRRMotor)+
+                        getStrafeMovement(mRFMotor))/4;
             return avg;
         }
         else{
-            double avg = (getLinearMovement(lfMotor) +
-                    getLinearMovement(lrMotor)+
-                    getLinearMovement(rrMotor)+
-                    getLinearMovement(rfMotor))/4;
+            double avg = (getLinearMovement(mLFMotor) +
+                    getLinearMovement(mLRMotor)+
+                    getLinearMovement(mRRMotor)+
+                    getLinearMovement(mRFMotor))/4;
             return avg;
         }
     }
@@ -375,12 +421,6 @@ public abstract class BaseMecanumDrive extends Drivetrain{
         }
         return 0d;
     }
-    /**
-     * Must be implemented by subclasses to provide the encoder counts threshold constant
-     * for finishing an encoder drive.
-     */
-    protected abstract int getEncoderDriveCountsMinThreshold();
-
 
 //    public boolean isMoving() {
 //        if (lfMotor != null){
@@ -489,4 +529,41 @@ public abstract class BaseMecanumDrive extends Drivetrain{
         setPower(lfPower,rfPower,lrPower,rrPower);
         return rotpower;
     }
+
+    /**
+     * Helper function to set power to the wheel drive motors
+     *
+     * @param lf left front motor power
+     * @param rf right front motor power
+     * @param lr left rear motor power
+     * @param rr right rear motor power
+     */
+    public void setPower(double lf, double rf, double lr, double rr) {
+        if (mLFMotor != null)
+            mLFMotor.setPower(lf);
+        if (mRFMotor != null)
+            mRFMotor.setPower(rf);
+        if (mLRMotor != null)
+        mLRMotor.setPower(lr);
+        if (mRRMotor != null)
+            mRRMotor.setPower(rr);
+    }
+
+    /**
+     * Helper function sets all motor modes to the same mode
+     *
+     * @param mode
+     */
+    public void setMotorModes(DcMotor.RunMode mode) {
+        if (mLFMotor != null)
+            mLFMotor.setMode(mode);
+        if (mRFMotor != null)
+            mRFMotor.setMode(mode);
+        if (mLRMotor != null)
+            mLRMotor.setMode(mode);
+        if (mRRMotor != null)
+            mRRMotor.setMode(mode);
+    }
+
+
 }

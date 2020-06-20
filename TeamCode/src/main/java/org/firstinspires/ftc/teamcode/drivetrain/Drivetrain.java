@@ -18,9 +18,6 @@ public abstract class Drivetrain {
     /* local OpMode members. */
     public HardwareMap mHWMap = null;
 
-    public abstract void setPower(double lf, double rf, double lr, double rr);
-    public abstract void setMotorModes(DcMotor.RunMode mode);
-
     /**
      * Called when linear heading correction is non-zero. Subclasses must correct with
      * an adjustement to the left if correction > 0, adjustment to the right if < 0.
@@ -172,7 +169,7 @@ public abstract class Drivetrain {
     }
 
     /**
-     * Must be called from the OpMode service loop to service timers for drive and rotation handling.
+     * Must be called from the OpMode service loop to service rotation and encoder timers
      */
     public void loop(){
 
