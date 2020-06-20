@@ -29,7 +29,6 @@
 
 package org.firstinspires.ftc.teamcode.speedbot;
 
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -45,8 +44,8 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
  * 6. a button on either controller moves hand to retracted position
  */
 @TeleOp(name="SpeedBotDualDriver", group="Robot")
-@Disabled
-public class SpeedBotDualDriverOpmode extends OpMode{
+//@Disabled
+public class BaseSpeedBotOpMode extends OpMode{
     private static final int MIN_BUTTON_UPDATE_TIME_MS = 200;
 
     private long mLastUpdateTime = 0L;
@@ -123,28 +122,6 @@ public class SpeedBotDualDriverOpmode extends OpMode{
         long delta = System.currentTimeMillis() - mLastUpdateTime;
         if (delta > MIN_BUTTON_UPDATE_TIME_MS) {
             mLastUpdateTime = System.currentTimeMillis();
-
-            // Use the right bumper to open and close the hand
-            boolean rightBumper = gamepad1.right_bumper || gamepad2.right_bumper;
-            if (rightBumper) {
-                switch(robot.getCrane().getHandPosition()){
-                    case Crane.HAND_CLOSED:
-                        robot.getCrane().setHandPosition(Crane.HAND_OPEN);
-                        break;
-                    case Crane.HAND_OPEN:
-                        robot.getCrane().setHandPosition(Crane.HAND_CLOSED);
-                        break;
-                    case Crane.HAND_RETRACTED:
-                        robot.getCrane().setHandPosition(Crane.HAND_OPEN);
-                        break;
-                }
-            }
-            else {
-                // Check for hand retract on button a
-                boolean a = gamepad1.a || gamepad2.a;
-                if (a) {
-                    robot.getCrane().setHandPosition(Crane.HAND_RETRACTED);
-                }
             }
             // Use left bumper to raise and lower the front hooks
             boolean leftBumper = gamepad1.left_bumper || gamepad2.left_bumper;
@@ -165,21 +142,8 @@ public class SpeedBotDualDriverOpmode extends OpMode{
                 leftTrigger = gamepad2.left_trigger;
             }
             double rightTrigger = gamepad1.right_trigger;
-            if (Math.abs(rightTrigger) < triggerThreshold) {
-                rightTrigger = gamepad2.right_trigger;
-            }
-            if (rightTrigger > triggerThreshold) {
-                if (leftTrigger < triggerThreshold) {
-                    robot.getCrane().raiseManual(Math.abs(rightTrigger));
-                }
-            } else if (leftTrigger > triggerThreshold) {
-                if (rightTrigger < triggerThreshold) {
-                    robot.getCrane().lowerManual(Math.abs(leftTrigger));
-                }
-            } else {
-                // Neither trigger so stop the crane in case it was moving
-                robot.getCrane().stop();
-            }
+
+
 
 //        // Process the autoramp Crane inputs on either controller's dpad Up or Down
 //        boolean dpadUp = gamepad1.dpad_up || gamepad1.dpad_up;
@@ -193,7 +157,7 @@ public class SpeedBotDualDriverOpmode extends OpMode{
 //        else {
 //            robot.getCrane().stop();
 //        }
-        }
+
     }
 
     /**
