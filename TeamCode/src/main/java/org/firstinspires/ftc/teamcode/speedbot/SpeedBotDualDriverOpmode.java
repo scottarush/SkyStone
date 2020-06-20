@@ -45,7 +45,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
  */
 @TeleOp(name="SpeedBotDualDriver", group="Robot")
 //@Disabled
-public class SpeedBotDualDriver extends OpMode{
+public class SpeedBotDualDriverOpmode extends OpMode{
     private static final int MIN_BUTTON_UPDATE_TIME_MS = 200;
 
     private long mLastUpdateTime = 0L;
