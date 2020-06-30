@@ -19,7 +19,7 @@ import java.util.Vector;
  * Measurement vector z=[vx,vy,w_zw,ax,ay,w_zi]^T
  * Estimate vector xhat=[px,vx,vy,ax,ay,w_z,theta]^T
  */
-public class KalmanTracker {
+public class KalmanTracker implements IKalmanTracker {
 
     private static final int XHAT_PX_INDEX = 0;
     private static final int XHAT_PY_INDEX = 1;

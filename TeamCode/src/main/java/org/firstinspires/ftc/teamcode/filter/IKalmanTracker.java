@@ -1,9 +1,11 @@
 package org.firstinspires.ftc.teamcode.filter;
 
+import java.util.Vector;
+
 public interface IKalmanTracker {
     /**
      * Initializes the Kalman filter
-     * @param T sampling interval in secons
+     * @param T sampling interval in seconds
      * @param px0 x coordinate of robot initial position in feet
      * @param py0 y coordinate of robot initial position in feet
      * @param theta0 initial heading in radians
@@ -48,4 +50,15 @@ public interface IKalmanTracker {
      * @param theta updated heading angle
      */
     public void setKnownHeading(double theta);
+
+    /**
+     * Returns the current estimated position as a Vector with {0,0} in the center
+     * of the playing field and positive y toward the judges.
+     * index 0 = estimated px
+     * index 1 = estimated py
+     */
+    public Vector<Double> getEstimatedPosition();
+
+    public Double getEstimatedHeading();
+
 }
