@@ -126,15 +126,17 @@ public abstract class BaseMecanumDrive extends Drivetrain{
     public void loop() {
         super.loop();
         long newtime = System.nanoTime();
-        if (mFirstLoopInit) {
+        if (!mFirstLoopInit) {
             mLastLoopTime = newtime;
             computeWheelSpeeds(0d);
             mFirstLoopInit = true;
             return;
         }
 
-        double deltat = (mLastLoopTime)*1e-9d;
+        double deltat = (mLastLoopTime-newtime)*1e-9d;
         computeWheelSpeeds(deltat);
+        // Compute delta t since last computation
+        mLastLoopTime = newtime;  // save for next time
 
     }
 
@@ -158,9 +160,6 @@ public abstract class BaseMecanumDrive extends Drivetrain{
         }
         // Otherwise compute the angular velocities
         int newPositions[] = new int[4];
-        long newtime = System.nanoTime();
-        // Compute delta t since last computation
-        mLastLoopTime = newtime;  // save for next time
         // and loop through and get the speeds.
         for(int i=0;i < mMotorList.size();i++){
             int newpos = getCurrentPosition(mMotorList.get(i));
