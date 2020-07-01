@@ -159,8 +159,6 @@ public abstract class BaseMecanumDrive extends Drivetrain{
             return;
         }
         // Otherwise compute the angular velocities
-        int newPositions[] = new int[4];
-        // and loop through and get the speeds.
         for(int i=0;i < mMotorList.size();i++){
             int newpos = getCurrentPosition(mMotorList.get(i));
             double angle = (newpos - mMotorPositions[i])/ getEncoderCountsPerRev() * 2*Math.PI;

@@ -43,7 +43,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
  * 5. right trigger on either controller raises crane.
  * 6. a button on either controller moves hand to retracted position
  */
-@TeleOp(name="SpeedBotManualDrive", group="Robot")
+@TeleOp(name="BaseSpeedBotOpMode", group="Robot")
 //@Disabled
 public class BaseSpeedBotOpMode extends OpMode{
     private static final int MIN_BUTTON_UPDATE_TIME_MS = 200;

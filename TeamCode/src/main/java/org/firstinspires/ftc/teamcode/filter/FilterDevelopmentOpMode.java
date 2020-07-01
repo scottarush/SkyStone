@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.filter;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.robotcore.external.navigation.Acceleration;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
@@ -9,8 +10,8 @@ import org.firstinspires.ftc.teamcode.drivetrain.Drivetrain;
 import org.firstinspires.ftc.teamcode.drivetrain.IMU;
 import org.firstinspires.ftc.teamcode.speedbot.BaseSpeedBot;
 
-
-public class FilterDevelopmentOpMode  extends  OpMode{
+@TeleOp(name="FilterDevelopment", group="Robot")
+public class FilterDevelopmentOpMode extends OpMode{
 
     public static final double INIT_PX = 0D;
     public static final double INIT_PY = 0D;
@@ -22,25 +23,14 @@ public class FilterDevelopmentOpMode  extends  OpMode{
 
     private OpMode mOpmode = null;
 
-    private int mSequence = 0;
-
     private IKalmanTracker mKalmanTracker = null;
 
     private long mLastSystemTime = 0;
     private boolean mFirstTime = true;
-    /**
-     *
-     * @param opMode
-     * @param sequence
-     */
-    public FilterDevelopmentOpMode(OpMode opMode, int sequence){
-        mOpmode = opMode;
-        // lengthen init timeout to give time to initialize the IMU
-        mOpmode.msStuckDetectInit = 40000;
-        mSequence = sequence;
-     }
 
+    @Override
     public void init() {
+        mOpmode.msStuckDetectInit = 40000;
         String initErrs = "";
         try {
             mSpeedBot = new BaseSpeedBot(mOpmode, true);
