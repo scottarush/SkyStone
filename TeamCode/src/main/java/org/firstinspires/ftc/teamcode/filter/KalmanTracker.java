@@ -166,10 +166,12 @@ public class KalmanTracker implements IKalmanTracker {
                                   double ax_imu,
                                   double ay_imu,
                                   double wz_imu) {
+        // Compute the robot velocity from the wheel velocities
         double rover4 = radius_wheel/4.0d;
         double vx = rover4*(w_lf+w_rf-w_lr-w_rr);
         double vy = rover4*(w_lf+w_rf+w_lr+w_rr);
         double wzw = rover4*(w_lf+w_rf+w_lr+w_rr)/(lx+ly);
+
         DMatrixRMaj z = new DMatrixRMaj(new double[][] {{vx},{vy},{wzw},{ax_imu},{ay_imu},{wz_imu}});
 
         // Do Kalman predict step

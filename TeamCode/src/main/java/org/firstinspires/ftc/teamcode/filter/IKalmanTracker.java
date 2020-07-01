@@ -35,13 +35,13 @@ public interface IKalmanTracker {
                                   double wz_imu) ;
     /**
      * Called to set the position x coordinate when known from objects in the field
-     * @param px updated x position
+     * @param px updated x position in feet
      */
     public void setKnownXPosition(double px);
 
     /**
      * Called to update the position y coordinate when known from objects in the field
-     * @param py updated y position
+     * @param py updated y position in feet
      */
     public void setKnownYPosition(double py);
 
@@ -54,11 +54,16 @@ public interface IKalmanTracker {
     /**
      * Returns the current estimated position as a Vector with {0,0} in the center
      * of the playing field and positive y toward the judges.
-     * index 0 = estimated px
-     * index 1 = estimated py
+     * index 0 = estimated px in feet
+     * index 1 = estimated py in feet
      */
     public Vector<Double> getEstimatedPosition();
 
+    /**
+     * Returns the current estimated heading in radians with 0 on the right side of the
+     * playing fireld viewed from the audience side.
+     * @return estimated heading in radians
+     */
     public Double getEstimatedHeading();
 
 }
