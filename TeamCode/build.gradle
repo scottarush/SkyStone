@@ -15,5 +15,8 @@
 apply from: '../build.common.gradle'
 
 dependencies{
-    implementation 'org.ejml:ejml-all:0.33'
+    // Maven directive was not including libraries in build so force to use the downloaded
+    // ones in the libs directory instead
+    // implementation 'org.ejml:ejml-all:0.33'
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
 }

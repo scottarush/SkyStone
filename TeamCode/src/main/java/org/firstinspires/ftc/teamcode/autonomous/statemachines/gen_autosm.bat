@@ -1,1 +1,1 @@
-java -jar Smc.jar -java -d ../ SpeedBotAutoStateMachine.sm
+java -jar ../../../../../../../../../libs/Smc.jar -java -d ../ SpeedBotAutoStateMachine.sm
