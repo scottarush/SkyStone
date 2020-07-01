@@ -19,4 +19,6 @@ dependencies{
     // ones in the libs directory instead
     // implementation 'org.ejml:ejml-all:0.33'
     implementation fileTree(include: ['*.jar'], dir: 'libs')
+//    implementation fileTree(include: 'Smc.jar', dir: 'libs')
+
 }
