@@ -77,6 +77,26 @@ public class FilterDevelopmentOpMode  extends  OpMode{
             updateTracker();
             mLastSystemTime = systemTime;   // save for next loop
         }
+
+        // update speeds from the joystick
+        double xleft = gamepad1.left_stick_x;
+        double yleft = -gamepad1.left_stick_y;
+        double xright = gamepad1.right_stick_x;
+        double yright = -gamepad1.right_stick_y;
+        // apply nonlinear joystick gain to each raw value
+        xleft = applyJoystickGain(xleft);
+        yleft = applyJoystickGain(yleft);
+        xright = applyJoystickGain(xright);
+        yright = applyJoystickGain(yright);
+        mSpeedBot.getDrivetrain().setTankDriveJoystickInput(xleft,yleft,xright,yright);
+
+        // Service the drivetrain loop to update wheel speed measurements
+        mSpeedBot.getDrivetrain().loop();
+        // Now output the wheel speeds
+        double[] speeds = mSpeedBot.getDrivetrain().getWheelSpeeds();
+        mOpmode.telemetry.addData("WhlSpds:","%4.2lf,%4.2lf,%4.2lf,%4.2lf",speeds[0],speeds[1],speeds[2],speeds[3]);
+        mOpmode.telemetry.update();
+
         // TODO: Send the estimated position and heading to the state machine controller
         // TODO: update the robot speed
     }
@@ -102,6 +122,13 @@ public class FilterDevelopmentOpMode  extends  OpMode{
                 orientation.firstAngle);
     }
 
+    /**
+     * helper function for control gain
+     */
+    private double applyJoystickGain(double input){
+        double output = input * input;
+        return output * Math.signum(input);
+    }
 /**
     public static void main(String[] args) {
         SkystoneAutonomousOpMode mode = new SkystoneAutonomousOpMode();
