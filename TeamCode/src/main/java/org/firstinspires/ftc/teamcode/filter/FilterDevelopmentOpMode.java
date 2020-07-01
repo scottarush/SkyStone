@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.filter;
 
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -10,7 +11,7 @@ import org.firstinspires.ftc.teamcode.drivetrain.Drivetrain;
 import org.firstinspires.ftc.teamcode.drivetrain.IMU;
 import org.firstinspires.ftc.teamcode.speedbot.BaseSpeedBot;
 
-@TeleOp(name="FilterDevelopment", group="Robot")
+@Autonomous(name="FilterDevelopment", group="Robot")
 public class FilterDevelopmentOpMode extends OpMode{
 
     public static final double INIT_PX = 0D;
@@ -21,8 +22,6 @@ public class FilterDevelopmentOpMode extends OpMode{
 
     private BaseSpeedBot mSpeedBot = null;
 
-    private OpMode mOpmode = null;
-
     private IKalmanTracker mKalmanTracker = null;
 
     private long mLastSystemTime = 0;
@@ -30,10 +29,10 @@ public class FilterDevelopmentOpMode extends OpMode{
 
     @Override
     public void init() {
-        mOpmode.msStuckDetectInit = 40000;
+        msStuckDetectInit = 40000;
         String initErrs = "";
         try {
-            mSpeedBot = new BaseSpeedBot(mOpmode, true);
+            mSpeedBot = new BaseSpeedBot(this, true);
             mSpeedBot.init();
         }
         catch(Exception e){
@@ -41,12 +40,12 @@ public class FilterDevelopmentOpMode extends OpMode{
         }
 
         if (initErrs.length() == 0){
-            mOpmode.telemetry.addData("Status:","Robot init complete");
-            mOpmode.telemetry.update();
+            telemetry.addData("Status:","Robot init complete");
+            telemetry.update();
         }
         else {
-            mOpmode.telemetry.addData("Init errors:", initErrs);
-            mOpmode.telemetry.update();
+            telemetry.addData("Init errors:", initErrs);
+            telemetry.update();
         }
         // Initialize the KalmanTracker
         mKalmanTracker = new KalmanTracker();
@@ -84,8 +83,8 @@ public class FilterDevelopmentOpMode extends OpMode{
         mSpeedBot.getDrivetrain().loop();
         // Now output the wheel speeds
         double[] speeds = mSpeedBot.getDrivetrain().getWheelSpeeds();
-        mOpmode.telemetry.addData("WhlSpds:","%4.2lf,%4.2lf,%4.2lf,%4.2lf",speeds[0],speeds[1],speeds[2],speeds[3]);
-        mOpmode.telemetry.update();
+        telemetry.addData("WhlSpds:","%4.2lf,%4.2lf,%4.2lf,%4.2lf",speeds[0],speeds[1],speeds[2],speeds[3]);
+        telemetry.update();
 
         // TODO: Send the estimated position and heading to the state machine controller
         // TODO: update the robot speed
