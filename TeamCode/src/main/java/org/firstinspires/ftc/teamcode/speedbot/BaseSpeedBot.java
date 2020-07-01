@@ -5,7 +5,6 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import org.firstinspires.ftc.teamcode.drivetrain.BaseMecanumDrive;
 import org.firstinspires.ftc.teamcode.drivetrain.IMU;
 import org.firstinspires.ftc.teamcode.drivetrain.SpeedBotMecanumDrive;
-import org.firstinspires.ftc.teamcode.filter.KalmanTracker;
 
 /**
  * This is the Speed Bot Chassis version used for development of the autonomous filter
