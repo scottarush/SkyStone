@@ -33,7 +33,7 @@ public class IMU {
             // on a Core Device Interface Module, configured to be a sensor of type "AdaFruit IMU",
             // and named "imu".
             try {
-                hwMap.get(BNO055IMU.class, "imu");
+                mIMU = hwMap.get(BNO055IMU.class, "imu");
                 mIMU.initialize(parameters);
             }
             catch(Exception e){

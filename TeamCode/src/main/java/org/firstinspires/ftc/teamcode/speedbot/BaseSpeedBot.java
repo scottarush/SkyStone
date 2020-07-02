@@ -27,6 +27,7 @@ public class BaseSpeedBot {
 
     private IMU mIMU = null;
 
+    private boolean mEnableIMU = false;
     /**
      * distance from IMU to far wheel axes = {@value} in mm
      */
@@ -45,13 +46,8 @@ public class BaseSpeedBot {
 
     public BaseSpeedBot(OpMode opMode, boolean enableIMU){
         this.mOpMode = opMode;
-        if (enableIMU){
-            mIMU = new IMU();
-        }
-        mDrivetrain = new SpeedBotMecanumDrive(opMode,mIMU);
-
-        mFrontHooks = new FrontHooks(opMode);
-    }
+        mEnableIMU = enableIMU;
+     }
 
     public BaseMecanumDrive getDrivetrain(){
         return mDrivetrain;
@@ -67,8 +63,10 @@ public class BaseSpeedBot {
      */
     public void init() throws Exception {
         String initErrString = "";
-        if (mIMU != null){
+
+        if (mEnableIMU){
             try {
+                mIMU = new IMU();
                 mIMU.initIMU(mOpMode.hardwareMap);
             }
             catch(Exception e){
@@ -76,6 +74,7 @@ public class BaseSpeedBot {
             }
         }
         try {
+            mDrivetrain = new SpeedBotMecanumDrive(mOpMode,mIMU);
             mDrivetrain.init(mOpMode.hardwareMap);
 
         }
@@ -83,7 +82,8 @@ public class BaseSpeedBot {
             initErrString += e.getMessage();
         }
          try{
-            mFrontHooks.init(mOpMode.hardwareMap);
+             mFrontHooks = new FrontHooks(mOpMode);
+             mFrontHooks.init(mOpMode.hardwareMap);
         }
         catch (Exception e){
             initErrString += e.getMessage();

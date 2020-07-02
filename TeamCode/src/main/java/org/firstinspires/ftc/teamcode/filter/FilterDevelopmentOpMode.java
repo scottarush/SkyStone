@@ -83,7 +83,7 @@ public class FilterDevelopmentOpMode extends OpMode{
         mSpeedBot.getDrivetrain().loop();
         // Now output the wheel speeds
         double[] speeds = mSpeedBot.getDrivetrain().getWheelSpeeds();
-        telemetry.addData("WhlSpds:","%4.2lf,%4.2lf,%4.2lf,%4.2lf",speeds[0],speeds[1],speeds[2],speeds[3]);
+        telemetry.addData("WhlSpds:","%4.2f,%4.2f,%4.2f,%4.2f",speeds[0],speeds[1],speeds[2],speeds[3]);
         telemetry.update();
 
         // TODO: Send the estimated position and heading to the state machine controller
