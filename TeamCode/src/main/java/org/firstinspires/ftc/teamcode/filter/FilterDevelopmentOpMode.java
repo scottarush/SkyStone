@@ -29,7 +29,7 @@ public class FilterDevelopmentOpMode extends OpMode{
 
     @Override
     public void init() {
-        msStuckDetectInit = 40000;
+        msStuckDetectInit = 1000000;
         String initErrs = "";
         try {
             mSpeedBot = new BaseSpeedBot(this, true);

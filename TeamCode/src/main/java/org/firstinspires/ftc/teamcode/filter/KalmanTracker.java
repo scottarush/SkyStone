@@ -134,12 +134,9 @@ public class KalmanTracker implements IKalmanTracker {
         Q = new DMatrixRMaj(Q_MATRIX);
         H = new DMatrixRMaj(H_MATRIX);
 
-        // configure the filter
+        // Create and configure the filter
+        mFilter = new KalmanFilterOperations();
         mFilter.configure(A,Q,H);
-
-        //------------------------------
-        // Now initialize the state
-        //------------------------------
 
         // Initialize the state estimate vector to the supplied position and orientation
         DMatrixRMaj xhat = new DMatrixRMaj(new double[][] {{px0},{py0},{0d},{0d},{0d},{0d},{0d},{theta0}});
