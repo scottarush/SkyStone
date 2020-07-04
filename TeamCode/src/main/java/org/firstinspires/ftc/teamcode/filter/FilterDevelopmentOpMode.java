@@ -104,6 +104,9 @@ public class FilterDevelopmentOpMode extends OpMode{
         yright = applyJoystickGain(yright);
         mSpeedBot.getDrivetrain().setTankDriveJoystickInput(xleft,yleft,xright,yright);
 
+        int[] array = mSpeedBot.getDrivetrain().getEncoderPositions();
+        telemetry.addData("LF", array[0]);
+        telemetry.addData("LR", array[1]);
         // TODO: Send the estimated position and heading to the state machine controller
 
         // TODO: update the robot speed
