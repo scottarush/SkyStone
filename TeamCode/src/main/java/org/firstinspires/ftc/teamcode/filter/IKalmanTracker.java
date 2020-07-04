@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.filter;
 
+import java.util.List;
 import java.util.Vector;
 
 public interface IKalmanTracker {
@@ -52,18 +53,19 @@ public interface IKalmanTracker {
     public void setKnownHeading(double theta);
 
     /**
-     * Returns the current estimated position as a Vector with {0,0} in the center
-     * of the playing field and positive y toward the judges.
-     * index 0 = estimated px in feet
-     * index 1 = estimated py in feet
+     * Returns the current estimated x position
      */
-    public Vector<Double> getEstimatedPosition();
-
+    public Double getEstimatedXPosition();
     /**
-     * Returns the current estimated heading in radians with 0 on the right side of the
-     * playing fireld viewed from the audience side.
-     * @return estimated heading in radians
+     * Returns the current estimated y position
      */
+    public Double getEstimatedYPosition();
+
+        /**
+         * Returns the current estimated heading in radians with 0 on the right side of the
+         * playing fireld viewed from the audience side.
+         * @return estimated heading in radians
+         */
     public Double getEstimatedHeading();
 
 }

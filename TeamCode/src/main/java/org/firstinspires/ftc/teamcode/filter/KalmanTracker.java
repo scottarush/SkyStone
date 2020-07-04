@@ -3,6 +3,8 @@ package org.firstinspires.ftc.teamcode.filter;
 
 import org.ejml.data.DMatrixRMaj;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Vector;
 
 /**
@@ -176,17 +178,17 @@ public class KalmanTracker implements IKalmanTracker {
         // Do Kalman correct step
         mFilter.update(z,R);
     }
-   /**
-     * Returns the current estimated position as a Vector with {0,0} in the center
-     * of the playing field and positive y toward the judges.
-     * index 0 = estimated px
-     * index 1 = estimated py
+    /**
+     * Returns the current estimated x position
      */
-    public Vector<Double> getEstimatedPosition(){
-        Vector<Double> location = new Vector<Double>();
-        location.add(mFilter.getState().get(XHAT_PX_INDEX,0));
-        location.add(mFilter.getState().get(XHAT_PY_INDEX,0));
-        return location;
+    public Double getEstimatedXPosition(){
+        return mFilter.getState().get(XHAT_PX_INDEX);
+    }
+    /**
+     * Returns the current estimated y7 position
+     */
+    public Double getEstimatedYPosition(){
+        return mFilter.getState().get(XHAT_PY_INDEX);
     }
     public Double getEstimatedHeading(){
         return mFilter.getState().get(XHAT_THETA_INDEX,0);

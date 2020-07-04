@@ -29,6 +29,8 @@
 
 package org.firstinspires.ftc.teamcode.drivetrain;
 
+import android.util.Log;
+
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
@@ -83,7 +85,7 @@ public abstract class BaseMecanumDrive extends Drivetrain{
 
     private boolean mFirstLoopInit = false;
 
-    private long mLastLoopTime = 0;
+    private long mLastLoopTimeNS = 0;
     /**
      * Wheel circumference in inches
      **/
@@ -127,16 +129,16 @@ public abstract class BaseMecanumDrive extends Drivetrain{
         super.loop();
         long newtime = System.nanoTime();
         if (!mFirstLoopInit) {
-            mLastLoopTime = newtime;
+            mLastLoopTimeNS = newtime;
             computeWheelSpeeds(0d);
             mFirstLoopInit = true;
             return;
         }
 
-        double deltat = (mLastLoopTime-newtime)*1e-9d;
+        double deltat = (mLastLoopTimeNS -newtime)*1e-9d;
         computeWheelSpeeds(deltat);
         // Compute delta t since last computation
-        mLastLoopTime = newtime;  // save for next time
+        mLastLoopTimeNS = newtime;  // save for next time
 
     }
 
@@ -156,6 +158,7 @@ public abstract class BaseMecanumDrive extends Drivetrain{
                 mMotorPositions[i] = getCurrentPosition(mMotorList.get(i));
                 mWheelSpeeds[i] = 0d;
             }
+            Log.i(getClass().getCanonicalName(),"positions=" + mMotorPositions[0]+","+mMotorPositions[1]);
             return;
         }
         // Otherwise compute the angular velocities

@@ -2,34 +2,43 @@ package org.firstinspires.ftc.teamcode.filter;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.robotcore.external.navigation.Acceleration;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.teamcode.drivetrain.BaseMecanumDrive;
-import org.firstinspires.ftc.teamcode.drivetrain.Drivetrain;
 import org.firstinspires.ftc.teamcode.drivetrain.IMU;
 import org.firstinspires.ftc.teamcode.speedbot.BaseSpeedBot;
+import org.firstinspires.ftc.teamcode.util.LogFile;
 
 @Autonomous(name="FilterDevelopment", group="Robot")
 public class FilterDevelopmentOpMode extends OpMode{
+    public static final String LOG_PATHNAME = "/sdcard";
+
+    public static final String LOG_FILENAME = "kflog.csv";
+    public static final String[] LOG_COLUMNS = {"time","w_lf","w_rf","w_lr","w_rr","ax_imu","ay_imu","theta_imu","px","py","heading"};
+    private LogFile mWheelSpeedLogFile;
 
     public static final double INIT_PX = 0D;
     public static final double INIT_PY = 0D;
     public static final double INIT_HEADING = Math.PI/2;
     public static final double T = 0.050d;
-    private static final int T_MS = Math.round((float)(T * 1000d));
+    private static final int T_NS = Math.round((float)(T * 1e9d));
 
     private BaseSpeedBot mSpeedBot = null;
 
     private IKalmanTracker mKalmanTracker = null;
-
-    private long mLastSystemTime = 0;
+    private Acceleration mIMUAcceleration;
+    private Orientation mIMUOrientation;
+    private long mLastSystemTimeNS = 0;
+    private int mElapsedTimeNS = 0;
     private boolean mFirstTime = true;
 
     @Override
     public void init() {
         msStuckDetectInit = 1000000;
+        mElapsedTimeNS = 0;
+        mFirstTime = false;
+
         String initErrs = "";
         try {
             mSpeedBot = new BaseSpeedBot(this, true);
@@ -50,21 +59,37 @@ public class FilterDevelopmentOpMode extends OpMode{
         // Initialize the KalmanTracker
         mKalmanTracker = new KalmanTracker();
         mKalmanTracker.init(T,INIT_PX,INIT_PY,INIT_HEADING,BaseSpeedBot.LX_MM,BaseSpeedBot.LY_MM,BaseSpeedBot.WHEEL_RADIUS_MM);
+
+        // And the wheel speed log file
+        mWheelSpeedLogFile = new LogFile(LOG_PATHNAME, LOG_FILENAME, LOG_COLUMNS);
+        mWheelSpeedLogFile.openFile();
+    }
+
+    @Override
+    public void stop() {
+        mWheelSpeedLogFile.closeFile();
+        super.stop();
     }
 
     public void loop() {
         if (mFirstTime){
             mFirstTime = false;
-            mLastSystemTime = System.currentTimeMillis();
+            mLastSystemTimeNS = System.nanoTime();
             updateTracker();
             return;
         }
-        // Compute the delta time and update the Tracker if we are at the sampel period T
-        long systemTime = System.currentTimeMillis();
-        int deltat_ms = (int)(systemTime-mLastSystemTime);
-        if (deltat_ms > T_MS){
+        // Service the drivetrain loop to update wheel speed measurements
+        mSpeedBot.getDrivetrain().loop();
+
+        // Compute the delta time and update the Tracker if we are at the sample period T
+        long systemTime = System.nanoTime();
+        int deltat_ns = (int)(systemTime-mLastSystemTimeNS);
+        mElapsedTimeNS += deltat_ns;
+        if (deltat_ns >= T_NS){
             updateTracker();
-            mLastSystemTime = systemTime;   // save for next loop
+            mLastSystemTimeNS = systemTime;   // save for next loop
+            // Log a record of data
+            logData();
         }
 
         // update speeds from the joystick
@@ -79,15 +104,38 @@ public class FilterDevelopmentOpMode extends OpMode{
         yright = applyJoystickGain(yright);
         mSpeedBot.getDrivetrain().setTankDriveJoystickInput(xleft,yleft,xright,yright);
 
-        // Service the drivetrain loop to update wheel speed measurements
-        mSpeedBot.getDrivetrain().loop();
-        // Now output the wheel speeds
+        // TODO: Send the estimated position and heading to the state machine controller
+
+        // TODO: update the robot speed
+    }
+
+    private void logData(){
+        // Now output the wheel speeds to telemetry and to the log file
         double[] speeds = mSpeedBot.getDrivetrain().getWheelSpeeds();
         telemetry.addData("WhlSpds:","%4.2f,%4.2f,%4.2f,%4.2f",speeds[0],speeds[1],speeds[2],speeds[3]);
         telemetry.update();
 
-        // TODO: Send the estimated position and heading to the state machine controller
-        // TODO: update the robot speed
+        // Now form the record for the log
+        String[] logRecord = new String[LOG_COLUMNS.length];
+        int logIndex = 0;
+        double time = (double)mElapsedTimeNS/1e9d;
+        logRecord[logIndex++] = String.format("%4.3f",time);
+        // Now the speeds
+        for(int i=0;i < speeds.length;i++){
+            logRecord[logIndex++] = String.format("%4.2f",speeds[i]);
+        }
+        // IMU data
+        logRecord[logIndex++] = String.format("%4.2f",mIMUAcceleration.xAccel);
+        logRecord[logIndex++] = String.format("%4.2f",mIMUAcceleration.yAccel);
+        logRecord[logIndex++] = String.format("%4.2f",mIMUOrientation.firstAngle);
+
+        // Kalman outputs
+        logRecord[logIndex++] = String.format("%2.2f",mKalmanTracker.getEstimatedXPosition());
+        logRecord[logIndex++] = String.format("%2.2f",mKalmanTracker.getEstimatedYPosition());
+        logRecord[logIndex++] = String.format("%2.2f",mKalmanTracker.getEstimatedHeading());
+
+        mWheelSpeedLogFile.writeLogRow(logRecord);
+
     }
 
     /**
@@ -99,16 +147,17 @@ public class FilterDevelopmentOpMode extends OpMode{
 
         // Now get the IMU data
         IMU imu = mSpeedBot.getIMU();
-        Acceleration acceleration = imu.getBNO055IMU().getLinearAcceleration();
-        Orientation orientation = imu.getBNO055IMU().getAngularOrientation();
+        mIMUAcceleration = imu.getBNO055IMU().getLinearAcceleration();
+        mIMUOrientation = imu.getBNO055IMU().getAngularOrientation();
         // Update the tracker
         mKalmanTracker.updateMeasurement(wheelSpeeds[BaseMecanumDrive.LF_WHEEL_ARRAY_INDEX],
                     wheelSpeeds[BaseMecanumDrive.LR_WHEEL_ARRAY_INDEX],
                 wheelSpeeds[BaseMecanumDrive.RF_WHEEL_ARRAY_INDEX],
                 wheelSpeeds[BaseMecanumDrive.RR_WHEEL_ARRAY_INDEX],
-                acceleration.xAccel,
-                acceleration.yAccel,
-                orientation.firstAngle);
+                mIMUAcceleration.xAccel,
+                mIMUAcceleration.yAccel,
+                mIMUOrientation.firstAngle);
+
     }
 
     /**
@@ -118,13 +167,5 @@ public class FilterDevelopmentOpMode extends OpMode{
         double output = input * input;
         return output * Math.signum(input);
     }
-/**
-    public static void main(String[] args) {
-        SkystoneAutonomousOpMode mode = new SkystoneAutonomousOpMode();
-        mOpmode.mode.gamepad1 = new Gamepad();
-        mOpmode.mode.telemetry = new TelemetryImpl(mode);
-        mode.init_loop();
-    }
-**/
 
 }
