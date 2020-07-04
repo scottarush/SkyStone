@@ -204,6 +204,18 @@ public abstract class BaseMecanumDrive extends Drivetrain{
     }
 
     /**
+     * dumps the current encoder positions for development in same order
+     * as internal motor list lf,rf,lr,rr
+     */
+    public int[] getEncoderPositions(){
+        int retarray[] = new int[mMotorList.size()];
+        for(int i = 0;i < mMotorList.size();i++){
+            retarray[i] = mMotorList.get(i).getCurrentPosition();
+        }
+        return retarray;
+    }
+
+    /**
      * helper function to stop all motors on the robot and return motor modes to
      * manual mode if they had been changed to run to position.
      * Make sure to call base class.
