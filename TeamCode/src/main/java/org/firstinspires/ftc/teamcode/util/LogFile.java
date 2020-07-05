@@ -39,6 +39,7 @@ public class LogFile {
                     mWriter.write(',');
                 }
             }
+            mWriter.newLine();
         }
         catch(IOException e){
             e.printStackTrace();
