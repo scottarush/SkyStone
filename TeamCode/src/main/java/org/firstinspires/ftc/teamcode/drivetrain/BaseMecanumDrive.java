@@ -164,7 +164,7 @@ public abstract class BaseMecanumDrive extends Drivetrain{
         // Otherwise compute the angular velocities
         for(int i=0;i < mMotorList.size();i++){
             int newpos = getCurrentPosition(mMotorList.get(i));
-            double angle = (newpos - mMotorPositions[i])/ getEncoderCountsPerRev() * 2*Math.PI;
+            double angle = (double)(newpos - mMotorPositions[i])/(double)getEncoderCountsPerRev() * 2d*Math.PI;
             mWheelSpeeds[i] = angle /deltaT;
             mMotorPositions[i] = newpos;  // Transfer to current pos array for next time
         }
