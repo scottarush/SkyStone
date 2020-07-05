@@ -34,13 +34,12 @@ public class FilterDevelopmentOpMode extends OpMode{
     private Orientation mIMUOrientation;
     private long mLastSystemTimeNS = 0;
     private int mElapsedTimeNS = 0;
-    private boolean mFirstTime = true;
+    private int mStartTimeNS = 0;
 
     @Override
     public void init() {
         msStuckDetectInit = 1000000;
         mElapsedTimeNS = 0;
-        mFirstTime = false;
 
         String initErrs = "";
         try {
@@ -74,21 +73,25 @@ public class FilterDevelopmentOpMode extends OpMode{
         super.stop();
     }
 
+    @Override
+    public void start() {
+        mLastSystemTimeNS = System.nanoTime();
+        mElapsedTimeNS = 0;
+        mStartTimeNS = 0;
+
+         super.start();
+    }
+
     public void loop() {
-        if (mFirstTime){
-            mFirstTime = false;
-            mLastSystemTimeNS = System.nanoTime();
-            updateTracker();
-            return;
-        }
+        // Compute the delta time and update the Tracker if we are at the sample period T
+        long systemTime = System.nanoTime();
+
         // Service the drivetrain loop to update wheel speed measurements
         mSpeedBot.getDrivetrain().loop();
 
-        // Compute the delta time and update the Tracker if we are at the sample period T
-        long systemTime = System.nanoTime();
         int deltat_ns = (int)(systemTime-mLastSystemTimeNS);
         if (deltat_ns >= T_NS){
-            mElapsedTimeNS += deltat_ns;
+            mElapsedTimeNS = (int)(systemTime-mStartTimeNS);
             updateTracker();
             mLastSystemTimeNS = systemTime;   // save for next loop
             // Log a record of data
@@ -107,9 +110,6 @@ public class FilterDevelopmentOpMode extends OpMode{
         yright = applyJoystickGain(yright);
         mSpeedBot.getDrivetrain().setTankDriveJoystickInput(xleft,yleft,xright,yright);
 
-        int[] array = mSpeedBot.getDrivetrain().getEncoderPositions();
-        telemetry.addData("LF", array[0]);
-        telemetry.addData("LR", array[1]);
         // TODO: Send the estimated position and heading to the state machine controller
 
         // TODO: update the robot speed
