@@ -4,6 +4,9 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.firstinspires.ftc.robotcore.external.navigation.Acceleration;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.teamcode.drivetrain.BaseMecanumDrive;
 import org.firstinspires.ftc.teamcode.drivetrain.IMU;
@@ -151,7 +154,7 @@ public class FilterDevelopmentOpMode extends OpMode{
         // Now get the IMU data
         IMU imu = mSpeedBot.getIMU();
         mIMUAcceleration = imu.getBNO055IMU().getLinearAcceleration();
-        mIMUOrientation = imu.getBNO055IMU().getAngularOrientation();
+        mIMUOrientation = imu.getBNO055IMU().getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.RADIANS);
         // Update the tracker
         mKalmanTracker.updateMeasurement(wheelSpeeds[BaseMecanumDrive.LF_WHEEL_ARRAY_INDEX],
                     wheelSpeeds[BaseMecanumDrive.LR_WHEEL_ARRAY_INDEX],
