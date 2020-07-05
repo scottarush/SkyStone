@@ -33,8 +33,8 @@ public class FilterDevelopmentOpMode extends OpMode{
     private Acceleration mIMUAcceleration;
     private Orientation mIMUOrientation;
     private long mLastSystemTimeNS = 0;
-    private int mElapsedTimeNS = 0;
-    private int mStartTimeNS = 0;
+    private long mElapsedTimeNS = 0;
+    private long mStartTimeNS = 0;
 
     @Override
     public void init() {
@@ -77,7 +77,7 @@ public class FilterDevelopmentOpMode extends OpMode{
     public void start() {
         mLastSystemTimeNS = System.nanoTime();
         mElapsedTimeNS = 0;
-        mStartTimeNS = 0;
+        mStartTimeNS = mLastSystemTimeNS;
 
          super.start();
     }
@@ -91,7 +91,7 @@ public class FilterDevelopmentOpMode extends OpMode{
 
         int deltat_ns = (int)(systemTime-mLastSystemTimeNS);
         if (deltat_ns >= T_NS){
-            mElapsedTimeNS = (int)(systemTime-mStartTimeNS);
+            mElapsedTimeNS = systemTime-mStartTimeNS;
             updateTracker();
             mLastSystemTimeNS = systemTime;   // save for next loop
             // Log a record of data
