@@ -84,8 +84,8 @@ public class FilterDevelopmentOpMode extends OpMode{
         // Compute the delta time and update the Tracker if we are at the sample period T
         long systemTime = System.nanoTime();
         int deltat_ns = (int)(systemTime-mLastSystemTimeNS);
-        mElapsedTimeNS += deltat_ns;
         if (deltat_ns >= T_NS){
+            mElapsedTimeNS += deltat_ns;
             updateTracker();
             mLastSystemTimeNS = systemTime;   // save for next loop
             // Log a record of data
