@@ -57,7 +57,7 @@ public abstract class Drivetrain {
     protected int mRotationTargetAngle = 0;
 
 
-    protected IMU mIMU;
+    protected GuidanceController mIMU;
 
     private static final boolean ENABLE_LINEAR_DRIVE_CORRECTION = false;
     /**
@@ -71,7 +71,7 @@ public abstract class Drivetrain {
     private ArrayList<IRotationStatusListener> mRotationStatusListeners = new ArrayList<>();
 
 
-    public Drivetrain(OpMode opMode, IMU imu) {
+    public Drivetrain(OpMode opMode, GuidanceController imu) {
         init(opMode);
         mIMU = imu;
     }

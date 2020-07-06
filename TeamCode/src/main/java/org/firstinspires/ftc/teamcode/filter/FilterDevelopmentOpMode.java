@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode.filter;
 
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -10,7 +9,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.teamcode.drivetrain.BaseMecanumDrive;
-import org.firstinspires.ftc.teamcode.drivetrain.IMU;
+import org.firstinspires.ftc.teamcode.drivetrain.GuidanceController;
 import org.firstinspires.ftc.teamcode.speedbot.BaseSpeedBot;
 import org.firstinspires.ftc.teamcode.util.LogFile;
 
@@ -53,7 +52,7 @@ public class FilterDevelopmentOpMode extends OpMode{
 
         if (initErrs.length() == 0){
             telemetry.addData("Status:","Robot init complete");
-            telemetry.addData("IMU cal status",mSpeedBot.getIMU().getBNO055IMU().getCalibrationStatus());
+            telemetry.addData("IMU cal status",mSpeedBot.getGuidanceController().getBNO055IMU().getCalibrationStatus());
             telemetry.update();
         }
         else {
@@ -154,7 +153,7 @@ public class FilterDevelopmentOpMode extends OpMode{
         double[] wheelSpeeds = mSpeedBot.getDrivetrain().getWheelSpeeds();
 
         // Now get the IMU data
-        IMU imu = mSpeedBot.getIMU();
+        GuidanceController imu = mSpeedBot.getGuidanceController();
         mIMUAcceleration = imu.getBNO055IMU().getLinearAcceleration();
         mIMUOrientation = imu.getBNO055IMU().getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.RADIANS);
         // Update the tracker

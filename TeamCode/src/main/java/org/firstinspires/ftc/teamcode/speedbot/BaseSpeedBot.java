@@ -3,7 +3,7 @@ package org.firstinspires.ftc.teamcode.speedbot;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.firstinspires.ftc.teamcode.drivetrain.BaseMecanumDrive;
-import org.firstinspires.ftc.teamcode.drivetrain.IMU;
+import org.firstinspires.ftc.teamcode.drivetrain.GuidanceController;
 import org.firstinspires.ftc.teamcode.drivetrain.SpeedBotMecanumDrive;
 
 /**
@@ -25,7 +25,7 @@ public class BaseSpeedBot {
 
     private  FrontHooks mFrontHooks = null;
 
-    private IMU mIMU = null;
+    private GuidanceController mGuidanceController = null;
 
     private boolean mEnableIMU = false;
     /**
@@ -66,15 +66,16 @@ public class BaseSpeedBot {
 
         if (mEnableIMU){
             try {
-                mIMU = new IMU();
-                mIMU.initIMU(mOpMode.hardwareMap);
+                mGuidanceController = new GuidanceController();
+                GuidanceController.Parameters gcParams = new GuidanceController.Parameters();
+                mGuidanceController.init(mOpMode.hardwareMap, gcParams);
             }
             catch(Exception e){
                 initErrString += e.getMessage();
             }
         }
         try {
-            mDrivetrain = new SpeedBotMecanumDrive(mOpMode,mIMU);
+            mDrivetrain = new SpeedBotMecanumDrive(mOpMode, mGuidanceController);
             mDrivetrain.init(mOpMode.hardwareMap);
 
         }
@@ -98,7 +99,7 @@ public class BaseSpeedBot {
     /**
      * gets a reference to the IMU
      */
-    public IMU getIMU(){
-        return mIMU;
+    public GuidanceController getGuidanceController(){
+        return mGuidanceController;
     }
 }

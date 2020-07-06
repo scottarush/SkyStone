@@ -102,7 +102,7 @@ public abstract class BaseMecanumDrive extends Drivetrain{
     /**
      * @param
      **/
-    public BaseMecanumDrive(OpMode opMode,IMU imu) {
+    public BaseMecanumDrive(OpMode opMode, GuidanceController imu) {
         super(opMode,imu);
     }
 

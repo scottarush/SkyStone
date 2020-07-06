@@ -6,13 +6,15 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ReadWriteFile;
 
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
+import org.firstinspires.ftc.teamcode.util.MiniPID;
 
 import java.io.File;
 
 /**
- * Encapsulates the IMU
+ * GuidanceController encapsulates the IMU and a PID algorithm that generates corrective
+ * gain for guidance to an x,y field target position.
  */
-public class IMU {
+public class GuidanceController {
 
     /**
      * IMU inside REV hub
@@ -20,22 +22,33 @@ public class IMU {
     private BNO055IMU mIMU = null;
     private boolean mIMUInitialized = false;
 
+    private MiniPID mPID = null;
+    private Parameters mPIDParameters = null;
+
+    public static class Parameters {
+        public String imuCalibrationDataFilename = "IMUCal.json";
+        public double proportionalGain = 0d;
+        public double integralGain = 0d;
+        public double derivativeGain = 0d;
+    }
+
     /**
      *
      * IMPORTANT:  IMU can take a long time to initialize
      */
-    public void initIMU(HardwareMap hwMap) throws Exception {
+    public void init(HardwareMap hwMap,Parameters pidParams) throws Exception {
+        mPIDParameters = pidParams;
         try{
             // Initialize the IMU
-            BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
+            BNO055IMU.Parameters imuParameters = new BNO055IMU.Parameters();
 
-            parameters.mode                = BNO055IMU.SensorMode.IMU;
-            parameters.angleUnit           = BNO055IMU.AngleUnit.RADIANS;
-            parameters.accelUnit           = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
-            parameters.calibrationDataFile = "IMUCal.json"; // see the calibration sample opmode
+            imuParameters.mode                = BNO055IMU.SensorMode.IMU;
+            imuParameters.angleUnit           = BNO055IMU.AngleUnit.RADIANS;
+            imuParameters.accelUnit           = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
+            imuParameters.calibrationDataFile = pidParams.imuCalibrationDataFilename;
 //            parameters.loggingEnabled      = true;
 //            parameters.loggingTag          = "IMU";
-            parameters.loggingEnabled      = false;
+            imuParameters.loggingEnabled      = false;
 
             // Retrieve and initialize the IMU. We expect the IMU to be attached to an I2C port
             // on a Core Device Interface Module, configured to be a sensor of type "AdaFruit IMU",
@@ -43,9 +56,10 @@ public class IMU {
             try {
                 mIMU = hwMap.get(BNO055IMU.class, "imu");
 
-                mIMU.initialize(parameters);
+                mIMU.initialize(imuParameters);
 
                 // Now load calibrations
+
                 String filename = "IMUCal_ctrlhub1.json";
                 File file = AppUtil.getInstance().getSettingsFile(filename);
                 BNO055IMU.CalibrationData calibrationData = BNO055IMU.CalibrationData.deserialize(ReadWriteFile.readFile(file));
@@ -62,6 +76,8 @@ public class IMU {
             throw new Exception(e);
         }
         mIMUInitialized = true;
+        //  Now initialize the pid
+        mPID = new MiniPID(pidParams.proportionalGain,pidParams.integralGain,pidParams.derivativeGain);
     }
     public boolean isIMUInitialized(){
         return mIMUInitialized;
@@ -73,4 +89,13 @@ public class IMU {
     public BNO055IMU getBNO055IMU(){
         return mIMU;
     }
+
+    /**
+     * sets the current heading and position feedback to the guidance controller
+     */
+    public void updateFeedback(double heading, double px, double py){
+
+    }
+
+
 }

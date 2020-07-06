@@ -54,7 +54,7 @@ public class SpeedBotMecanumDrive extends BaseMecanumDrive {
             (4 * MECANUM_WHEEL_CIRCUMFERENCE);
 
 
-    public SpeedBotMecanumDrive(OpMode opMode,IMU imu){
+    public SpeedBotMecanumDrive(OpMode opMode, GuidanceController imu){
         super(opMode,imu);
     }
 
