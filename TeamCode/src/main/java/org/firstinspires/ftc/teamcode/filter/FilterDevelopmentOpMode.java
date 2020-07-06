@@ -17,7 +17,7 @@ public class FilterDevelopmentOpMode extends OpMode{
     public static final String LOG_PATHNAME = "/sdcard";
 
     public static final String LOG_FILENAME = "kflog.csv";
-    public static final String[] LOG_COLUMNS = {"time","w_lf","w_rf","w_lr","w_rr","ax_imu","ay_imu","theta_imu","px","py","heading","cmd_pwr","cmd_steering"};
+    public static final String[] LOG_COLUMNS = {"time","w_lf","w_rf","w_lr","w_rr","theta_imu","px","py","heading","cmd_pwr","cmd_steering"};
     private LogFile mLogFile;
 
     public static final double INIT_PX = 0D;
@@ -28,7 +28,7 @@ public class FilterDevelopmentOpMode extends OpMode{
 
     private BaseSpeedBot mSpeedBot = null;
 
-    private IKalmanTracker mKalmanTracker = null;
+    private KalmanTracker mKalmanTracker = null;
     private Acceleration mIMUAcceleration;
     private Orientation mIMUOrientation;
     private long mLastSystemTimeNS = 0;
@@ -44,20 +44,20 @@ public class FilterDevelopmentOpMode extends OpMode{
         try {
             mSpeedBot = new BaseSpeedBot(this, true);
             mSpeedBot.init();
-        }
+         }
         catch(Exception e){
             initErrs += ","+e.getMessage();
         }
 
         if (initErrs.length() == 0){
             telemetry.addData("Status:","Robot init complete");
-            telemetry.addData("IMU cal status",mSpeedBot.getGuidanceController().getIMUCalibrationStatus());
-            telemetry.update();
         }
         else {
             telemetry.addData("Init errors:", initErrs);
-            telemetry.update();
         }
+        telemetry.addData("IMU cal status",mSpeedBot.getGuidanceController().getIMUCalibrationStatus());
+        telemetry.update();
+
         // Initialize the KalmanTracker
         mKalmanTracker = new KalmanTracker();
         mKalmanTracker.init(T,INIT_PX,INIT_PY,INIT_HEADING,BaseSpeedBot.LX,BaseSpeedBot.LY,BaseSpeedBot.WHEEL_RADIUS);
@@ -103,7 +103,8 @@ public class FilterDevelopmentOpMode extends OpMode{
             gc.setTargetPosition(targetX,targetY);
             gc.update(mKalmanTracker.getEstimatedHeading(),mKalmanTracker.getEstimatedXPosition(),mKalmanTracker.getEstimatedXPosition());
 
-            mSpeedBot.getDrivetrain().setSteeringCommand(gc.getCommandedSteeringAngle(),gc.getCommandedPower());
+
+ //           mSpeedBot.getDrivetrain().setSteeringCommand(gc.getSteeringCommand(),gc.getPowerCommand());
             // Log a record of data
             logData();
         }
@@ -125,16 +126,14 @@ public class FilterDevelopmentOpMode extends OpMode{
             logRecord[logIndex++] = String.format("%4.2f",speeds[i]);
         }
         // IMU data
-        logRecord[logIndex++] = String.format("%4.2f",mIMUAcceleration.xAccel);
-        logRecord[logIndex++] = String.format("%4.2f",mIMUAcceleration.yAccel);
-        logRecord[logIndex++] = String.format("%4.2f",mIMUOrientation.firstAngle);
+         logRecord[logIndex++] = String.format("%4.2f",mIMUOrientation.firstAngle);
 
         // Kalman outputs
         logRecord[logIndex++] = String.format("%2.2f",mKalmanTracker.getEstimatedXPosition());
         logRecord[logIndex++] = String.format("%2.2f",mKalmanTracker.getEstimatedYPosition());
         logRecord[logIndex++] = String.format("%2.2f",mKalmanTracker.getEstimatedHeading());
-        logRecord[logIndex++] = String.format("%2.2f",mSpeedBot.getGuidanceController().getCommandedPower());
-        logRecord[logIndex++] = String.format("%2.2f",mSpeedBot.getGuidanceController().getCommandedSteeringAngle());
+        logRecord[logIndex++] = String.format("%2.2f",mSpeedBot.getGuidanceController().getPowerCommand());
+        logRecord[logIndex++] = String.format("%2.2f",mSpeedBot.getGuidanceController().getSteeringCommand());
 
         mLogFile.writeLogRow(logRecord);
 
@@ -147,27 +146,17 @@ public class FilterDevelopmentOpMode extends OpMode{
         // Get the wheel speeds
         double[] wheelSpeeds = mSpeedBot.getDrivetrain().getWheelSpeeds();
 
-        // Now get the IMU data
+        // Now get the IMU orientation
         GuidanceController gc = mSpeedBot.getGuidanceController();
-        mIMUAcceleration = gc.getIMU().getLinearAcceleration();
         mIMUOrientation = gc.getIMU().getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.RADIANS);
         // Update the tracker
         mKalmanTracker.updateMeasurement(wheelSpeeds[BaseMecanumDrive.LF_WHEEL_ARRAY_INDEX],
                     wheelSpeeds[BaseMecanumDrive.LR_WHEEL_ARRAY_INDEX],
                 wheelSpeeds[BaseMecanumDrive.RF_WHEEL_ARRAY_INDEX],
                 wheelSpeeds[BaseMecanumDrive.RR_WHEEL_ARRAY_INDEX],
-                mIMUAcceleration.xAccel,
-                mIMUAcceleration.yAccel,
                 mIMUOrientation.firstAngle);
 
      }
 
-    /**
-     * helper function for control gain
-     */
-    private double applyJoystickGain(double input){
-        double output = input * input;
-        return output * Math.signum(input);
-    }
 
 }

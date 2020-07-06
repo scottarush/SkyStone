@@ -3,10 +3,6 @@ package org.firstinspires.ftc.teamcode.filter;
 
 import org.ejml.data.DMatrixRMaj;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Vector;
-
 /**
  * Encapsulates a Kalman filter state estimator for a mecanum wheel robot.
  * The filter estimates position (returned by getEstimatedPosition()) and
@@ -21,11 +17,11 @@ import java.util.Vector;
  * Measurement vector z=[vx,vy,w_zw,ax,ay,w_zi]^T
  * Estimate vector xhat=[px,vx,vy,ax,ay,w_z,theta]^T
  */
-public class KalmanTracker {
+public class KalmanTrackerWithAccels {
 
     private static final int XHAT_PX_INDEX = 0;
     private static final int XHAT_PY_INDEX = 1;
-    private static final int XHAT_THETA_INDEX = 5;
+    private static final int XHAT_THETA_INDEX = 7;
 
     // Initial P covariance values
     final double SIGMA_POSITION = 0.1;
@@ -55,7 +51,7 @@ public class KalmanTracker {
     private double ly;
     private double radius_wheel;
 
-    public KalmanTracker(){
+    public KalmanTrackerWithAccels(){
 
     }
 
@@ -77,24 +73,28 @@ public class KalmanTracker {
         radius_wheel = r;
 
         final double[][] A_MATRIX = {
-                {1,0,T,0,0,0},
-                {0,1,0,T,0,0},
-                {0,0,1,0,0,0},
-                {0,0,0,1,0,0},
-                {0,0,0,0,1,0},
-                {0,0,0,0,T,1} };
+                {1,0,T,0,0,0,0,0},
+                {0,1,0,T,0,0,0,0},
+                {0,0,1,0,T,0,0,0},
+                {0,0,0,1,0,T,0,0},
+                {0,0,0,0,1,0,0,0},
+                {0,0,0,0,0,1,0,0},
+                {0,0,0,0,0,0,1,0},
+                {0,0,0,0,0,0,T,0} };
 
         //-------------------------------------------------------------
         // Q process noise covariance matrix
         //-------------------------------------------------------------
 
         final double[][] Q_MATRIX = {
-                {VAR_POSITION,0,0,0,0,0},
-                {0, VAR_POSITION,0,0,0,0},
-                {0,0, VAR_VELOCITY,0,0,0},
-                {0,0,0, VAR_VELOCITY,0,0},
-                {0,0,0,0,VAR_W,0},
-                {0,0,0,0,0,VAR_THETA} };
+                {VAR_POSITION,0,0,0,0,0,0,0},
+                {0, VAR_POSITION,0,0,0,0,0,0},
+                {0,0, VAR_VELOCITY,0,0,0,0,0},
+                {0,0,0, VAR_VELOCITY,0,0,0,0},
+                {0,0,0,0, VAR_ACCEL,0,0,0},
+                {0,0,0,0,0, VAR_ACCEL,0,0},
+                {0,0,0,0,0,0,VAR_W,0},
+                {0,0,0,0,0,0,0,VAR_THETA} };
 
         //-------------------------------------------------------------
         // R measurement noise covariance matrix
@@ -105,19 +105,25 @@ public class KalmanTracker {
         final double VAR_VX = R2_VAR_W_WHL;
         final double VAR_VY = R2_VAR_W_WHL;
         final double VAR_W_WHL = R2_VAR_W_WHL/((Math.pow(ly,2.0d) + Math.pow(ly,2.0d)));
+        final double SIGMA_A_IMU = 0.1;
+        final double VAR_A_IMU = Math.pow(SIGMA_A_IMU,2.0d);
         final double SIGMA_W_IMU = 0.1;
         final double VAR_W_IMU = Math.pow(SIGMA_W_IMU,2.0d);
         final double[][] R_MATRIX = {
-                {VAR_VX,0,0,0},
-                {0,VAR_VY,0,0},
-                {0,0,VAR_W_WHL,0},
-                {0,0,0,VAR_W_IMU}};
+                {VAR_VX,0,0,0,0,0},
+                {0,VAR_VY,0,0,0,0},
+                {0,0,VAR_W_WHL,0,0,0},
+                {0,0,0,VAR_A_IMU,0,0},
+                {0,0,0,0,VAR_A_IMU,0},
+                {0,0,0,0,0,VAR_W_IMU}};
 
         final double[][] H_MATRIX = {
-                {0,0,1,0,0,0},
-                {0,0,0,1,0,0},
-                {0,0,0,0,1,0},
-                {0,0,0,0,0,1}};
+                {0,0,1,0,0,0,0,0},
+                {0,0,0,1,0,0,0,0},
+                {0,0,0,0,0,0,1,0},
+                {0,0,0,0,1,0,0,0},
+                {0,0,0,0,0,1,0,0},
+                {0,0,0,0,0,0,1,0}};
 
 
         // Initialize constant matrices
@@ -131,7 +137,7 @@ public class KalmanTracker {
         mFilter.configure(A,Q,H);
 
         // Initialize the state estimate vector to the supplied position and orientation
-        DMatrixRMaj xhat = new DMatrixRMaj(new double[][] {{px0},{py0},{0d},{0d},{0d},{theta0}});
+        DMatrixRMaj xhat = new DMatrixRMaj(new double[][] {{px0},{py0},{0d},{0d},{0d},{0d},{0d},{theta0}});
         // Initialize P to the process noise covariance matrix
         DMatrixRMaj p = new DMatrixRMaj(Q_MATRIX);
 
@@ -144,12 +150,16 @@ public class KalmanTracker {
      * @param w_lr angular velocity of LR wheel in radians/sec
      * @param w_rf angular velocity of RF wheel in radians/sec
      * @param w_rr angular velocity of RR wheel in radians/sec
-      * @param wz_imu z coordinate of imu measured angular velocity radians/sec
+     * @param ax_imu x coordinate of imu measured acceleration in meters/sec^2
+     * @param ay_imu y coordinate of imu measured acceleration in meters/sec^2
+     * @param wz_imu z coordinate of imu measured angular velocity radians/sec
      */
     public void updateMeasurement(double w_lf,
                                   double w_lr,
                                   double w_rf,
                                   double w_rr,
+                                  double ax_imu,
+                                  double ay_imu,
                                   double wz_imu) {
         // Compute the robot velocity from the wheel velocities
         double rover4 = radius_wheel/4.0d;
@@ -157,7 +167,7 @@ public class KalmanTracker {
         double vy = rover4*(w_lf+w_rf+w_lr+w_rr);
         double wzw = rover4*(w_lf+w_rf+w_lr+w_rr)/(lx+ly);
 
-        DMatrixRMaj z = new DMatrixRMaj(new double[][] {{vx},{vy},{wzw},{wz_imu}});
+        DMatrixRMaj z = new DMatrixRMaj(new double[][] {{vx},{vy},{wzw},{ax_imu},{ay_imu},{wz_imu}});
 
         // Do Kalman predict step
         mFilter.predict();

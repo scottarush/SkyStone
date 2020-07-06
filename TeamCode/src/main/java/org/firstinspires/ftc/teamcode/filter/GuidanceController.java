@@ -26,21 +26,21 @@ public class GuidanceController {
 
     private Parameters mPIDParameters = null;
 
-    private double mCommandedPower = 0d;
-    private double mCommandedSteeringAngle = 0d;
+    private double mPowerCommand = 0d;
+    private double mSteeringCommand = 0d;
 
     private double mTargetPX = 0d;
     private double mTargetPY = 0d;
 
     public static class Parameters {
         public String imuCalibrationDataFilename = "IMUCal.json";
-        public double steeringPropGain = 0.5d;
-        public double steeringIntegGain = 0.5d;
-        public double steeringDerivGain = 0.5d;
+        public double steeringPropGain = 0.1d;
+        public double steeringIntegGain = 0.05d;
+        public double steeringDerivGain = 0.05d;
 
-        public double powerPropGain = 0.5d;
-        public double powerIntegGain = 0.5d;
-        public double powerDerivGain = 0.5d;
+        public double powerPropGain = 0.1d;
+        public double powerIntegGain = 0.05d;
+        public double powerDerivGain = 0.05d;
     }
 
     /**
@@ -121,13 +121,41 @@ public class GuidanceController {
         // Compute the distance vector and angle to target
         double xrel = mTargetPX-xpos;
         double yrel = mTargetPY-ypos;
-        double angleToTarget = Math.atan(xrel/yrel);
+
+        // Compute the angle assuming the robot is pointed straight north and add
+        // the current heading afterward
+        double angleToTarget = 0d;
+        if (xrel > 0){
+            if (yrel > 0){
+                // northeast quadrant is negative angle
+                angleToTarget = -Math.atan(Math.abs(yrel)/Math.abs(xrel));
+            }
+            else{
+                // northwest quadrant is positive angle
+                angleToTarget = Math.atan(Math.abs(yrel)/Math.abs(xrel));
+            }
+        }
+        else{
+            if (yrel > 0){
+                // southeast quadrant is negative angle - PI/2
+                angleToTarget = -Math.atan(Math.abs(yrel)/Math.abs(xrel))-Math.PI/2;
+            }
+            else{
+                // southwest quadrant is positive angle + PI/2
+                angleToTarget = Math.atan(Math.abs(yrel)/Math.abs(xrel))+Math.PI/2;
+            }
+
+        }
+        // Now subtract current heading to get the actual angle
+        angleToTarget = heading - angleToTarget;
         double distance = Math.sqrt(Math.pow(xrel,2.0d)+Math.pow(yrel,2.0d));
         // Power command is computed using the new distance to the target
-        mCommandedPower = mPowerPID.getOutput(distance);
-        // Steering angle command is computed using angleToTarget as the new setpoint and
+        mPowerCommand = mPowerPID.getOutput(distance);
+        // Steering  command is computed using angleToTarget as the new setpoint and
         // the current heading
-        mCommandedSteeringAngle = mSteeringPID.getOutput(heading,angleToTarget);
+        mSteeringCommand = mSteeringPID.getOutput(heading,angleToTarget);
+        //And scaled down to +/-1
+        mSteeringCommand = mSteeringCommand /(Math.PI/2);
     }
 
     /**
@@ -150,16 +178,16 @@ public class GuidanceController {
     }
     /**
      * returns the current steering command
-     * @return current commanded steering angle - range +/- PI/2
+     * @return current steering command +1 for left, -1 for right.
      */
-    public double getCommandedSteeringAngle(){
-        return mCommandedSteeringAngle;
+    public double getSteeringCommand(){
+        return mSteeringCommand;
     }
     /**
      * returns the current commanded power
      * @return commanded power - range -1.0 (reverse) to 1.0 (forward)
      */
-    public double getCommandedPower(){
-        return mCommandedPower;
+    public double getPowerCommand(){
+        return mPowerCommand;
     }
 }

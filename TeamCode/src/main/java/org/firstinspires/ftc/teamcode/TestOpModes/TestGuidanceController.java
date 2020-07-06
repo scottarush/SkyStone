@@ -35,8 +35,38 @@ public class TestGuidanceController extends OpMode {
 
     @Override
     public void loop() {
- //       double y = gamepad1.left_stick_y;
-        mSpeedBot.getDrivetrain().setSteeringCommand(-0.5d, 0.5d);
-        mSpeedBot.getDrivetrain().loop();
+        double xleft = gamepad1.left_stick_x;
+        double yleft = -gamepad1.left_stick_y;
+        double xright = gamepad1.right_stick_x;
+        double yright = -gamepad1.right_stick_y;
+        xleft = applyJoystickGain(xleft);
+        yleft = applyJoystickGain(yleft);
+        xright = applyJoystickGain(xright);
+        yright = applyJoystickGain(yright);
+        if (gamepad1.a) {
+            mSpeedBot.getDrivetrain().setSteeringCommand(-0.5d, 0.5d);
+            mSpeedBot.getDrivetrain().loop();
+        }
+        else if (gamepad1.b) {
+            mSpeedBot.getDrivetrain().setSteeringCommand(0.5d, 0.5d);
+            mSpeedBot.getDrivetrain().loop();
+        }
+        else if (gamepad1.x) {
+            mSpeedBot.getDrivetrain().setSteeringCommand(-0.7d, 0.8d);
+            mSpeedBot.getDrivetrain().loop();
+        }
+        else if (gamepad1.y) {
+            mSpeedBot.getDrivetrain().setSteeringCommand(0.7d, 0.8d);
+        }
+        else{
+            mSpeedBot.getDrivetrain().setSteeringCommand(0, 0);
+        }
+        mSpeedBot   .getDrivetrain().setTankDriveJoystickInput(xleft,yleft,xright,yright);
+
     }
+    private double applyJoystickGain(double input){
+        double output = input * input;
+        return output * Math.signum(input);
+    }
+    public void stop() {mSpeedBot.getDrivetrain().stop();}
 }
