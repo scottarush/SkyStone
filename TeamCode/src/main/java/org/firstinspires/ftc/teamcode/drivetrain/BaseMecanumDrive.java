@@ -92,14 +92,6 @@ public abstract class BaseMecanumDrive extends Drivetrain{
     public static final double MECANUM_WHEEL_CIRCUMFERENCE = 12.1211;
 
     /**
-     * scale factor for strafe lateral distance.
-     */
-    public static final double STRAFE_ENCODER_DISTANCE_COEFFICIENT = 1.08d;
-
-
-    private boolean mWasLastMovementStrafe = false;
-
-    /**
      * @param
      **/
     public BaseMecanumDrive(OpMode opMode, GuidanceController imu) {
@@ -172,16 +164,6 @@ public abstract class BaseMecanumDrive extends Drivetrain{
     }
 
     /**
-     * private helper function for set target position.  Does nothing if motor pointer is
-     * null to allow fail-op operation.
-     */
-    private void setTargetPosition(DcMotor motor,int position){
-        if (motor != null){
-            motor.setTargetPosition(position);
-        }
-    }
-
-    /**
      * private helper function for get current position.  Returns 0 if
      * null to allow fail-op operation.
      */
@@ -192,6 +174,47 @@ public abstract class BaseMecanumDrive extends Drivetrain{
         return 0;
     }
 
+    /**
+     * Sets the steering command from the GuidanceController
+     * @param steering 0 = straight ahead, +1.0 max left, -1.0 max right
+     * @param power -1.0..1.0 backward to forward
+     */
+    public void setSteeringCommand(double steering,double power){
+        double motorPower[] = new double[4];
+        // Do a rotation scaled by the steering command
+        // limit steering
+        if (Math.abs(steering) > 1.0d){
+            steering = Math.signum(steering);
+        }
+        double steerAbs = Math.abs(steering);
+        if (steering >= 0){
+            // Turn to the left
+            motorPower[0] = limitPower(power * (1.0d-steerAbs));
+            motorPower[1] = limitPower(power * (1.0d+steerAbs));
+            motorPower[2] = limitPower(power * (1.0d-steerAbs));
+            motorPower[3] = limitPower(power * (1.0d+steerAbs));
+        }
+        else{
+            // Turn to the right
+            motorPower[0] = limitPower(power * (1.0d+steerAbs));
+            motorPower[1] = limitPower(power * (1.0d-steerAbs));
+            motorPower[2] = limitPower(power * (1.0d+steerAbs));
+            motorPower[3] = limitPower(power * (1.0d-steerAbs));
+        }
+        for(int i=0;i < mMotorList.size();i++){
+            mMotorList.get(i).setPower(motorPower[i]);
+        }
+    }
+
+    /**
+     * helper computes power to each and limits to +/-
+     */
+    private double limitPower(double power){
+        if (Math.abs(power) > 1.0d){
+            power = Math.signum(power);
+        }
+        return power;
+    }
     /**
      * dumps the current encoder positions for development in same order
      * as internal motor list lf,rf,lr,rr

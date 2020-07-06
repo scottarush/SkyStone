@@ -18,8 +18,8 @@ public class FilterDevelopmentOpMode extends OpMode{
     public static final String LOG_PATHNAME = "/sdcard";
 
     public static final String LOG_FILENAME = "kflog.csv";
-    public static final String[] LOG_COLUMNS = {"time","w_lf","w_rf","w_lr","w_rr","ax_imu","ay_imu","theta_imu","px","py","heading"};
-    private LogFile mWheelSpeedLogFile;
+    public static final String[] LOG_COLUMNS = {"time","w_lf","w_rf","w_lr","w_rr","ax_imu","ay_imu","theta_imu","px","py","heading","cmd_pwr","cmd_steering"};
+    private LogFile mLogFile;
 
     public static final double INIT_PX = 0D;
     public static final double INIT_PY = 0D;
@@ -64,13 +64,13 @@ public class FilterDevelopmentOpMode extends OpMode{
         mKalmanTracker.init(T,INIT_PX,INIT_PY,INIT_HEADING,BaseSpeedBot.LX_MM,BaseSpeedBot.LY_MM,BaseSpeedBot.WHEEL_RADIUS_MM);
 
         // And the wheel speed log file
-        mWheelSpeedLogFile = new LogFile(LOG_PATHNAME, LOG_FILENAME, LOG_COLUMNS);
-        mWheelSpeedLogFile.openFile();
+        mLogFile = new LogFile(LOG_PATHNAME, LOG_FILENAME, LOG_COLUMNS);
+        mLogFile.openFile();
     }
 
     @Override
     public void stop() {
-        mWheelSpeedLogFile.closeFile();
+        mLogFile.closeFile();
         super.stop();
     }
 
@@ -111,7 +111,16 @@ public class FilterDevelopmentOpMode extends OpMode{
         yright = applyJoystickGain(yright);
         mSpeedBot.getDrivetrain().setTankDriveJoystickInput(xleft,yleft,xright,yright);
 
-        // TODO: Send the estimated position and heading to the state machine controller
+        // TODO: Get the target position and heading from the state machine controller
+        double targetX = 0d;
+        double targetY = 0d;
+        double targetHeading = 0d;
+
+        // Update the guidance controller
+        GuidanceController gc = mSpeedBot.getGuidanceController();
+
+        gc.setTargetPosition(targetX,targetY);
+        gc.update(mKalmanTracker.getEstimatedHeading(),mKalmanTracker.getEstimatedXPosition(),mKalmanTracker.getEstimatedXPosition());
 
         // TODO: update the robot speed
     }
@@ -140,8 +149,10 @@ public class FilterDevelopmentOpMode extends OpMode{
         logRecord[logIndex++] = String.format("%2.2f",mKalmanTracker.getEstimatedXPosition());
         logRecord[logIndex++] = String.format("%2.2f",mKalmanTracker.getEstimatedYPosition());
         logRecord[logIndex++] = String.format("%2.2f",mKalmanTracker.getEstimatedHeading());
+        logRecord[logIndex++] = String.format("%2.2f",mSpeedBot.getGuidanceController().getCommandedPower());
+        logRecord[logIndex++] = String.format("%2.2f",mSpeedBot.getGuidanceController().getCommandedSteeringAngle());
 
-        mWheelSpeedLogFile.writeLogRow(logRecord);
+        mLogFile.writeLogRow(logRecord);
 
     }
 
@@ -165,7 +176,7 @@ public class FilterDevelopmentOpMode extends OpMode{
                 mIMUAcceleration.yAccel,
                 mIMUOrientation.firstAngle);
 
-    }
+     }
 
     /**
      * helper function for control gain
