@@ -34,6 +34,8 @@ import android.util.Log;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
+import org.firstinspires.ftc.teamcode.filter.GuidanceController;
+
 import java.util.ArrayList;
 
 /**

@@ -3,7 +3,7 @@ package org.firstinspires.ftc.teamcode.speedbot;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.firstinspires.ftc.teamcode.drivetrain.BaseMecanumDrive;
-import org.firstinspires.ftc.teamcode.drivetrain.GuidanceController;
+import org.firstinspires.ftc.teamcode.filter.GuidanceController;
 import org.firstinspires.ftc.teamcode.drivetrain.SpeedBotMecanumDrive;
 
 /**
@@ -29,20 +29,20 @@ public class BaseSpeedBot {
 
     private boolean mEnableIMU = false;
     /**
-     * distance from IMU to far wheel axes = {@value} in mm
+     * distance from IMU to far wheel axes = {@value} in meters
      */
-    public static double LX_MM = 100.0d;
+    public static double LX = 0.1d;
 
     /**
-     * distance from IMU to wheel = {@value} in mm
+     * distance from IMU to wheel = {@value} in meters
      */
-    public static double LY_MM = 25.0d;
+    public static double LY = 0.025d;
 
     /**
-     * Wheel radius in mm
+     * Wheel radius in meters
      *
      */
-    public static double WHEEL_RADIUS_MM = 98.0d;
+    public static double WHEEL_RADIUS = 0.98d;
 
     public BaseSpeedBot(OpMode opMode, boolean enableIMU){
         this.mOpMode = opMode;

@@ -9,7 +9,6 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.teamcode.drivetrain.BaseMecanumDrive;
-import org.firstinspires.ftc.teamcode.drivetrain.GuidanceController;
 import org.firstinspires.ftc.teamcode.speedbot.BaseSpeedBot;
 import org.firstinspires.ftc.teamcode.util.LogFile;
 
@@ -61,7 +60,7 @@ public class FilterDevelopmentOpMode extends OpMode{
         }
         // Initialize the KalmanTracker
         mKalmanTracker = new KalmanTracker();
-        mKalmanTracker.init(T,INIT_PX,INIT_PY,INIT_HEADING,BaseSpeedBot.LX_MM,BaseSpeedBot.LY_MM,BaseSpeedBot.WHEEL_RADIUS_MM);
+        mKalmanTracker.init(T,INIT_PX,INIT_PY,INIT_HEADING,BaseSpeedBot.LX,BaseSpeedBot.LY,BaseSpeedBot.WHEEL_RADIUS);
 
         // And the wheel speed log file
         mLogFile = new LogFile(LOG_PATHNAME, LOG_FILENAME, LOG_COLUMNS);
@@ -95,7 +94,7 @@ public class FilterDevelopmentOpMode extends OpMode{
             mElapsedTimeNS = systemTime-mStartTimeNS;
             updateTracker();
             mLastSystemTimeNS = systemTime;   // save for next loop
-            // TODO: Get the target position and heading from the state machine controller
+            // TODO: Get the target position from the state machine controller
             double targetX = 0d;
             double targetY = 0d;
 

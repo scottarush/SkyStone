@@ -66,8 +66,8 @@ public class KalmanTracker implements IKalmanTracker {
      * @param py0 y coordinate of robot initial position in feet
      * @param theta0 initial heading in radians
      *               where 0=right side, PI/2=judge side, PI=left side, 3PI/2=audience side.
-     * @param lx  Lateral distance from wheel axle to imu center
-     * @param ly Lateral distance from wheel axle to imu center
+     * @param lx  Lateral distance from wheel axle to imu center in meters
+     * @param ly Lateral distance from wheel axle to imu center in meters
      * @param r radius of wheel
      */
     public void init(double T,double px0,double py0,double theta0,double lx,double ly,double r){
@@ -154,9 +154,9 @@ public class KalmanTracker implements IKalmanTracker {
      * @param w_lr angular velocity of LR wheel in radians/sec
      * @param w_rf angular velocity of RF wheel in radians/sec
      * @param w_rr angular velocity of RR wheel in radians/sec
-     * @param ax_imu x coordinate of imu measured acceleration
-     * @param ay_imu y coordinate of imu measured acceleration
-     * @param wz_imu z coordinate of imu measured angular velocity
+     * @param ax_imu x coordinate of imu measured acceleration in meters/sec^2
+     * @param ay_imu y coordinate of imu measured acceleration in meters/sec^2
+     * @param wz_imu z coordinate of imu measured angular velocity radians/sec
      */
     public void updateMeasurement(double w_lf,
                                   double w_lr,
