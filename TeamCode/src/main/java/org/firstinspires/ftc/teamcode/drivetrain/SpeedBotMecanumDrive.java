@@ -35,20 +35,6 @@ public class SpeedBotMecanumDrive extends BaseMecanumDrive {
         super(opMode,imu);
     }
 
-    @Override
-    protected double getEncoderCountsPerInchRotation() {
-        return COUNTS_PER_INCH;
-    }
-
-    public static final double ENCODER_COUNTS_MIN_THRESHOLD_WHEEL_ROTATION_FRACTION = 0.15d;
-    @Override
-    protected int getEncoderDriveCountsMinThreshold() {
-        // Return a fraction of a wheel rotation in counts
-        return (int)Math.round(COUNTS_PER_INCH *
-                ENCODER_COUNTS_MIN_THRESHOLD_WHEEL_ROTATION_FRACTION *
-                MECANUM_WHEEL_CIRCUMFERENCE);
-    }
-
     /* Initialize standard Hardware interfaces.
      * NOTE:  This class throws Exception on any hardware initIMU error so be sure to catch and
      * report to Telemetry in your initialization. */

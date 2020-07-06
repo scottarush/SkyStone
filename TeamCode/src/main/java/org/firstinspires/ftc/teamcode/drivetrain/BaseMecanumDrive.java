@@ -106,15 +106,6 @@ public abstract class BaseMecanumDrive extends Drivetrain{
         super(opMode);
     }
 
-    /**
-     * subclasses must implement to return the number of encoder counts per inch of rotation
-     */
-    protected abstract double getEncoderCountsPerInchRotation();
-    /**
-     * Must be implemented by subclasses to provide the encoder counts threshold constant
-     * for finishing an encoder drive.
-     */
-    protected abstract int getEncoderDriveCountsMinThreshold();
 
     /**
      * Must be implemented by subclasses to provide the number of counts per wheel revolution
