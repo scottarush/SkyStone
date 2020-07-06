@@ -187,19 +187,20 @@ public abstract class BaseMecanumDrive extends Drivetrain{
             steering = Math.signum(steering);
         }
         double steerAbs = Math.abs(steering);
-        if (steering >= 0){
+        double powerAbs = Math.abs(power);
+        if (steering >= 0d){
             // Turn to the left
-            motorPower[0] = limitPower(power * (1.0d-steerAbs));
-            motorPower[1] = limitPower(power * (1.0d+steerAbs));
-            motorPower[2] = limitPower(power * (1.0d-steerAbs));
-            motorPower[3] = limitPower(power * (1.0d+steerAbs));
+            motorPower[0] = limitPower(powerAbs - 2.0d*steerAbs);
+            motorPower[1] = limitPower(powerAbs + 2.0d*steerAbs);
+            motorPower[2] = limitPower(powerAbs - 2.0d*steerAbs);
+            motorPower[3] = limitPower(powerAbs + 2.0d*steerAbs);
         }
         else{
             // Turn to the right
-            motorPower[0] = limitPower(power * (1.0d+steerAbs));
-            motorPower[1] = limitPower(power * (1.0d-steerAbs));
-            motorPower[2] = limitPower(power * (1.0d+steerAbs));
-            motorPower[3] = limitPower(power * (1.0d-steerAbs));
+            motorPower[0] = limitPower(powerAbs + 2.0d*steerAbs);
+            motorPower[1] = limitPower(powerAbs - 2.0d*steerAbs);
+            motorPower[2] = limitPower(powerAbs + 2.0d*steerAbs);
+            motorPower[3] = limitPower(powerAbs - 2.0d*steerAbs);
         }
         for(int i=0;i < mMotorList.size();i++){
             mMotorList.get(i).setPower(motorPower[i]);
