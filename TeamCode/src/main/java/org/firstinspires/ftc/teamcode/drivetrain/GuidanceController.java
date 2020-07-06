@@ -71,7 +71,7 @@ public class GuidanceController {
 
                 // Now load calibrations
 
-                String filename = "IMUCal_ctrlhub1.json";
+                String filename = "IMUCalCtrlHubOne.json";
                 File file = AppUtil.getInstance().getSettingsFile(filename);
                 BNO055IMU.CalibrationData calibrationData = BNO055IMU.CalibrationData.deserialize(ReadWriteFile.readFile(file));
                 mIMU.writeCalibrationData(calibrationData);
