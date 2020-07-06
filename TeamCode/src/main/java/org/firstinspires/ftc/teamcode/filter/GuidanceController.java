@@ -34,13 +34,13 @@ public class GuidanceController {
 
     public static class Parameters {
         public String imuCalibrationDataFilename = "IMUCal.json";
-        public double steeringPropGain = 0d;
-        public double steeringIntegGain = 0d;
-        public double steeringDerivGain = 0d;
+        public double steeringPropGain = 0.5d;
+        public double steeringIntegGain = 0.5d;
+        public double steeringDerivGain = 0.5d;
 
-        public double powerPropGain = 0d;
-        public double powerIntegGain = 0d;
-        public double powerDerivGain = 0d;
+        public double powerPropGain = 0.5d;
+        public double powerIntegGain = 0.5d;
+        public double powerDerivGain = 0.5d;
     }
 
     /**

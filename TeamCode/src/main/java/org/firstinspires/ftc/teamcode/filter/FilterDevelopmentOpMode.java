@@ -95,8 +95,8 @@ public class FilterDevelopmentOpMode extends OpMode{
             updateTracker();
             mLastSystemTimeNS = systemTime;   // save for next loop
             // TODO: Get the target position from the state machine controller
-            double targetX = 0d;
-            double targetY = 0d;
+            double targetX = 1d;
+            double targetY = 1d;
 
             // Update the guidance controller
             GuidanceController gc = mSpeedBot.getGuidanceController();
