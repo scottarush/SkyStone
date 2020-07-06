@@ -103,7 +103,7 @@ public abstract class BaseMecanumDrive extends Drivetrain{
      * @param
      **/
     public BaseMecanumDrive(OpMode opMode, GuidanceController imu) {
-        super(opMode,imu);
+        super(opMode);
     }
 
     /**
@@ -122,11 +122,9 @@ public abstract class BaseMecanumDrive extends Drivetrain{
     protected abstract int getEncoderCountsPerRev();
 
     /**
-     * Overridden to compute wheel speeds.  Must call base class function too.
+     * Must be called to update wheel speed computations
      */
-    @Override
     public void loop() {
-        super.loop();
         long newtime = System.nanoTime();
         if (!mFirstLoopInit) {
             mLastLoopTimeNS = newtime;
@@ -220,226 +218,11 @@ public abstract class BaseMecanumDrive extends Drivetrain{
      * manual mode if they had been changed to run to position.
      * Make sure to call base class.
      */
-    @Override
     public void stop() {
-        super.stop();
         setPower(0.0, 0.0, 0.0, 0.0);
         // Return motors to manual control
         setMotorModes(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-    }
-    /**
-     * strafes sideways by time
-     *
-     * @param speed   speed to move
-     * @param strafeDistance distance in inches. Right is positive, left is negative
-     * @param timeoutms timeout in msseconds to abort if move not completed.
-     *
-     * @return true if session started, false on error.
-     */
-    public void strafeByTime(double speed, double strafeDistance, int timeoutms) {
-        if (isDriveByEncoderSessionActive()){
-            stop();
-        }
-        super.driveEncoder(speed,strafeDistance,timeoutms);
-        mWasLastMovementStrafe = true;
-        // Stop and reset the encoders first
-        setMotorModes(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        setMotorModes(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
-        // Compute the number of encoder counts for each wheel to move the requested distance
-        double scaledDistance = strafeDistance * STRAFE_ENCODER_DISTANCE_COEFFICIENT;
-        int lfDeltaCounts = (int) Math.round(scaledDistance * getEncoderCountsPerInchRotation());
-        int lrDeltaCounts = (int) Math.round(-scaledDistance * getEncoderCountsPerInchRotation());
-        int rfDeltaCounts = (int) Math.round(-scaledDistance * getEncoderCountsPerInchRotation());
-        int rrDeltaCounts = (int) Math.round(scaledDistance * getEncoderCountsPerInchRotation());
-
-        // Set target counts for each motor to the above
-        setTargetPosition(mLFMotor,lfDeltaCounts+getCurrentPosition(mLFMotor));
-        setTargetPosition(mRFMotor,rfDeltaCounts+getCurrentPosition(mRFMotor));
-        setTargetPosition(mLRMotor,lrDeltaCounts+getCurrentPosition(mLRMotor));
-        setTargetPosition(mRRMotor,rrDeltaCounts+getCurrentPosition(mRRMotor));
-        //       mOpMode.telemetry.addData("counts","lf="+lfDeltaCounts+",rf="+rfDeltaCounts+",lr="+lrDeltaCounts+",rr="+rrDeltaCounts);
-        //     mOpMode.telemetry.update();
-        // Set mode to run to position
-        setMotorModes(DcMotor.RunMode.RUN_TO_POSITION);
-
-        // set motor power
-        double aspeed = Math.abs(speed);
-        if (aspeed > 1.0)
-            aspeed = 1.0;
-        setPower(aspeed, aspeed, aspeed, aspeed);
-    }
-
-    /**
-     * strafes sideways by encoder
-     *
-     * @param speed   speed to move
-     * @param strafeDistance distance in inches. Right is positive, left is negative
-     * @param timeoutms timeout in msseconds to abort if move not completed.
-     *
-     * @return true if session started, false on error.
-     */
-    public void strafeEncoder(double speed, double strafeDistance, int timeoutms) {
-         super.driveEncoder(speed,strafeDistance,timeoutms);
-        mWasLastMovementStrafe = true;
-        // Stop and reset the encoders first
-        setMotorModes(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        // Run without encoders to go as fast as possible.
-        setMotorModes(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
-         // Pad the distance with the min threshold distance.  This a hack to get around the
-        // stall problem when using encoders .
-        double scaledDistance = strafeDistance * STRAFE_ENCODER_DISTANCE_COEFFICIENT;
-        double counts = scaledDistance * getEncoderCountsPerInchRotation();
-        double paddedCounts = Math.abs(counts)+ getEncoderDriveCountsMinThreshold();
-        paddedCounts = paddedCounts * Math.signum(counts);
-
-        // Set the number of encoder counts for each wheel to move the requested distance
-        int lfDeltaCounts = (int) Math.round(paddedCounts);
-        int lrDeltaCounts = (int) Math.round(-paddedCounts);
-        int rfDeltaCounts = (int) Math.round(-paddedCounts);
-        int rrDeltaCounts = (int) Math.round(paddedCounts);
-
-        // Set target counts for each motor to the above
-        setTargetPosition(mLFMotor,lfDeltaCounts+getCurrentPosition(mLFMotor));
-        setTargetPosition(mRFMotor,rfDeltaCounts+getCurrentPosition(mRFMotor));
-        setTargetPosition(mLRMotor,lrDeltaCounts+getCurrentPosition(mLRMotor));
-        setTargetPosition(mRRMotor,rrDeltaCounts+getCurrentPosition(mRRMotor));
-
-        //       mOpMode.telemetry.addData("counts","lf="+lfDeltaCounts+",rf="+rfDeltaCounts+",lr="+lrDeltaCounts+",rr="+rrDeltaCounts);
-        //     mOpMode.telemetry.update();
-        // Set mode to run to position
-        setMotorModes(DcMotor.RunMode.RUN_TO_POSITION);
-
-        // set motor power
-        double aspeed = Math.abs(speed);
-        if (aspeed > 1.0)
-            aspeed = 1.0;
-        setPower(aspeed, aspeed, aspeed, aspeed);
-    }
-
-    /**
-     * starts a drive by encoder session.  If robot is moving, it will be stopped.
-     *
-     * @param speed   speed to move
-     * @param linearDistance distance in inches
-     * @param timeoutms timeout in msseconds to abort if move not completed.
-     *
-     * @return true if session started, false on error.
-     */
-    @Override
-    public void driveEncoder(double speed, double linearDistance, int timeoutms) {
-        super.driveEncoder(speed,linearDistance,timeoutms);
-        mWasLastMovementStrafe = false;
-        // Stop and reset the encoders first
-        setMotorModes(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        // Run with encoders to try to stay straight
-        setMotorModes(DcMotor.RunMode.RUN_USING_ENCODER);
-
-        // Pad the distance with the min threshold distance.  This a hack to get around the
-        // stall problem when using encoders .
-        double counts = linearDistance * getEncoderCountsPerInchRotation();
-        double paddedCounts = Math.abs(counts)+ getEncoderDriveCountsMinThreshold();
-        paddedCounts = paddedCounts * Math.signum(counts);
-        // Compute the number of encoder counts for each wheel to move the requested distanc
-        int lfDeltaCounts = (int) Math.round(paddedCounts);
-        int rfDeltaCounts = (int) Math.round(paddedCounts);
-        int lrDeltaCounts = (int) Math.round(paddedCounts);
-        int rrDeltaCounts = (int) Math.round(paddedCounts);
-
-        // Set target counts for each motor to the above
-        setTargetPosition(mLFMotor,lfDeltaCounts+getCurrentPosition(mLFMotor));
-        setTargetPosition(mRFMotor,rfDeltaCounts+getCurrentPosition(mRFMotor));
-        setTargetPosition(mLRMotor,lrDeltaCounts+getCurrentPosition(mLRMotor));
-        setTargetPosition(mRRMotor,rrDeltaCounts+getCurrentPosition(mRRMotor));
-
- //       mOpMode.telemetry.addData("counts","lf="+lfDeltaCounts+",rf="+rfDeltaCounts+",lr="+lrDeltaCounts+",rr="+rrDeltaCounts);
- //       mOpMode.telemetry.update();
-        // Set mode to run to position
-        setMotorModes(DcMotor.RunMode.RUN_TO_POSITION);
-
-        // set motor power as absolute value of speed
-        double aspeed = Math.abs(speed);
-        if (aspeed > 1.0)
-            aspeed = 1.0;
-        setPower(aspeed, aspeed, aspeed, aspeed);
- //       mOpMode.telemetry.addData("driveEncoder:","lf=%d aspeeed=%1.1f",lfDeltaCounts,aspeed);
- //       mOpMode.telemetry.update();
-    }
-
-    @Override
-    protected boolean isTargetPositionReached() {
-        if (!isDriveByEncoderSessionActive()){
-            return true;
-        }
-        if (mLFMotor != null){
-            int delta = Math.abs(mLFMotor.getTargetPosition() - mLFMotor.getCurrentPosition());
-            if (delta > getEncoderDriveCountsMinThreshold()){
-                return false;
-            }
-        }
-        if (mLRMotor != null){
-            int delta = Math.abs(mLRMotor.getTargetPosition() - mLRMotor.getCurrentPosition());
-            if (delta > getEncoderDriveCountsMinThreshold()){
-                return false;
-            }
-        }
-        if (mRFMotor != null){
-            int delta = Math.abs(mRFMotor.getTargetPosition() - mRFMotor.getCurrentPosition());
-            if (delta > getEncoderDriveCountsMinThreshold()){
-                return false;
-            }
-        }
-        if (mRRMotor != null){
-            int delta = Math.abs(mRRMotor.getTargetPosition() - mRRMotor.getCurrentPosition());
-            if (delta > getEncoderDriveCountsMinThreshold()){
-                return false;
-            }
-        }
-        return true;
-    }
-
-    @Override
-    protected double getActualEncoderDistance() {
-        if (mWasLastMovementStrafe){
-            double avg = (getStrafeMovement(mLFMotor) +
-                        getStrafeMovement(mLRMotor)+
-                        getStrafeMovement(mRRMotor)+
-                        getStrafeMovement(mRFMotor))/4;
-            return avg;
-        }
-        else{
-            double avg = (getLinearMovement(mLFMotor) +
-                    getLinearMovement(mLRMotor)+
-                    getLinearMovement(mRRMotor)+
-                    getLinearMovement(mRFMotor))/4;
-            return avg;
-        }
-    }
-
-    /**
-     * helper function to compute average distance in getActualEncoderDistance
-     */
-    private double getStrafeMovement(DcMotor motor){
-        if (motor != null) {
-            int counts = motor.getCurrentPosition();
-            double distance = counts / getEncoderCountsPerInchRotation();
-            distance = distance * STRAFE_ENCODER_DISTANCE_COEFFICIENT;
-            return distance;
-        }
-        return 0d;
-    }
-    /**
-     * helper function to compute average distance in getActualEncoderDistance
-     */
-    private double getLinearMovement(DcMotor motor){
-        if (motor != null) {
-            int counts = motor.getCurrentPosition();
-            double distance = counts / getEncoderCountsPerInchRotation();
-            return distance;
-        }
-        return 0d;
     }
 
 //    public boolean isMoving() {
@@ -500,55 +283,6 @@ public abstract class BaseMecanumDrive extends Drivetrain{
         setPower(lfPower,rfPower,lrPower,rrPower);
     }
 
-    /**
-     * Drives for a set distance using open-loop, robot-specific time.
-     * @param linearDistance desired distance + forward or - rearward in inches
-     * @return time to drive in ms
-     */
-    @Override
-    public int driveLinearTime(double linearDistance, double power){
-       int timeout = super.driveLinearTime(linearDistance,power);  // Call base class for timer handling
-
-        setPower(power,power,power,power);
-        return timeout;
-    }
-
-    @Override
-    public void correctHeading(double correction) {
-        double power = mLinearDrivePower;
-
-        double lfPower = power - correction;
-        double lrPower = power + correction;
-        double rfPower = power + correction;
-        double rrPower = power - correction;
-        setPower(lfPower,rfPower,lrPower,rrPower);
-    }
-
-
-    /**
-     * Overridden function calls base class to pass correction value into motors.
-     */
-    @Override
-    protected double checkRotation() {
-        // Check if a rotation is active and return if not
-        if (!isRotationActive()){
-            return 0d;
-        }
-        // disables PID control in case it was set before.
- //       setMotorModes(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
-        double rotpower = super.checkRotation();
-        if (Math.abs(rotpower) > 1.0d) {
-            rotpower = Math.signum(rotpower);
-        }
-
-        double lfPower = -rotpower;
-        double rfPower = +rotpower;
-        double lrPower = -rotpower;
-        double rrPower = +rotpower;
-        setPower(lfPower,rfPower,lrPower,rrPower);
-        return rotpower;
-    }
 
     /**
      * Helper function to set power to the wheel drive motors

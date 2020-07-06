@@ -283,7 +283,7 @@ public class FilterDevStateMachineContext
             {
                 FilterDevController ctxt = context.getOwner();
 
-            ctxt.linearDriveSlow(28d);
+ //           ctxt.linearDriveSlow(28d);
             return;
         }
 
@@ -358,7 +358,7 @@ public class FilterDevStateMachineContext
             {
                 FilterDevController ctxt = context.getOwner();
 
-            ctxt.linearDriveSlow(8d);
+  //          ctxt.linearDriveSlow(8d);
             return;
         }
 

@@ -52,7 +52,7 @@ public class FilterDevelopmentOpMode extends OpMode{
 
         if (initErrs.length() == 0){
             telemetry.addData("Status:","Robot init complete");
-            telemetry.addData("IMU cal status",mSpeedBot.getGuidanceController().getBNO055IMU().getCalibrationStatus());
+            telemetry.addData("IMU cal status",mSpeedBot.getGuidanceController().getIMUCalibrationStatus());
             telemetry.update();
         }
         else {
@@ -153,9 +153,9 @@ public class FilterDevelopmentOpMode extends OpMode{
         double[] wheelSpeeds = mSpeedBot.getDrivetrain().getWheelSpeeds();
 
         // Now get the IMU data
-        GuidanceController imu = mSpeedBot.getGuidanceController();
-        mIMUAcceleration = imu.getBNO055IMU().getLinearAcceleration();
-        mIMUOrientation = imu.getBNO055IMU().getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.RADIANS);
+        GuidanceController gc = mSpeedBot.getGuidanceController();
+        mIMUAcceleration = gc.getIMU().getLinearAcceleration();
+        mIMUOrientation = gc.getIMU().getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.RADIANS);
         // Update the tracker
         mKalmanTracker.updateMeasurement(wheelSpeeds[BaseMecanumDrive.LF_WHEEL_ARRAY_INDEX],
                     wheelSpeeds[BaseMecanumDrive.LR_WHEEL_ARRAY_INDEX],

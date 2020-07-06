@@ -97,7 +97,7 @@ public class BaseSpeedBot {
     }
 
     /**
-     * gets a reference to the IMU
+     * gets a reference to the GuidanceController
      */
     public GuidanceController getGuidanceController(){
         return mGuidanceController;

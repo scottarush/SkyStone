@@ -5,8 +5,7 @@ import android.util.Log;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.firstinspires.ftc.teamcode.drivetrain.BaseMecanumDrive;
-import org.firstinspires.ftc.teamcode.drivetrain.IDriveSessionStatusListener;
-import org.firstinspires.ftc.teamcode.drivetrain.IRotationStatusListener;
+
 import org.firstinspires.ftc.teamcode.speedbot.BaseSpeedBot;
 import org.firstinspires.ftc.teamcode.speedbot.CraneSpeedBot;
 import org.firstinspires.ftc.teamcode.util.OneShotTimer;
@@ -94,34 +93,6 @@ public class FilterDevController {
      */
     private void init(){
         buildTransitionTable();
-
-        // Add listeners to drivetrain for callbacks in order to translate into state machine events
-        mMecanumDrive.addDriveSessionStatusListener(new IDriveSessionStatusListener() {
-            @Override
-            public void driveComplete(double distance) {
-                mLastDriveDistance = distance;
-                transition("evDriveComplete");
-            }
-
-            @Override
-            public void driveByEncoderTimeoutFailure(double distance) {
-                mLastDriveDistance = distance;
-                transition("evDriveTimeout");
-            }
-        });
-        mMecanumDrive.addRotationStatusListener(new IRotationStatusListener() {
-            @Override
-            public void rotationComplete(int angle) {
-                mLastRotationAngle = angle;
-                transition("evRotationComplete");
-            }
-
-            @Override
-            public void rotationTimeout(int angle) {
-                mLastRotationAngle = angle;
-                transition("evRotationTimeout");
-            }
-        });
 
 
         // And add a listener to the state machine to send the state transitions to telemtry
@@ -236,33 +207,6 @@ public class FilterDevController {
         mMecanumDrive.loop();
     }
 
-     /**
-     * drives forward at full speed
-     */
-    public void linearDrive(double distance){
-         mMecanumDrive.driveEncoder(1.0d,distance,2000);
-    }
-
-    /**
-     * drives forward at 1/2 speed
-     */
-    public void linearDriveSlow(double distance){
-        mMecanumDrive.driveEncoder(0.5d,distance,2000);
-    }
-
-    /**
-     * Strafes either right + or left -
-     */
-    public void strafeDrive(double distance){
-        mMecanumDrive.strafeEncoder(1.0d,distance,2000);
-    }
-
-    /**
-     * rotation by degrees.  + is ccw
-     */
-    public void rotate(int degrees){
-        mMecanumDrive.rotate(degrees, MAX_ROTATION_POWER,ROTATION_TIMEOUTMS);
-    }
 
      /**
      * Called from state machine to stop the robot

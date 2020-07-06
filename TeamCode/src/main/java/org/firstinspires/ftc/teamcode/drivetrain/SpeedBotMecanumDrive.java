@@ -10,15 +10,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
  */
 public class SpeedBotMecanumDrive extends BaseMecanumDrive {
 
-    /**
-     * Approximate number of milliseconds per inch forward and rearward at full power.
-     */
-    public static final int LINEAR_MILLISECONDS_PER_INCH = 50;
 
-    @Override
-    public int getLinearMillisecondsPerInch() {
-        return LINEAR_MILLISECONDS_PER_INCH;
-    }
 
     /*
     * With core hex motors there are 72 counts/axle rotation x 1:4 gear output ratio
@@ -26,21 +18,6 @@ public class SpeedBotMecanumDrive extends BaseMecanumDrive {
     @Override
     protected int getEncoderCountsPerRev() {
         return 288;
-    }
-
-    @Override
-    public double getRotationKp() {
-        return 1.8d;
-    }
-
-    @Override
-    protected double getMinRotationCompleteAngle() {
-        return 5;
-    }
-
-    @Override
-    public double getLinearKp() {
-        return 1.0d;
     }
 
     /**
