@@ -3,6 +3,11 @@ package org.firstinspires.ftc.teamcode.drivetrain;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.hardware.bosch.BNO055IMUImpl;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.util.ReadWriteFile;
+
+import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
+
+import java.io.File;
 
 /**
  * Encapsulates the IMU
@@ -37,7 +42,15 @@ public class IMU {
             // and named "imu".
             try {
                 mIMU = hwMap.get(BNO055IMU.class, "imu");
+
                 mIMU.initialize(parameters);
+
+                // Now load calibrations
+                String filename = "IMUCal_ctrlhub1.json";
+                File file = AppUtil.getInstance().getSettingsFile(filename);
+                BNO055IMU.CalibrationData calibrationData = BNO055IMU.CalibrationData.deserialize(ReadWriteFile.readFile(file));
+                mIMU.writeCalibrationData(calibrationData);
+
             }
             catch(Exception e){
                 throw new Exception("IMU Initialization error:"+e.getMessage());
