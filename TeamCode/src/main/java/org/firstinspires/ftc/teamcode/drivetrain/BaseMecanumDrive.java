@@ -186,22 +186,12 @@ public abstract class BaseMecanumDrive extends Drivetrain{
         if (Math.abs(steering) > 1.0d){
             steering = Math.signum(steering);
         }
-        double steerAbs = Math.abs(steering);
         double powerAbs = Math.abs(power);
-        if (steering >= 0d){
-            // Turn to the left
-            motorPower[0] = limitPower(powerAbs - 2.0d*steerAbs);
-            motorPower[1] = limitPower(powerAbs + 2.0d*steerAbs);
-            motorPower[2] = limitPower(powerAbs - 2.0d*steerAbs);
-            motorPower[3] = limitPower(powerAbs + 2.0d*steerAbs);
-        }
-        else{
-            // Turn to the right
-            motorPower[0] = limitPower(powerAbs + 2.0d*steerAbs);
-            motorPower[1] = limitPower(powerAbs - 2.0d*steerAbs);
-            motorPower[2] = limitPower(powerAbs + 2.0d*steerAbs);
-            motorPower[3] = limitPower(powerAbs - 2.0d*steerAbs);
-        }
+        double steering_gain = 2.0d;
+        motorPower[0] = powerAbs* limitUnity((1.0d - steering_gain*steering));
+        motorPower[1] = powerAbs* limitUnity((1.0d + steering_gain*steering));
+        motorPower[2] = powerAbs* limitUnity((1.0d - steering_gain*steering));
+        motorPower[3] = powerAbs* limitUnity((1.0d + steering_gain*steering));
         for(int i=0;i < mMotorList.size();i++){
             mMotorList.get(i).setPower(motorPower[i]);
         }
@@ -210,11 +200,11 @@ public abstract class BaseMecanumDrive extends Drivetrain{
     /**
      * helper computes power to each and limits to +/-
      */
-    private double limitPower(double power){
-        if (Math.abs(power) > 1.0d){
-            power = Math.signum(power);
+    private double limitUnity(double number){
+        if (Math.abs(number) > 1.0d){
+            number = Math.signum(number);
         }
-        return power;
+        return number;
     }
     /**
      * dumps the current encoder positions for development in same order

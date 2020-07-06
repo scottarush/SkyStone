@@ -99,7 +99,6 @@ public class FilterDevelopmentOpMode extends OpMode{
             // Log a record of data
             logData();
         }
-
         // update speeds from the joystick
         double xleft = gamepad1.left_stick_x;
         double yleft = -gamepad1.left_stick_y;
