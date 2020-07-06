@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.filter;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.robotcore.external.navigation.Acceleration;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -13,7 +14,7 @@ import org.firstinspires.ftc.teamcode.drivetrain.IMU;
 import org.firstinspires.ftc.teamcode.speedbot.BaseSpeedBot;
 import org.firstinspires.ftc.teamcode.util.LogFile;
 
-@Autonomous(name="FilterDevelopment", group="Robot")
+@TeleOp(name="FilterDevelopment", group="Robot")
 public class FilterDevelopmentOpMode extends OpMode{
     public static final String LOG_PATHNAME = "/sdcard";
 
