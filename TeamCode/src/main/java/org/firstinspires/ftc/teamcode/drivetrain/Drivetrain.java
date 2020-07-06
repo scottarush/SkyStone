@@ -37,11 +37,18 @@ public abstract class Drivetrain {
     public abstract void init(HardwareMap ahwMap) throws Exception;
 
 
-     /**
-         *  Utility function to handle motor initialization.  initIMU must have been called
-         *  with a non-null mHWMap or exception will be thrown.
-         *
-         */
+    /**
+     * Sets a steering command
+     * @param steering 0 = straight ahead, +1.0 max left, -1.0 max right
+     * @param power -1.0..1.0 backward to forward
+     */
+    public abstract void setSteeringCommand(double steering,double power);
+
+        /**
+            *  Utility function to handle motor initialization.  initIMU must have been called
+            *  with a non-null mHWMap or exception will be thrown.
+            *
+            */
     protected DcMotor tryMapMotor(String motorName) throws Exception {
         DcMotor motor = null;
         try {

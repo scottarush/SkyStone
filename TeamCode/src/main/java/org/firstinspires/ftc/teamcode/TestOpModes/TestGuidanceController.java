@@ -36,7 +36,7 @@ public class TestGuidanceController extends OpMode {
     @Override
     public void loop() {
  //       double y = gamepad1.left_stick_y;
-        mSpeedBot.getDrivetrain().setSteeringCommand(-1.0d, 0.8d);
+        mSpeedBot.getDrivetrain().setSteeringCommand(-0.5d, 0.5d);
         mSpeedBot.getDrivetrain().loop();
     }
 }
