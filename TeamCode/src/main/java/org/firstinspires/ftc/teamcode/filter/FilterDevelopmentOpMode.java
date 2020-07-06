@@ -52,6 +52,7 @@ public class FilterDevelopmentOpMode extends OpMode{
 
         if (initErrs.length() == 0){
             telemetry.addData("Status:","Robot init complete");
+            telemetry.addData("IMU cal status",mSpeedBot.getIMU().getBNO055IMU().getCalibrationStatus());
             telemetry.update();
         }
         else {
