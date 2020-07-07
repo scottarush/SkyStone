@@ -236,7 +236,7 @@ public class GuidanceController {
                 angleToTarget = Math.PI*2d-invtan;
             }
             else{
-                // southwest quadrant is PI to 3PI/2;
+                // southwest quadrant
                 angleToTarget = invtan + Math.PI;
             }
 
