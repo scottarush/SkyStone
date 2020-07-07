@@ -198,6 +198,26 @@ public abstract class BaseMecanumDrive extends Drivetrain{
             mMotorList.get(i).setPower(motorPower[i]);
         }
     }
+    /**
+     * Sets the rotation command from the GuidanceController
+     * @param rotation 0 = stop, >0..+1.0 turn to right at commanded power,
+     *                 >0..-1.0 turn to left at commanded power
+     */
+    public void setRotationCommand(double rotation){
+        double motorPower[] = new double[4];
+        // Do a rotation scaled by the steering command
+        // limit steering
+        if (Math.abs(rotation) > 1.0d){
+            rotation = Math.signum(rotation);
+        }
+        motorPower[0] = rotation;
+        motorPower[1] = rotation;
+        motorPower[2] = -rotation;
+        motorPower[3] = -rotation;
+        for(int i=0;i < mMotorList.size();i++){
+            mMotorList.get(i).setPower(motorPower[i]);
+        }
+    }
 
     /**
      * helper computes power to each and limits to +/-
