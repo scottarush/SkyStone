@@ -103,21 +103,25 @@ public class FilterDevelopmentOpMode extends OpMode{
             GuidanceController gc = mSpeedBot.getGuidanceController();
             if (!gc.isIMUInitialized()) {
                 gc.setTargetPosition(targetX, targetY);
-                gc.update(mKalmanTracker.getEstimatedHeading(), mKalmanTracker.getEstimatedXPosition(), mKalmanTracker.getEstimatedXPosition());
-
                 // Check the angle to the target
                 double angle = gc.getHeadingAngleToTarget();
-                if (Math.abs(angle) > Math.PI / 8) {
+
+                if (Math.abs(angle) > rotationModeThreshold) {
                     // Rotate the robot first instead in rotation mode
                     gc.updateRotationMode(mKalmanTracker.getEstimatedHeading(), mKalmanTracker.getEstimatedXPosition(), mKalmanTracker.getEstimatedXPosition());
                 }
-            }
-            // Now apply output to motors depending on rotation or normal mode
-            if (gc.isRotationModeActive()){
-                // mSpeedBot.getDrivetrain().setRotationCommand(gc.getRotationCommand());
-            }
-            else {
-                //           mSpeedBot.getDrivetrain().setSteeringCommand(gc.getSteeringCommand(),gc.getPowerCommand());
+                else{
+                    // update in steering mode
+                    gc.updateSteeringMode(mKalmanTracker.getEstimatedHeading(), mKalmanTracker.getEstimatedXPosition(), mKalmanTracker.getEstimatedXPosition());
+                }
+                // Now apply output to motors depending on rotation or normal mode
+                if (gc.isRotationModeActive()){
+                    mSpeedBot.getDrivetrain().setRotationCommand(gc.getRotationCommand());
+                }
+                else {
+                    mSpeedBot.getDrivetrain().stop();
+   //                 mSpeedBot.getDrivetrain().setSteeringCommand(gc.getSteeringCommand(),gc.getPowerCommand());
+                }
             }
             // Log a record of data
             logData();

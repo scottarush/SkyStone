@@ -200,8 +200,8 @@ public abstract class BaseMecanumDrive extends Drivetrain{
     }
     /**
      * Sets the rotation command from the GuidanceController
-     * @param rotation 0 = stop, >0..+1.0 turn to right at commanded power,
-     *                 >0..-1.0 turn to left at commanded power
+     * @param rotation 0 = stop, >0..+1.0 turn to right
+     *                 >0..-1.0 turn to left
      */
     public void setRotationCommand(double rotation){
         double motorPower[] = new double[4];

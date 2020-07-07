@@ -124,6 +124,16 @@ public class GuidanceController {
         mTargetPX = px;
         mTargetPY = py;
     }
+    /**
+     * sets the current position of the robot.  Utility function allows us to
+     * call this and then call {@link #getHeadingAngleToTarget()} for decision
+     * making prior to an update call
+     */
+    public void setCurrentPosition(double heading,double px,double py){
+        mLastPosX = px;
+        mLastPosY = py;
+        mLastHeading = heading;
+    }
 
     /**
      * updates the PID controllers with the new current heading and x,y position from
@@ -131,7 +141,7 @@ public class GuidanceController {
      * After calling, the commanded values can be retrieved with {@link #getPowerCommand()}
      * and {@link #getSteeringCommand()}
      */
-    public void update(double heading, double xpos, double ypos){
+    public void updateSteeringMode(double heading, double xpos, double ypos){
         if (mRotationModeActive){
             // Cancel rotation mode and reset both PIDs
             mRotationModeActive = false;
