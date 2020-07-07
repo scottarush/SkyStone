@@ -17,12 +17,12 @@ public class FilterDevelopmentOpMode extends OpMode{
     public static final String LOG_PATHNAME = "/sdcard";
 
     public static final String LOG_FILENAME = "kflog.csv";
-    public static final String[] LOG_COLUMNS = {"time","w_lf","w_rf","w_lr","w_rr","theta_imu","px","py","heading","cmd_pwr","cmd_steering"};
+    public static final String[] LOG_COLUMNS = {"time","w_lf","w_rf","w_lr","w_rr","theta_imu","target_ang_deg","kf_px","kf_py","kf_wz","kf_heading","kf_heading_deg","rot_cmd","pwr_cmd","steer_cmd"};
     private LogFile mLogFile;
 
     public static final double INIT_PX = 0D;
     public static final double INIT_PY = 0D;
-    public static final double INIT_HEADING = Math.PI/2;
+    public static final double INIT_HEADING = 0;
     public static final double T = 0.050d;
     private static final int T_NS = Math.round((float)(T * 1e9d));
 
@@ -99,10 +99,12 @@ public class FilterDevelopmentOpMode extends OpMode{
             double targetY = 1d;
 
             // Update the guidance controller
-            double rotationModeThreshold = Math.PI/8;
+            double rotationModeThreshold = Math.PI/32;
             GuidanceController gc = mSpeedBot.getGuidanceController();
-            if (!gc.isIMUInitialized()) {
+            if (gc.isIMUInitialized()) {
+                // Set the target and current position
                 gc.setTargetPosition(targetX, targetY);
+                gc.setCurrentPosition(mKalmanTracker.getEstimatedHeading(),mKalmanTracker.getEstimatedXPosition(),mKalmanTracker.getEstimatedYPosition());
                 // Check the angle to the target
                 double angle = gc.getHeadingAngleToTarget();
 
@@ -145,11 +147,15 @@ public class FilterDevelopmentOpMode extends OpMode{
         }
         // IMU data
          logRecord[logIndex++] = String.format("%4.2f",mIMUOrientation.firstAngle);
+        logRecord[logIndex++] = String.format("%2.2f",mSpeedBot.getGuidanceController().getHeadingAngleToTarget()*180d/Math.PI);
 
         // Kalman outputs
         logRecord[logIndex++] = String.format("%2.2f",mKalmanTracker.getEstimatedXPosition());
         logRecord[logIndex++] = String.format("%2.2f",mKalmanTracker.getEstimatedYPosition());
+        logRecord[logIndex++] = String.format("%2.2f",mKalmanTracker.getEstimatedAngularVelocity());
         logRecord[logIndex++] = String.format("%2.2f",mKalmanTracker.getEstimatedHeading());
+        logRecord[logIndex++] = String.format("%2.2f",mKalmanTracker.getEstimatedHeading()*180d/Math.PI);
+        logRecord[logIndex++] = String.format("%2.2f",mSpeedBot.getGuidanceController().getRotationCommand());
         logRecord[logIndex++] = String.format("%2.2f",mSpeedBot.getGuidanceController().getPowerCommand());
         logRecord[logIndex++] = String.format("%2.2f",mSpeedBot.getGuidanceController().getSteeringCommand());
 
@@ -167,12 +173,13 @@ public class FilterDevelopmentOpMode extends OpMode{
         // Now get the IMU orientation
         GuidanceController gc = mSpeedBot.getGuidanceController();
         mIMUOrientation = gc.getIMU().getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.RADIANS);
-        // Update the tracker
+        // Update the tracker.  Have to negate the IMU angle because IMU angles go positive to the left and we want to
+        // use the compass where angle increases to the right
         mKalmanTracker.updateMeasurement(wheelSpeeds[BaseMecanumDrive.LF_WHEEL_ARRAY_INDEX],
                     wheelSpeeds[BaseMecanumDrive.LR_WHEEL_ARRAY_INDEX],
                 wheelSpeeds[BaseMecanumDrive.RF_WHEEL_ARRAY_INDEX],
                 wheelSpeeds[BaseMecanumDrive.RR_WHEEL_ARRAY_INDEX],
-                mIMUOrientation.firstAngle);
+                -mIMUOrientation.firstAngle);
 
      }
 

@@ -19,12 +19,13 @@ import java.util.Vector;
  * setKnownXXX functions to update the estimate.
  *
  * Measurement vector z=[vx,vy,w_zw,ax,ay,w_zi]^T
- * Estimate vector xhat=[px,vx,vy,ax,ay,w_z,theta]^T
+ * Estimate vector xhat=[px,vx,vy,ax,ay,w_z,theta]^
  */
 public class KalmanTracker {
 
     private static final int XHAT_PX_INDEX = 0;
     private static final int XHAT_PY_INDEX = 1;
+    private static final int XHAT_OMEGAZ_INDEX = 4;
     private static final int XHAT_THETA_INDEX = 5;
 
     // Initial P covariance values
@@ -62,10 +63,10 @@ public class KalmanTracker {
     /**
      * Initializes the Kalman filter
      * @param T sampling interval in secons
-     * @param px0 x coordinate of robot initial position in feet
-     * @param py0 y coordinate of robot initial position in feet
+     * @param px0 x coordinate of robot initial position in meters
+     * @param py0 y coordinate of robot initial position in meters
      * @param theta0 initial heading in radians
-     *               where 0=right side, PI/2=judge side, PI=left side, 3PI/2=audience side.
+     *               where 0=judge side, PI/2=right side, PI=audience side, 3PI/2=left side
      * @param lx  Lateral distance from wheel axle to imu center in meters
      * @param ly Lateral distance from wheel axle to imu center in meters
      * @param r radius of wheel
@@ -179,6 +180,11 @@ public class KalmanTracker {
     public Double getEstimatedHeading(){
         return mFilter.getState().get(XHAT_THETA_INDEX,0);
     }
+
+    public Double getEstimatedAngularVelocity(){
+        return mFilter.getState().get(XHAT_OMEGAZ_INDEX,0);
+    }
+
     /**
      * Called to set the position x coordinate when known from objects in the field
      * @param px updated x position

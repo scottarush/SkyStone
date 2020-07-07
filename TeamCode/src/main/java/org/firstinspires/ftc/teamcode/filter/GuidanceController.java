@@ -39,7 +39,7 @@ public class GuidanceController {
     private double mLastHeading = 0d;
 
     public static class Parameters {
-        public String imuCalibrationDataFilename = "IMUCal.json";
+        public String imuCalibrationDataFilename = "IMUCalCtrlHubOne.json";
         public double steeringPropGain = 0.1d;
         public double steeringIntegGain = 0.05d;
         public double steeringDerivGain = 0.05d;
@@ -48,9 +48,9 @@ public class GuidanceController {
         public double powerIntegGain = 0.05d;
         public double powerDerivGain = 0.05d;
 
-        public double rotationPropGain = 1.0d;
-        public double rotationIntegGain = 0.05d;
-        public double rotationDerivGain = 0.05d;
+        public double rotationPropGain = 0.2d;
+        public double rotationIntegGain = 0.1d;
+        public double rotationDerivGain = 0.5d;
     }
 
     /**
@@ -80,9 +80,7 @@ public class GuidanceController {
                 mIMU.initialize(imuParameters);
 
                 // Now load calibrations
-
-                String filename = "IMUCalCtrlHubOne.json";
-                File file = AppUtil.getInstance().getSettingsFile(filename);
+                File file = AppUtil.getInstance().getSettingsFile(pidParams.imuCalibrationDataFilename);
                 BNO055IMU.CalibrationData calibrationData = BNO055IMU.CalibrationData.deserialize(ReadWriteFile.readFile(file));
                 mIMU.writeCalibrationData(calibrationData);
 
@@ -152,8 +150,8 @@ public class GuidanceController {
         mLastPosY = ypos;
         mLastHeading = heading;
         // Compute the angle to the target relative to the current position
-        double angleToTarget = getRelativeAngle(mLastPosX,mLastPosY,mTargetPX,mTargetPY);
-        angleToTarget = mLastHeading - angleToTarget;
+        double angleToTarget = getHeadingAngleToTarget();
+
         // And compute the distance
         double distance = Math.sqrt(Math.pow(mTargetPX-xpos,2.0d)+Math.pow(mTargetPY-ypos,2.0d));
         // Power command is computed using the new distance to the target
@@ -168,7 +166,7 @@ public class GuidanceController {
      */
     public double getHeadingAngleToTarget(){
         double angleToTarget = getRelativeAngle(mLastPosX,mLastPosY,mTargetPX,mTargetPY);
-        angleToTarget = mLastHeading - angleToTarget;
+        angleToTarget = angleToTarget-mLastHeading;
         return angleToTarget;
     }
     /**
@@ -192,8 +190,7 @@ public class GuidanceController {
         mLastPosY = ypos;
         mLastHeading = heading;
         // Compute the angle to the target relative to the current position
-        double angleToTarget = getRelativeAngle(mLastPosX,mLastPosY,mTargetPX,mTargetPY);
-        angleToTarget = heading - angleToTarget;
+        double angleToTarget = getHeadingAngleToTarget();
 
         mRotationCommand = mRotationPID.getOutput(heading,angleToTarget);
     }
@@ -214,8 +211,8 @@ public class GuidanceController {
         if (xrel != 0d){
             invtan = Math.atan(Math.abs(yrel)/Math.abs(xrel));
         }
-        if (xrel > 0){
-            if (yrel > 0){
+        if (xrel > 0d){
+            if (yrel > 0d){
                 // northeast quadrant is 0 to PI/2
                 angleToTarget = invtan;
             }
@@ -225,7 +222,7 @@ public class GuidanceController {
             }
         }
         else{
-            if (yrel > 0){
+            if (yrel > 0d){
                 // southeast quadrant is PI/2 to PI
                 angleToTarget = invtan + Math.PI/2;
             }

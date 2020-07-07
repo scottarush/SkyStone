@@ -211,8 +211,8 @@ public abstract class BaseMecanumDrive extends Drivetrain{
             rotation = Math.signum(rotation);
         }
         motorPower[0] = rotation;
-        motorPower[1] = rotation;
-        motorPower[2] = -rotation;
+        motorPower[1] = -rotation;
+        motorPower[2] = rotation;
         motorPower[3] = -rotation;
         for(int i=0;i < mMotorList.size();i++){
             mMotorList.get(i).setPower(motorPower[i]);
