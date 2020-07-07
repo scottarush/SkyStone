@@ -226,14 +226,14 @@ public class GuidanceController {
             }
             else{
                 // southeast quadrant
-                angleToTarget = invtan + Math.PI*2d;
+                angleToTarget = Math.PI-invtan;
             }
         }
         else{
             // xrel is negative
             if (yrel >= 0d){
                 // northwest quadrant
-                angleToTarget = Math.PI/2-invtan;
+                angleToTarget = Math.PI*2d-invtan;
             }
             else{
                 // southwest quadrant is PI to 3PI/2;
