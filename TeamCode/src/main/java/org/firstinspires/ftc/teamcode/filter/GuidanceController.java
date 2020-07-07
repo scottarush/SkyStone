@@ -48,9 +48,9 @@ public class GuidanceController {
         public double powerIntegGain = 0.05d;
         public double powerDerivGain = 0.05d;
 
-        public double rotationPropGain = 0.2d;
-        public double rotationIntegGain = 0.1d;
-        public double rotationDerivGain = 0.5d;
+        public double rotationPropGain = 0.5d;
+        public double rotationIntegGain = 0.07d;
+        public double rotationDerivGain = 0.3d;
     }
 
     /**
@@ -124,7 +124,7 @@ public class GuidanceController {
     }
     /**
      * sets the current position of the robot.  Utility function allows us to
-     * call this and then call {@link #getHeadingAngleToTarget()} for decision
+     * call this and then call {@link #getHeadingToTargetDeltaAngle()} for decision
      * making prior to an update call
      */
     public void setCurrentPosition(double heading,double px,double py){
@@ -150,7 +150,7 @@ public class GuidanceController {
         mLastPosY = ypos;
         mLastHeading = heading;
         // Compute the angle to the target relative to the current position
-        double angleToTarget = getHeadingAngleToTarget();
+        double angleToTarget = getHeadingToTargetDeltaAngle();
 
         // And compute the distance
         double distance = Math.sqrt(Math.pow(mTargetPX-xpos,2.0d)+Math.pow(mTargetPY-ypos,2.0d));
@@ -162,10 +162,11 @@ public class GuidanceController {
     }
 
     /**
-     * Returns the rotation angle to turn the robot toward the target
+     * Returns delta angle between the robot heading and the angle to the target.
+     * when pointed at the target, this function should return 0.
      */
-    public double getHeadingAngleToTarget(){
-        double angleToTarget = getRelativeAngle(mLastPosX,mLastPosY,mTargetPX,mTargetPY);
+    public double getHeadingToTargetDeltaAngle(){
+        double angleToTarget = getAngleToTarget();
         angleToTarget = angleToTarget-mLastHeading;
         return angleToTarget;
     }
@@ -189,42 +190,50 @@ public class GuidanceController {
         mLastPosX = xpos;
         mLastPosY = ypos;
         mLastHeading = heading;
-        // Compute the angle to the target relative to the current position
-        double angleToTarget = getHeadingAngleToTarget();
 
-        mRotationCommand = mRotationPID.getOutput(heading,angleToTarget);
+        mRotationCommand = mRotationPID.getOutput(heading,getAngleToTarget());
     }
 
     public boolean isRotationModeActive(){
         return mRotationModeActive;
     }
     /**
-     * utility computes the compass angle in radians from a start point to a target.
+     * utility computes the angle between the current robot position and the
+     * target position
      */
-    private double getRelativeAngle(double xstart, double ystart, double xtarget, double ytarget){
-        double xrel = xtarget-xstart;
-        double yrel = ytarget-ystart;
+    private double getAngleToTarget(){
+        double xrel = mTargetPX-mLastPosX;
+        double yrel = mTargetPY-mLastPosY;
         // Compute the angle assuming the robot is pointed straight north and add
         // the current heading afterward
         double angleToTarget = 0d;
         double invtan = 0d;
-        if (xrel != 0d){
-            invtan = Math.atan(Math.abs(yrel)/Math.abs(xrel));
+        // Handle straight line case with yrel = 0 as inverse tan will blow up at 0 and PI
+        if (yrel == 0d){
+            if (xrel >= 0d){
+                return Math.PI/2d;
+            }
+            else{
+                return Math.PI*3d/2d;
+            }
         }
-        if (xrel > 0d){
-            if (yrel > 0d){
+        // Otherwise compute angle from the inverse tangent
+        invtan = Math.abs(Math.atan(Math.abs(xrel)/Math.abs(yrel)));
+        if (xrel >= 0d){
+            if (yrel >= 0d){
                 // northeast quadrant is 0 to PI/2
                 angleToTarget = invtan;
             }
             else{
-                // northwest quadrant is 3PI/2 to 2PI
-                angleToTarget = invtan + Math.PI*3/2;
+                // southeast quadrant
+                angleToTarget = invtan + Math.PI*2d;
             }
         }
         else{
-            if (yrel > 0d){
-                // southeast quadrant is PI/2 to PI
-                angleToTarget = invtan + Math.PI/2;
+            // xrel is negative
+            if (yrel >= 0d){
+                // northwest quadrant
+                angleToTarget = Math.PI/2-invtan;
             }
             else{
                 // southwest quadrant is PI to 3PI/2;
