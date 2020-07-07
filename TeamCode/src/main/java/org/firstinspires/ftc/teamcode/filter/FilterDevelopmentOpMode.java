@@ -99,12 +99,26 @@ public class FilterDevelopmentOpMode extends OpMode{
             double targetY = 1d;
 
             // Update the guidance controller
+            double rotationModeThreshold = Math.PI/8;
             GuidanceController gc = mSpeedBot.getGuidanceController();
-            gc.setTargetPosition(targetX,targetY);
-            gc.update(mKalmanTracker.getEstimatedHeading(),mKalmanTracker.getEstimatedXPosition(),mKalmanTracker.getEstimatedXPosition());
+            if (!gc.isIMUInitialized()) {
+                gc.setTargetPosition(targetX, targetY);
+                gc.update(mKalmanTracker.getEstimatedHeading(), mKalmanTracker.getEstimatedXPosition(), mKalmanTracker.getEstimatedXPosition());
 
-
- //           mSpeedBot.getDrivetrain().setSteeringCommand(gc.getSteeringCommand(),gc.getPowerCommand());
+                // Check the angle to the target
+                double angle = gc.getHeadingAngleToTarget();
+                if (Math.abs(angle) > Math.PI / 8) {
+                    // Rotate the robot first instead in rotation mode
+                    gc.updateRotationMode(mKalmanTracker.getEstimatedHeading(), mKalmanTracker.getEstimatedXPosition(), mKalmanTracker.getEstimatedXPosition());
+                }
+            }
+            // Now apply output to motors depending on rotation or normal mode
+            if (gc.isRotationModeActive()){
+                // mSpeedBot.getDrivetrain().setRotationCommand(gc.getRotationCommand());
+            }
+            else {
+                //           mSpeedBot.getDrivetrain().setSteeringCommand(gc.getSteeringCommand(),gc.getPowerCommand());
+            }
             // Log a record of data
             logData();
         }
