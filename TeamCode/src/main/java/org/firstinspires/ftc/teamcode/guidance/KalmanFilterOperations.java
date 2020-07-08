@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.filter;
+package org.firstinspires.ftc.teamcode.guidance;
 /*
  * Copyright (c) 2009-2017, Peter Abeles. All Rights Reserved.
  *
@@ -101,6 +101,7 @@ public class KalmanFilterOperations implements KalmanFilter{
         subtract(z, y, y);
 
         // S = H P H' + R
+
         mult(H,P,c);
         multTransB(c,H,S);
         addEquals(S,R);

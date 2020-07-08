@@ -5,7 +5,7 @@
  * from file : FilterDevStateMachine.sm
  */
 
-package org.firstinspires.ftc.teamcode.filter.devstatemachines;
+package org.firstinspires.ftc.teamcode.guidance.devstatemachines;
 
 
 public class FilterDevStateMachineContext

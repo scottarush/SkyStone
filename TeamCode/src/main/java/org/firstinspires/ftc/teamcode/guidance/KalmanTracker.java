@@ -1,11 +1,7 @@
-package org.firstinspires.ftc.teamcode.filter;
+package org.firstinspires.ftc.teamcode.guidance;
 
 
 import org.ejml.data.DMatrixRMaj;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Vector;
 
 /**
  * Encapsulates a Kalman filter state estimator for a mecanum wheel robot.

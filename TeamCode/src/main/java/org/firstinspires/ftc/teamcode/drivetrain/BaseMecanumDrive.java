@@ -29,12 +29,10 @@
 
 package org.firstinspires.ftc.teamcode.drivetrain;
 
-import android.util.Log;
-
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
-import org.firstinspires.ftc.teamcode.filter.GuidanceController;
+import org.firstinspires.ftc.teamcode.guidance.IGuidanceControllerCommandListener;
 
 import java.util.ArrayList;
 
@@ -55,7 +53,7 @@ import java.util.ArrayList;
  * Motor channel:  Right rear drive motor:   "r"
  *
  */
-public abstract class BaseMecanumDrive extends Drivetrain{
+public abstract class BaseMecanumDrive extends Drivetrain implements IGuidanceControllerCommandListener {
 
     protected DcMotor mLFMotor = null;
     protected DcMotor mRFMotor = null;
@@ -175,9 +173,25 @@ public abstract class BaseMecanumDrive extends Drivetrain{
         }
         return 0;
     }
+    /**
+     * Sets a straight command to the motors either forward or backward
+     * @param power -1.0..1.0 backward to forward
+     */
+    public void setStraightCommand(double power){
+        double motorPower[] = new double[4];
+
+        power = limitUnity(power);
+        motorPower[0] = power;
+        motorPower[1] = power;
+        motorPower[2] = power;
+        motorPower[3] = power;
+        for(int i=0;i < mMotorList.size();i++){
+            mMotorList.get(i).setPower(motorPower[i]);
+        }
+    }
 
     /**
-     * Sets the steering command from the GuidanceController
+     * Sets a composite steering command to the motors with both steering and power input
      * @param steering 0 = straight ahead, +1.0 max left, -1.0 max right
      * @param power -1.0..1.0 backward to forward
      */
@@ -199,7 +213,7 @@ public abstract class BaseMecanumDrive extends Drivetrain{
         }
     }
     /**
-     * Sets the rotation command from the GuidanceController
+     * sets the motors to rotation mode with a rotation gain onlky
      * @param rotation 0 = stop, >0..+1.0 turn to right
      *                 >0..-1.0 turn to left
      */

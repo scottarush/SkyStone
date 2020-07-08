@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.filter;
+package org.firstinspires.ftc.teamcode.guidance;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -17,7 +17,9 @@ public class FilterDevelopmentOpMode extends OpMode{
     public static final String LOG_PATHNAME = "/sdcard";
 
     public static final String LOG_FILENAME = "kflog.csv";
-    public static final String[] LOG_COLUMNS = {"time","w_lf","w_rf","w_lr","w_rr","theta_imu","tgt_ang_deg","trgt_dist","kf_px","kf_py","kf_wz","kf_heading","kf_heading_deg","rot_cmd","pwr_cmd","steer_cmd"};
+    public static final String[] LOG_COLUMNS = {"time", "w_lf", "w_rf", "w_lr", "w_rr", "theta_imu",
+            "tgt_ang_deg", "trgt_dist", "kf_px", "kf_py", "kf_wz", "kf_heading", "kf_heading_deg",
+            "mode","rot_cmd", "steerpwr_cmd", "steer_cmd", "strght_cmd"};
     private LogFile mLogFile;
 
     public static final double INIT_PX = 0D;
@@ -34,8 +36,6 @@ public class FilterDevelopmentOpMode extends OpMode{
     private long mLastSystemTimeNS = 0;
     private long mElapsedTimeNS = 0;
     private long mStartTimeNS = 0;
-
-    private boolean mRotationModeExit = false;
 
     private GuidanceController mGuidanceController = null;
     @Override
@@ -66,7 +66,10 @@ public class FilterDevelopmentOpMode extends OpMode{
         mKalmanTracker.init(T,INIT_PX,INIT_PY,INIT_HEADING,BaseSpeedBot.LX,BaseSpeedBot.LY,BaseSpeedBot.WHEEL_RADIUS);
 
         // Initialize the guidance controller
-        mGuidanceController = new GuidanceController(new GuidanceController.Parameters(),mKalmanTracker);
+        mGuidanceController = new GuidanceController(new GuidanceController.GuidanceControllerParameters(),mKalmanTracker);
+
+        // And add the drivetrain as a listener for guidance controller commands
+        mGuidanceController.addGuidanceControllerCommandListener(mSpeedBot.getDrivetrain());
 
         // And the wheel speed log file
         mLogFile = new LogFile(LOG_PATHNAME, LOG_FILENAME, LOG_COLUMNS);
@@ -113,31 +116,12 @@ public class FilterDevelopmentOpMode extends OpMode{
 //            mSpeedBot.getDrivetrain().setTankDriveJoystickInput(xleft,yleft,xright,yright);
 //            logData();
 
-            // Update the guidance controller
-            double rotationModeThreshold = Math.PI/16;
-
             if (mSpeedBot.isIMUInitialized()) {
                 // Set the target and current position
                 mGuidanceController.setTargetPosition(targetX, targetY);
-                // Check the delta angle between the heading and the target
-                double angle = mGuidanceController.getHeadingToTargetDeltaAngle();
-                if ((Math.abs(angle) > rotationModeThreshold) && !mRotationModeExit) {
-                    // Rotate the robot first instead in rotation mode
-                    mGuidanceController.updateRotationMode();
-                }
-                else{
-                    // update in steering mode
-                    mRotationModeExit = true;  // Prevent entry into rotation mode for rest of cycle
-                    mGuidanceController.updateSteeringMode();
-                }
-                // Now apply output to motors depending on rotation or normal mode
-                if (mGuidanceController.isRotationModeActive()){
-                    mSpeedBot.getDrivetrain().setRotationCommand(mGuidanceController.getRotationCommand());
-                }
-                else {
-                    mSpeedBot.getDrivetrain().setSteeringCommand(mGuidanceController.getSteeringCommand(),mGuidanceController.getPowerCommand());
-                }
-            }
+                // And update the guidance controller commnd
+                mGuidanceController.updateCommand();
+             }
             telemetry.addData("KF Data","heading=%5.2f px=%4.1f py=%4.1f",mKalmanTracker.getEstimatedHeading()*180d/Math.PI,mKalmanTracker.getEstimatedXPosition(),mKalmanTracker.getEstimatedYPosition());
             telemetry.update();
             // Log a record of data
@@ -168,9 +152,11 @@ public class FilterDevelopmentOpMode extends OpMode{
         logRecord[logIndex++] = String.format("%4.2f",mKalmanTracker.getEstimatedAngularVelocity());
         logRecord[logIndex++] = String.format("%5.2f",mKalmanTracker.getEstimatedHeading());
         logRecord[logIndex++] = String.format("%5.2f",mKalmanTracker.getEstimatedHeading()*180d/Math.PI);
+        logRecord[logIndex++] = mGuidanceController.getModeString();
         logRecord[logIndex++] = String.format("%4.2f",mGuidanceController.getRotationCommand());
-        logRecord[logIndex++] = String.format("%4.2f",mGuidanceController.getPowerCommand());
+        logRecord[logIndex++] = String.format("%4.2f",mGuidanceController.getSteeringPowerCommand());
         logRecord[logIndex++] = String.format("%4.2f",mGuidanceController.getSteeringCommand());
+        logRecord[logIndex++] = String.format("%4.2f",mGuidanceController.getStraightCommand());
 
         mLogFile.writeLogRow(logRecord);
 
