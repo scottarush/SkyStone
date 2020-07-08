@@ -96,7 +96,7 @@ public abstract class BaseMecanumDrive extends Drivetrain{
     /**
      * @param
      **/
-    public BaseMecanumDrive(OpMode opMode, GuidanceController imu) {
+    public BaseMecanumDrive(OpMode opMode) {
         super(opMode);
     }
 
@@ -118,7 +118,7 @@ public abstract class BaseMecanumDrive extends Drivetrain{
             return;
         }
 
-        double deltat = (mLastLoopTimeNS -newtime)*1e-9d;
+        double deltat = (newtime-mLastLoopTimeNS)*1e-9d;
         computeWheelSpeeds(deltat);
         // Compute delta t since last computation
         mLastLoopTimeNS = newtime;  // save for next time
@@ -141,7 +141,6 @@ public abstract class BaseMecanumDrive extends Drivetrain{
                 mMotorPositions[i] = getCurrentPosition(mMotorList.get(i));
                 mWheelSpeeds[i] = 0d;
             }
-            Log.i(getClass().getCanonicalName(),"positions=" + mMotorPositions[0]+","+mMotorPositions[1]);
             return;
         }
         // Otherwise compute the angular velocities
@@ -151,6 +150,7 @@ public abstract class BaseMecanumDrive extends Drivetrain{
             mWheelSpeeds[i] = angle /deltaT;
             mMotorPositions[i] = newpos;  // Transfer to current pos array for next time
         }
+ //       Log.i(getClass().getCanonicalName(),"positions=" + mMotorPositions[0]+","+mMotorPositions[1]+","+mMotorPositions[2]+","+mMotorPositions[3]);
     }
 
     /**

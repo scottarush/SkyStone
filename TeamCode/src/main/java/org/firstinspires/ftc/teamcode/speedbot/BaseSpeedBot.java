@@ -1,10 +1,17 @@
 package org.firstinspires.ftc.teamcode.speedbot;
 
+import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.util.ReadWriteFile;
 
+import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 import org.firstinspires.ftc.teamcode.drivetrain.BaseMecanumDrive;
 import org.firstinspires.ftc.teamcode.filter.GuidanceController;
 import org.firstinspires.ftc.teamcode.drivetrain.SpeedBotMecanumDrive;
+import org.firstinspires.ftc.teamcode.util.MiniPID;
+
+import java.io.File;
 
 /**
  * This is the Speed Bot Chassis version used for development of the autonomous filter
@@ -21,11 +28,12 @@ public class BaseSpeedBot {
 
     protected OpMode mOpMode;
 
+    private BNO055IMU mIMU;
+    private boolean mIMUInitialized = false;
+
     protected SpeedBotMecanumDrive mDrivetrain = null;
 
     private  FrontHooks mFrontHooks = null;
-
-    private GuidanceController mGuidanceController = null;
 
     private boolean mEnableIMU = false;
     /**
@@ -61,21 +69,48 @@ public class BaseSpeedBot {
      *
      * @throws Exception
      */
-    public void init() throws Exception {
+    public void init(String imuCalibrationDataFilename) throws Exception {
         String initErrString = "";
 
         if (mEnableIMU){
-            try {
-                mGuidanceController = new GuidanceController();
-                GuidanceController.Parameters gcParams = new GuidanceController.Parameters();
-                mGuidanceController.init(mOpMode.hardwareMap, gcParams);
+            try{
+                // Initialize the IMU
+                BNO055IMU.Parameters imuParameters = new BNO055IMU.Parameters();
+
+                imuParameters.mode                = BNO055IMU.SensorMode.IMU;
+                imuParameters.angleUnit           = BNO055IMU.AngleUnit.RADIANS;
+                imuParameters.accelUnit           = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
+         //       imuParameters.calibrationDataFile = imuCalibrationDataFilename;
+//            parameters.loggingEnabled      = true;
+//            parameters.loggingTag          = "IMU";
+                imuParameters.loggingEnabled      = false;
+
+                // Retrieve and initialize the IMU. We expect the IMU to be attached to an I2C port
+                // on a Core Device Interface Module, configured to be a sensor of type "AdaFruit IMU",
+                // and named "imu".
+                try {
+                    mIMU = mOpMode.hardwareMap.get(BNO055IMU.class, "imu");
+
+                    mIMU.initialize(imuParameters);
+
+                    // Now load calibrations - not sure why parameter method didn't work
+                    File file = AppUtil.getInstance().getSettingsFile(imuCalibrationDataFilename);
+                    BNO055IMU.CalibrationData calibrationData = BNO055IMU.CalibrationData.deserialize(ReadWriteFile.readFile(file));
+                    mIMU.writeCalibrationData(calibrationData);
+
+                }
+                catch(Exception e){
+                    throw new Exception("IMU Initialization error:"+e.getMessage());
+                }
+
+                mIMUInitialized = true;
             }
             catch(Exception e){
                 initErrString += e.getMessage();
             }
         }
         try {
-            mDrivetrain = new SpeedBotMecanumDrive(mOpMode, mGuidanceController);
+            mDrivetrain = new SpeedBotMecanumDrive(mOpMode);
             mDrivetrain.init(mOpMode.hardwareMap);
 
         }
@@ -95,11 +130,22 @@ public class BaseSpeedBot {
         }
 
     }
-
+     public boolean isIMUInitialized(){
+        return mIMUInitialized;
+    }
     /**
-     * gets a reference to the GuidanceController
+     * Returns the IMU calibration status string for development
      */
-    public GuidanceController getGuidanceController(){
-        return mGuidanceController;
+    public String getIMUCalibrationStatus(){
+        if (mIMUInitialized){
+            return mIMU.getCalibrationStatus().toString();
+        }
+        else{
+            return "Error:  IMU not initialized";
+        }
+    }
+
+    public BNO055IMU getIMU(){
+        return mIMU;
     }
 }

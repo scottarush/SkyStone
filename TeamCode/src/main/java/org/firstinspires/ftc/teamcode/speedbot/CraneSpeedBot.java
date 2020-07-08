@@ -39,7 +39,7 @@ public class CraneSpeedBot extends BaseSpeedBot {
     public void init() throws Exception {
         String initErrString = "";
         try {
-           super.init();
+           super.init(null);
         }
         catch (Exception e){
             initErrString += e.getMessage();
