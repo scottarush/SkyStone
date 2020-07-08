@@ -63,7 +63,15 @@ public class FilterDevelopmentOpMode extends OpMode{
 
         // Initialize the KalmanTracker
         mKalmanTracker = new KalmanTracker();
-        mKalmanTracker.init(T,INIT_PX,INIT_PY,INIT_HEADING,BaseSpeedBot.LX,BaseSpeedBot.LY,BaseSpeedBot.WHEEL_RADIUS);
+        KalmanTracker.KalmanParameters params = new KalmanTracker.KalmanParameters();
+        params.T = 0.050;
+        params.PX0 = INIT_PX;
+        params.PY0 = INIT_PY;
+        params.THETA0 = INIT_HEADING;
+        params.LX = BaseSpeedBot.LX;
+        params.LY = BaseSpeedBot.LY;
+        params.WHEEL_RADIUS = BaseSpeedBot.WHEEL_RADIUS;
+        mKalmanTracker.init(params);
 
         // Initialize the guidance controller
         mGuidanceController = new GuidanceController(new GuidanceController.GuidanceControllerParameters(),mKalmanTracker);

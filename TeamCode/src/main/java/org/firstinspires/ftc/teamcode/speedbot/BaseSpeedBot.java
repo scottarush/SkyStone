@@ -47,7 +47,7 @@ public class BaseSpeedBot {
      * Wheel radius in meters
      *
      */
-    public static double WHEEL_RADIUS = 0.98d;
+    public static double WHEEL_RADIUS = 0.098d;
 
     public BaseSpeedBot(OpMode opMode, boolean enableIMU){
         this.mOpMode = opMode;
