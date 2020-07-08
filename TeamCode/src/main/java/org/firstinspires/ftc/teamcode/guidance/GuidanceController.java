@@ -46,7 +46,7 @@ public class GuidanceController {
          * Minimum distance in meters for steering mode operation.  Below this distance
          * steering mode will automatically transition to forward approach mode.
          */
-        public double steeringModeMinimumDistance = 0.2d;
+        public double steeringModeMinimumDistance = 2.0d;
 
         /**
          * Minimum angle threshold for transition from rotation to steering mode.
@@ -84,7 +84,7 @@ public class GuidanceController {
         mSteeringModeSteeringPID.setOutputLimits(-1d,+1d);
 
         // Power controller limited to 0 to 1.0
-        mSteeringModePowerPID = new MiniPID(mGCParameters.steeringModePropGain,mGCParameters.steeringModePowerIntegGain,mGCParameters.steeringModePowerDerivGain);
+        mSteeringModePowerPID = new MiniPID(mGCParameters.steeringModePowerPropGain,mGCParameters.steeringModePowerIntegGain,mGCParameters.steeringModePowerDerivGain);
         mSteeringModePowerPID.setOutputLimits(0d,1.0d);
 
         // Rotation controller limited to -1.0 to 1.0
@@ -184,7 +184,7 @@ public class GuidanceController {
                 break;
             case STRAIGHT_MODE:
                 distance = getDistanceToTarget();
-                if (distance <= mGCParameters.steeringModeMinimumDistance){
+                if (distance <= mGCParameters.straightModeProjectionStopDistance){
                     mMode = STOPPED;
                 }
                 break;
