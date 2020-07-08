@@ -35,20 +35,20 @@ public class BaseSpeedBot {
 
     private boolean mEnableIMU = false;
     /**
-     * distance from IMU to far wheel axes = {@value} in meters
+     * distance from body center to wheel center = {@value} in meters
      */
-    public static double LX = 0.1d;
+    public static double LX = 0.29d/2d;
 
     /**
-     * distance from IMU to wheel = {@value} in meters
+     * distance from body center to wheel axles = {@value} in meters
      */
-    public static double LY = 0.025d;
+    public static double LY = 0.275d/2d;
 
     /**
      * Wheel radius in meters
      *
      */
-    public static double WHEEL_RADIUS = 0.098d;
+    public static double WHEEL_RADIUS = 0.098d/2d;
 
     public BaseSpeedBot(OpMode opMode, boolean enableIMU){
         this.mOpMode = opMode;
