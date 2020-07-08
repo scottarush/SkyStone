@@ -13,11 +13,11 @@ public class SpeedBotMecanumDrive extends BaseMecanumDrive {
 
 
     /*
-    * With core hex motors there are 288 counts/axle rotation x 1:4 gear output ratio
+    * With core hex motors there are 288 counts/axle rotation x 4:1 gear output ratio
      */
     @Override
     protected int getEncoderCountsPerRev() {
-        return 4*288;
+        return 288/4;
     }
 
     /**

@@ -70,8 +70,8 @@ public class GuidanceController {
          * used to determine when the projection of the line has been reached
          */
         public double straightModeProjectionStopDistance = 0.02;
-        public double straightModePropGain = 0.5d;
-        public double straightModeIntegGain = 0.07d;
+        public double straightModePropGain = 0.3d;
+        public double straightModeIntegGain = 0.05d;
         public double straightModeDerivGain = 0.3d;
     }
 
@@ -183,7 +183,7 @@ public class GuidanceController {
                 // Otherwise, drop through to continue in rotation mode
                 break;
             case STRAIGHT_MODE:
-                distance = getDistanceToTarget();
+                distance = getStraightModeDistanceToTarget();
                 if (distance <= mGCParameters.straightModeProjectionStopDistance){
                     mMode = STOPPED;
                 }
@@ -280,14 +280,14 @@ public class GuidanceController {
     private void updateStraightMode(){
         // Look for the distance to target and straight mode delta to determine when to stop
         double straightModeDistance = getStraightModeDistanceToTarget();
-        double distance = getDistanceToTarget();
-        double delta = Math.abs(straightModeDistance-distance);
-        if (delta <= mGCParameters.straightModeProjectionStopDistance){
+        if (straightModeDistance <= mGCParameters.straightModeProjectionStopDistance){
             mStraightCommand = 0d;
             mMode = STOPPED;
         }
         else{
-            mStraightCommand = mStraightModePID.getOutput(getStraightModeDistanceToTarget());
+            mStraightCommand = mStraightModePID.getOutput(getStraightModeDistanceToTarget(),0d);
+            // Invert the command to go forward
+            mStraightCommand *= -1d;
         }
        for(Iterator<IGuidanceControllerCommandListener> iter=mCommandListeners.iterator();iter.hasNext();){
             IGuidanceControllerCommandListener listener = iter.next();

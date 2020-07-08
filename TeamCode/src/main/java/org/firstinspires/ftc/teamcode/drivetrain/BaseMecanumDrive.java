@@ -33,6 +33,7 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
 import org.firstinspires.ftc.teamcode.guidance.IGuidanceControllerCommandListener;
+import org.firstinspires.ftc.teamcode.util.LogFile;
 
 import java.util.ArrayList;
 
@@ -82,9 +83,11 @@ public abstract class BaseMecanumDrive extends Drivetrain implements IGuidanceCo
     private int mMotorPositions[] = new int[4];
     private double mWheelSpeeds[] = new double[4];
 
+    public static final String[] LOG_COLUMNS = {"time","counts_lf", "w_lf","counts_rf","w_rf","counts_lr" ,"w_lr","counts_rr" ,"w_rr"};
 
     private boolean mFirstLoopInit = false;
 
+    private LogFile mLogFile;
     private long mLastLoopTimeNS = 0;
     /**
      * Wheel circumference in inches
@@ -96,6 +99,9 @@ public abstract class BaseMecanumDrive extends Drivetrain implements IGuidanceCo
      **/
     public BaseMecanumDrive(OpMode opMode) {
         super(opMode);
+        // And the wheel speed log file
+        mLogFile = new LogFile("/sdcard","slog.csv", LOG_COLUMNS);
+        mLogFile.openFile();
     }
 
 
@@ -121,6 +127,7 @@ public abstract class BaseMecanumDrive extends Drivetrain implements IGuidanceCo
         // Compute delta t since last computation
         mLastLoopTimeNS = newtime;  // save for next time
 
+        logData();
     }
 
     /**
@@ -264,27 +271,25 @@ public abstract class BaseMecanumDrive extends Drivetrain implements IGuidanceCo
         // Return motors to manual control
         setMotorModes(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
+        mLogFile.closeFile();
     }
 
-//    public boolean isMoving() {
-//        if (lfMotor != null){
-//            if (lfMotor.isBusy())
-//                return true;
-//        }
-//        if (rfMotor != null){
-//            if (rfMotor.isBusy())
-//                return true;
-//        }
-//        if (lrMotor != null){
-//            if (lrMotor.isBusy())
-//                return true;
-//        }
-//        if (rrMotor != null){
-//            if (rrMotor.isBusy())
-//                return true;
-//        }
-//        return false;
-//    }
+    private void logData(){
+        // Now form the record for the log
+        String[] logRecord = new String[LOG_COLUMNS.length];
+        int logIndex = 0;
+        double time = (double)mLastLoopTimeNS/1e9d;
+        logRecord[logIndex++] = String.format("%4.3f",time);
+        // Now the speeds
+        double[] speeds = getWheelSpeeds();
+        for(int i=0;i < speeds.length;i++){
+            logRecord[logIndex++] = String.format("%5d",mMotorPositions[i]);
+            logRecord[logIndex++] = String.format("%4.2f",speeds[i]);
+        }
+
+        mLogFile.writeLogRow(logRecord);
+
+    }
 
     /**
      * This is a helper function that takes input from a dual joy stick and computes the speed

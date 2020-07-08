@@ -9,6 +9,7 @@ import org.firstinspires.ftc.teamcode.drivetrain.BaseMecanumDrive;
 import org.firstinspires.ftc.teamcode.drivetrain.SpeedBotMecanumDrive;
 
 import java.io.File;
+import java.io.IOException;
 
 /**
  * This is the Speed Bot Chassis version used for development of the autonomous filter
@@ -71,13 +72,16 @@ public class BaseSpeedBot {
 
         if (mEnableIMU){
             try{
+
                 // Initialize the IMU
                 BNO055IMU.Parameters imuParameters = new BNO055IMU.Parameters();
+
+  //              mIMU.writeCalibrationData(calibrationData);
 
                 imuParameters.mode                = BNO055IMU.SensorMode.IMU;
                 imuParameters.angleUnit           = BNO055IMU.AngleUnit.RADIANS;
                 imuParameters.accelUnit           = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
-         //       imuParameters.calibrationDataFile = imuCalibrationDataFilename;
+//                imuParameters.calibrationData   = calibrationData;   // Doesn't work TODO:  Figure this out to reduce startup times
 //            parameters.loggingEnabled      = true;
 //            parameters.loggingTag          = "IMU";
                 imuParameters.loggingEnabled      = false;
