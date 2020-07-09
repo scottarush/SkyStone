@@ -1,5 +1,8 @@
 package org.firstinspires.ftc.teamcode.guidance;
 
+import android.util.Log;
+
+import org.firstinspires.ftc.teamcode.util.LogFile;
 import org.firstinspires.ftc.teamcode.util.MiniPID;
 
 import java.util.ArrayList;
@@ -32,6 +35,9 @@ public class GuidanceController {
     private double mTargetPY = 0d;
 
     private KalmanTracker mKalmanTracker = null;
+    private LogFile mLogFile = null;
+    private static boolean ENABLE_LOGGING = false;
+    public static final String[] LOG_COLUMNS = {"px","py","theta","distance","projection","angle"};
 
     private ArrayList<IGuidanceControllerCommandListener> mCommandListeners = new ArrayList<>();
 
@@ -69,7 +75,7 @@ public class GuidanceController {
          * Minimum delta between distance to target and straight mode distance
          * used to determine when the projection of the line has been reached
          */
-        public double straightModeProjectionStopDistance = 0.02;
+        public double straightModeProjectionStopDistance = 0.1;
         public double straightModePropGain = 0.3d;
         public double straightModeIntegGain = 0.05d;
         public double straightModeDerivGain = 0.3d;
@@ -95,8 +101,16 @@ public class GuidanceController {
         mStraightModePID = new MiniPID(mGCParameters.straightModePropGain,mGCParameters.straightModeIntegGain,mGCParameters.straightModeDerivGain);
         mStraightModePID.setOutputLimits(-1.0,1.0d);
 
+        if (ENABLE_LOGGING){
+            mLogFile = new LogFile("/sdcard","gclog.csv",LOG_COLUMNS);
+            mLogFile.openFile();
+        }
     }
 
+    public void closeLogFile(){
+        if (ENABLE_LOGGING)
+            mLogFile.closeFile();
+    }
     /**
      * sets the target position.  The correct mode will be selected based on the distance
      * to the target and the current orientation of the robot.
@@ -184,7 +198,7 @@ public class GuidanceController {
                 break;
             case STRAIGHT_MODE:
                 distance = getStraightModeDistanceToTarget();
-                if (distance <= mGCParameters.straightModeProjectionStopDistance){
+                 if (distance <= mGCParameters.straightModeProjectionStopDistance){
                     mMode = STOPPED;
                 }
                 break;
@@ -203,6 +217,10 @@ public class GuidanceController {
                 updateStraightMode();
                 break;
             case STOPPED:
+                for(Iterator<IGuidanceControllerCommandListener> iter=mCommandListeners.iterator();iter.hasNext();){
+                    IGuidanceControllerCommandListener listener = iter.next();
+                    listener.setStraightCommand(0d);
+                }
                 break;
         }
      }
@@ -251,7 +269,7 @@ public class GuidanceController {
     }
 
     /**
-     * internal utility computes straight line distance to target for approach mode only
+     * internal utility computes straight line distance to target for straight mode only
      */
     private double getStraightModeDistanceToTarget(){
         // Compute the vector from the current position to the target as distance /_ angle
@@ -260,6 +278,18 @@ public class GuidanceController {
         // Now compute the projection of this vector into the straight line path of the robot
         // This will give us the closest point we can approach to the target on a straight line.
         double projection = distance / (Math.cos(angle));
+        if (ENABLE_LOGGING) {
+            int logIndex = 0;
+            String logRecord[] = new String[LOG_COLUMNS.length];
+            logRecord[logIndex++] = String.format("%4.2f", mKalmanTracker.getEstimatedXPosition());
+            logRecord[logIndex++] = String.format("%4.2f", mKalmanTracker.getEstimatedYPosition());
+            logRecord[logIndex++] = String.format("%5.2f", mKalmanTracker.getEstimatedHeading() * 180d / Math.PI);
+            logRecord[logIndex++] = String.format("%4.2f", distance);
+            logRecord[logIndex++] = String.format("%4.2f", projection);
+            logRecord[logIndex++] = String.format("%4.2f", angle);
+
+            mLogFile.writeLogRow(logRecord);
+        }
         return projection;
     }
     /**
@@ -285,7 +315,7 @@ public class GuidanceController {
             mMode = STOPPED;
         }
         else{
-            mStraightCommand = mStraightModePID.getOutput(getStraightModeDistanceToTarget(),0d);
+            mStraightCommand = mStraightModePID.getOutput(straightModeDistance,0d);
             // Invert the command to go forward
             mStraightCommand *= -1d;
         }
@@ -302,7 +332,7 @@ public class GuidanceController {
      * target position from 0..PI = N->E->S and -PI..0 = N->W->S
      */
     private double getAngleToTarget(){
-        double xrel = mTargetPX-mKalmanTracker.getEstimatedYPosition();
+        double xrel = mTargetPX-mKalmanTracker.getEstimatedXPosition();
         double yrel = mTargetPY-mKalmanTracker.getEstimatedYPosition();
         // Compute the angle assuming the robot is pointed straight north and add
         // the current heading afterward
@@ -384,6 +414,6 @@ public class GuidanceController {
             default:
                 return "INVALID_MODE";  // Can't happen
         }
-
     }
+
 }

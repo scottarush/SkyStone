@@ -96,6 +96,7 @@ public class FilterDevelopmentOpMode extends OpMode{
         super.stop();
 
         mSpeedBot.getDrivetrain().stop();
+        mGuidanceController.closeLogFile();
     }
 
     @Override

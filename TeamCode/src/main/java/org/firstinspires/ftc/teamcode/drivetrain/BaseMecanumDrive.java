@@ -88,7 +88,9 @@ public abstract class BaseMecanumDrive extends Drivetrain implements IGuidanceCo
     private boolean mFirstLoopInit = false;
 
     private LogFile mLogFile;
+    private final static boolean ENABLE_LOGGING = false;
     private long mLastLoopTimeNS = 0;
+
     /**
      * Wheel circumference in inches
      **/
@@ -100,8 +102,10 @@ public abstract class BaseMecanumDrive extends Drivetrain implements IGuidanceCo
     public BaseMecanumDrive(OpMode opMode) {
         super(opMode);
         // And the wheel speed log file
-        mLogFile = new LogFile("/sdcard","slog.csv", LOG_COLUMNS);
-        mLogFile.openFile();
+        if (ENABLE_LOGGING) {
+            mLogFile = new LogFile("/sdcard", "slog.csv", LOG_COLUMNS);
+            mLogFile.openFile();
+        }
     }
 
 
@@ -127,7 +131,8 @@ public abstract class BaseMecanumDrive extends Drivetrain implements IGuidanceCo
         // Compute delta t since last computation
         mLastLoopTimeNS = newtime;  // save for next time
 
-        logData();
+        if (ENABLE_LOGGING)
+            logData();
     }
 
     /**
@@ -270,8 +275,9 @@ public abstract class BaseMecanumDrive extends Drivetrain implements IGuidanceCo
         setPower(0.0, 0.0, 0.0, 0.0);
         // Return motors to manual control
         setMotorModes(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
-        mLogFile.closeFile();
+        if (ENABLE_LOGGING) {
+            mLogFile.closeFile();
+        }
     }
 
     private void logData(){
