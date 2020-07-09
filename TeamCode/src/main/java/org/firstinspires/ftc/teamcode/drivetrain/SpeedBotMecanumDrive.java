@@ -91,7 +91,7 @@ public class SpeedBotMecanumDrive extends BaseMecanumDrive {
         setPower(0, 0, 0, 0);
 
         // Set all motors to run without encoders for maximum power
-        setMotorModes(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        setMotorModes(DcMotor.RunMode.RUN_USING_ENCODER);
 
         if (motorInitError.length() > 0){
             throw new Exception("Motor initIMU errs: '"+motorInitError+"'");

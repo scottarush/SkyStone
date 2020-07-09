@@ -75,10 +75,10 @@ public class GuidanceController {
          * Minimum delta between distance to target and straight mode distance
          * used to determine when the projection of the line has been reached
          */
-        public double straightModeProjectionStopDistance = 0.1;
-        public double straightModePropGain = 0.3d;
-        public double straightModeIntegGain = 0.05d;
-        public double straightModeDerivGain = 0.3d;
+        public double straightModeProjectionStopDistance = 0.01;
+        public double straightModePropGain = 0.5d;
+        public double straightModeIntegGain = 0.003d;
+        public double straightModeDerivGain = 0.5d;
     }
 
     public GuidanceController(GuidanceControllerParameters gcParameters, KalmanTracker kalmanTracker){

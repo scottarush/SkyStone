@@ -87,7 +87,8 @@ public class FilterDevelopmentOpMode extends OpMode{
         mLogFile.openFile();
 
         // Set the target and current position
-        mGuidanceController.setTargetPosition(0d   , 1.22d);
+ //       mGuidanceController.setTargetPosition(0d   , 1.22d);
+        mGuidanceController.setTargetPosition(0d   , 1.22d/2d);
     }
 
     @Override
