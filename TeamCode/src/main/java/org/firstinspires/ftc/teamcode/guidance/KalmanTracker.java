@@ -154,7 +154,10 @@ public class KalmanTracker {
         double vy = rover4*(w_lf+w_rf+w_lr+w_rr);
         double wzw = rover4*(w_lf+w_rf+w_lr+w_rr)/(lx+ly);
 
-        DMatrixRMaj z = new DMatrixRMaj(new double[][] {{vx},{vy},{wzw},{wz_imu}});
+        // Have to negate the wzw and wz_imu because we want to use left-handed orientation angles
+        // instead of the right-handed angles produced by the measurements
+
+        DMatrixRMaj z = new DMatrixRMaj(new double[][] {{vx},{vy},{-wzw},{-wz_imu}});
 
         // Do Kalman predict step
         mFilter.predict();
@@ -168,15 +171,24 @@ public class KalmanTracker {
         return mFilter.getState().get(XHAT_PX_INDEX);
     }
     /**
-     * Returns the current estimated y7 position
+     * Returns the current estimated y position
      */
     public Double getEstimatedYPosition(){
         return mFilter.getState().get(XHAT_PY_INDEX);
     }
-    public Double getEstimatedHeading(){
-        return mFilter.getState().get(XHAT_THETA_INDEX,0);
+
+    /**
+     *
+     * @return Estimated heading from 0 to 2*PI in radians.  Note that this is a left-handed angle
+     */
+    public Double getEstimatedHeading() {
+        return mFilter.getState().get(XHAT_THETA_INDEX, 0);
     }
 
+    /**
+     *
+     * @return Estimated angular velocity in radians/sec.  Note that this is a left-handed angular velocity
+     */
     public Double getEstimatedAngularVelocity(){
         return mFilter.getState().get(XHAT_OMEGAZ_INDEX,0);
     }

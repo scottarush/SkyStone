@@ -189,13 +189,12 @@ public class FilterDevelopmentOpMode extends OpMode{
 
         // Now get the IMU orientation
         mIMUOrientation = mSpeedBot.getIMU().getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.RADIANS);
-        // Update the tracker.  Have to negate the IMU angle because IMU angles go positive to the left and we want to
-        // use the compass where angle increases to the right
+        // Update the tracker.
         mKalmanTracker.updateMeasurement(wheelSpeeds[BaseMecanumDrive.LF_WHEEL_ARRAY_INDEX],
                 wheelSpeeds[BaseMecanumDrive.LR_WHEEL_ARRAY_INDEX],
                 wheelSpeeds[BaseMecanumDrive.RF_WHEEL_ARRAY_INDEX],
                 wheelSpeeds[BaseMecanumDrive.RR_WHEEL_ARRAY_INDEX],
-                -mIMUOrientation.firstAngle);
+                mIMUOrientation.firstAngle);
 
      }
 
