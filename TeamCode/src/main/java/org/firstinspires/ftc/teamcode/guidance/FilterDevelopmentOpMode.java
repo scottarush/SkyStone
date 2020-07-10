@@ -31,6 +31,7 @@ public class FilterDevelopmentOpMode extends OpMode{
     private BaseSpeedBot mSpeedBot = null;
 
     private KalmanTracker mKalmanTracker = null;
+    private KalmanTracker.KalmanParameters mKalmanParameters = null;
     private Acceleration mIMUAcceleration;
     private Orientation mIMUOrientation;
     private long mLastSystemTimeNS = 0;
@@ -63,14 +64,14 @@ public class FilterDevelopmentOpMode extends OpMode{
 
         // Initialize the KalmanTracker
         mKalmanTracker = new KalmanTracker();
-        KalmanTracker.KalmanParameters params = new KalmanTracker.KalmanParameters();
-        params.PX0 = 0d;
-        params.PY0 = 0d;
-        params.THETA0 = Math.PI;
-        params.LX = BaseSpeedBot.LX;
-        params.LY = BaseSpeedBot.LY;
-        params.WHEEL_RADIUS = BaseSpeedBot.WHEEL_RADIUS;
-        mKalmanTracker.init(params);
+        mKalmanParameters = new KalmanTracker.KalmanParameters();
+        mKalmanParameters.PX0 = 0d;
+        mKalmanParameters.PY0 = 0d;
+        mKalmanParameters.THETA0 = 0;
+        mKalmanParameters.LX = BaseSpeedBot.LX;
+        mKalmanParameters.LY = BaseSpeedBot.LY;
+        mKalmanParameters.WHEEL_RADIUS = BaseSpeedBot.WHEEL_RADIUS;
+        mKalmanTracker.init(mKalmanParameters);
 
         // Initialize the guidance controller
         mGuidanceController = new GuidanceController(new GuidanceController.GuidanceControllerParameters(),mKalmanTracker);
@@ -83,8 +84,7 @@ public class FilterDevelopmentOpMode extends OpMode{
         mLogFile.openFile();
 
         // Set the target and current position
- //       mGuidanceController.setTargetPosition(0d   , 1.22d);
-        mGuidanceController.setTargetPosition(0d   , 1.22d);
+        mGuidanceController.setTargetPosition(29d/39.37d , 31d/39.37d);
     }
 
     @Override
@@ -159,7 +159,8 @@ public class FilterDevelopmentOpMode extends OpMode{
         }
 
         // IMU data
-        logRecord[logIndex++] = String.format("%4.2f",mIMUOrientation.firstAngle*180d/Math.PI);
+        double theta_imu = mIMUOrientation.firstAngle + mKalmanParameters.THETA0;
+        logRecord[logIndex++] = String.format("%4.2f",theta_imu*180d/Math.PI);
         logRecord[logIndex++] = String.format("%5.2f",mGuidanceController.getHeadingToTargetDeltaAngle()*180d/Math.PI);
         logRecord[logIndex++] = String.format("%4.3f",mGuidanceController.getDistanceToTarget());
 
@@ -187,12 +188,13 @@ public class FilterDevelopmentOpMode extends OpMode{
 
         // Now get the IMU orientation
         mIMUOrientation = mSpeedBot.getIMU().getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.RADIANS);
+        double theta_imu = mIMUOrientation.firstAngle + mKalmanParameters.THETA0;
         // Update the tracker.
         mKalmanTracker.updateMeasurement(wheelSpeeds[BaseMecanumDrive.LF_WHEEL_ARRAY_INDEX],
                 wheelSpeeds[BaseMecanumDrive.LR_WHEEL_ARRAY_INDEX],
                 wheelSpeeds[BaseMecanumDrive.RF_WHEEL_ARRAY_INDEX],
                 wheelSpeeds[BaseMecanumDrive.RR_WHEEL_ARRAY_INDEX],
-                mIMUOrientation.firstAngle);
+                theta_imu);
 
      }
 

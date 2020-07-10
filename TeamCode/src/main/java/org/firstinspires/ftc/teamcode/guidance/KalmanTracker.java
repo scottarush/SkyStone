@@ -62,8 +62,6 @@ public class KalmanTracker {
         double VAR_POSITION = Math.pow(SIGMA_POSITION,2.0d);
         double SIGMA_VELOCITY = 0.1;
         double VAR_VELOCITY = Math.pow(SIGMA_VELOCITY,2.0d);
-        double SIGMA_ACCEL = 0.1;
-        double VAR_ACCEL = Math.pow(SIGMA_ACCEL,2.0d);
         double SIGMA_W = 0.1;
         double VAR_W = Math.pow(SIGMA_W,2.0d);
         double SIGMA_THETA = 0.1;
@@ -143,13 +141,13 @@ public class KalmanTracker {
      * @param w_lr angular velocity of LR wheel in radians/sec
      * @param w_rf angular velocity of RF wheel in radians/sec
      * @param w_rr angular velocity of RR wheel in radians/sec
-      * @param wz_imu z coordinate of imu measured angular velocity radians/sec
+      * @param theta_imu z coordinate of imu measured orientation in radians
      */
     public void updateMeasurement(double w_lf,
                                   double w_lr,
                                   double w_rf,
                                   double w_rr,
-                                  double wz_imu) {
+                                  double theta_imu) {
         // Compute the robot velocity from the wheel velocities
         double rover4 = mKalmanParameters.WHEEL_RADIUS/4.0d;
         double vx = rover4*(w_lf+w_rf-w_lr-w_rr);
@@ -159,7 +157,7 @@ public class KalmanTracker {
         // Have to negate the wzw and wz_imu because we want to use left-handed orientation angles
         // instead of the right-handed angles produced by the measurements
 
-        DMatrixRMaj z = new DMatrixRMaj(new double[][] {{vx},{vy},{-wzw},{-wz_imu}});
+        DMatrixRMaj z = new DMatrixRMaj(new double[][] {{vx},{vy},{-wzw},{-theta_imu}});
 
         // Do Kalman predict step
         mFilter.predict();

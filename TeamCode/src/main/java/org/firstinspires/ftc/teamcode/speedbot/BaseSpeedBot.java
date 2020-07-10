@@ -118,13 +118,13 @@ public class BaseSpeedBot {
         catch (Exception e){
             initErrString += e.getMessage();
         }
-         try{
-             mFrontHooks = new FrontHooks(mOpMode);
-             mFrontHooks.init(mOpMode.hardwareMap);
-        }
-        catch (Exception e){
-            initErrString += e.getMessage();
-        }
+//         try{
+//             mFrontHooks = new FrontHooks(mOpMode);
+//             mFrontHooks.init(mOpMode.hardwareMap);
+//        }
+//        catch (Exception e){
+//            initErrString += e.getMessage();
+//        }
 
         if (initErrString.length() > 0){
             throw new Exception(initErrString);

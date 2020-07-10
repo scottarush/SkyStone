@@ -50,9 +50,9 @@ public class GuidanceController {
 
         /**
          * Minimum distance in meters for steering mode operation.  Below this distance
-         * steering mode will automatically transition to forward approach mode.
+         * steering mode will automatically transition to straight mode.
          */
-        public double steeringModeMinimumDistance = 0.4d;
+        public double steeringModeMinimumDistance = 0.2d;
 
         /**
          * Minimum angle threshold for transition from rotation to steering mode.
@@ -66,10 +66,10 @@ public class GuidanceController {
         /**
          * Minimum angle threshold for rotation mode.
          */
-        public double rotationModeMinimumAngle = Math.PI/8;
-        public double rotationModePropGain = 0.5d;
-        public double rotationModeIntegGain = 0.07d;
-        public double rotationModeDerivGain = 0.3d;
+        public double rotationModeMinimumAngle = Math.PI/16;
+        public double rotationModePropGain = 0.3d;
+        public double rotationModeIntegGain = 0.005d;
+        public double rotationModeDerivGain = 0.5d;
 
         /**
          * Minimum delta between distance to target and straight mode distance
