@@ -24,17 +24,6 @@ public class KalmanTracker {
     private static final int XHAT_OMEGAZ_INDEX = 4;
     private static final int XHAT_THETA_INDEX = 5;
 
-    // Initial P covariance values
-    final double SIGMA_POSITION = 0.1;
-    final double VAR_POSITION = Math.pow(SIGMA_POSITION,2.0d);
-    final double SIGMA_VELOCITY = 0.1;
-    final double VAR_VELOCITY = Math.pow(SIGMA_VELOCITY,2.0d);
-    final double SIGMA_ACCEL = 0.1;
-    final double VAR_ACCEL = Math.pow(SIGMA_ACCEL,2.0d);
-    final double SIGMA_W = 0.5;
-    final double VAR_W = Math.pow(SIGMA_W,2.0d);
-    final double SIGMA_THETA = 0.1;
-    final double VAR_THETA = Math.pow(SIGMA_THETA,2.0d);
 
     private KalmanFilterOperations mFilter = null;
 
@@ -47,51 +36,64 @@ public class KalmanTracker {
     // Measurement matrix
     private DMatrixRMaj H;
 
-
-    private double lx;
-    private double ly;
-    private double radius_wheel;
-
     public KalmanTracker(){
 
     }
 
+    private KalmanParameters mKalmanParameters;
+
+    public static class KalmanParameters {
+        // T sampling interval in seconds
+        double T = 0.050d;
+        // px0 x coordinate of robot initial position in meters
+        double PX0 = 0d;
+        //  py0 y coordinate of robot initial position in meters
+        double PY0 = 0d;
+        //  theta0 initial heading in radians where 0=judge side, PI/2=right side, PI=audience side, 3PI/2=left side
+        double THETA0 = 0d;
+        //  lx  Lateral distance from wheel axle to imu center in meters
+        double LX = 0.5d;
+        //  ly Lateral distance from wheel axle to imu center in meters
+        double LY = 0.5d;
+        //  r radius of wheel in meters
+        double WHEEL_RADIUS = 0.098d;
+        // Initial P covariance values
+        double SIGMA_POSITION = 0.1;
+        double VAR_POSITION = Math.pow(SIGMA_POSITION,2.0d);
+        double SIGMA_VELOCITY = 0.1;
+        double VAR_VELOCITY = Math.pow(SIGMA_VELOCITY,2.0d);
+        double SIGMA_ACCEL = 0.1;
+        double VAR_ACCEL = Math.pow(SIGMA_ACCEL,2.0d);
+        double SIGMA_W = 0.1;
+        double VAR_W = Math.pow(SIGMA_W,2.0d);
+        double SIGMA_THETA = 0.1;
+        double VAR_THETA = Math.pow(SIGMA_THETA,2.0d);
+    }
     /**
      * Initializes the Kalman filter
-     * @param T sampling interval in secons
-     * @param px0 x coordinate of robot initial position in meters
-     * @param py0 y coordinate of robot initial position in meters
-     * @param theta0 initial heading in radians
-     *               where 0=judge side, PI/2=right side, PI=audience side, 3PI/2=left side
-     * @param lx  Lateral distance from wheel axle to imu center in meters
-     * @param ly Lateral distance from wheel axle to imu center in meters
-     * @param r radius of wheel
      */
-    public void init(double T,double px0,double py0,double theta0,double lx,double ly,double r){
-        // Save the lx and ly, as we'll need them when calculating the measurements
-        this.lx = lx;
-        this.ly = ly;
-        radius_wheel = r;
+    public void init(KalmanParameters parameters){
+        mKalmanParameters = parameters;
 
         final double[][] A_MATRIX = {
-                {1,0,T,0,0,0},
-                {0,1,0,T,0,0},
+                {1,0,mKalmanParameters.T,0,0,0},
+                {0,1,0,mKalmanParameters.T,0,0},
                 {0,0,1,0,0,0},
                 {0,0,0,1,0,0},
                 {0,0,0,0,1,0},
-                {0,0,0,0,T,1} };
+                {0,0,0,0,mKalmanParameters.T,1} };
 
         //-------------------------------------------------------------
         // Q process noise covariance matrix
         //-------------------------------------------------------------
 
         final double[][] Q_MATRIX = {
-                {VAR_POSITION,0,0,0,0,0},
-                {0, VAR_POSITION,0,0,0,0},
-                {0,0, VAR_VELOCITY,0,0,0},
-                {0,0,0, VAR_VELOCITY,0,0},
-                {0,0,0,0,VAR_W,0},
-                {0,0,0,0,0,VAR_THETA} };
+                {mKalmanParameters.VAR_POSITION,0,0,0,0,0},
+                {0, mKalmanParameters.VAR_POSITION,0,0,0,0},
+                {0,0, mKalmanParameters.VAR_VELOCITY,0,0,0},
+                {0,0,0, mKalmanParameters.VAR_VELOCITY,0,0},
+                {0,0,0,0,mKalmanParameters.VAR_W,0},
+                {0,0,0,0,0,mKalmanParameters.VAR_THETA} };
 
         //-------------------------------------------------------------
         // R measurement noise covariance matrix
@@ -101,7 +103,7 @@ public class KalmanTracker {
         final double R2_VAR_W_WHL = Math.pow(WHEEL_RADIUS,2.0d) * Math.pow(SIGMA_W_WHL,2.0d);
         final double VAR_VX = R2_VAR_W_WHL;
         final double VAR_VY = R2_VAR_W_WHL;
-        final double VAR_W_WHL = R2_VAR_W_WHL/((Math.pow(ly,2.0d) + Math.pow(ly,2.0d)));
+        final double VAR_W_WHL = R2_VAR_W_WHL/((Math.pow(mKalmanParameters.LY,2.0d) + Math.pow(mKalmanParameters.LX,2.0d)));
         final double SIGMA_W_IMU = 0.1;
         final double VAR_W_IMU = Math.pow(SIGMA_W_IMU,2.0d);
         final double[][] R_MATRIX = {
@@ -128,7 +130,7 @@ public class KalmanTracker {
         mFilter.configure(A,Q,H);
 
         // Initialize the state estimate vector to the supplied position and orientation
-        DMatrixRMaj xhat = new DMatrixRMaj(new double[][] {{px0},{py0},{0d},{0d},{0d},{theta0}});
+        DMatrixRMaj xhat = new DMatrixRMaj(new double[][] {{mKalmanParameters.PX0},{mKalmanParameters.PY0},{0d},{0d},{0d},{mKalmanParameters.THETA0}});
         // Initialize P to the process noise covariance matrix
         DMatrixRMaj p = new DMatrixRMaj(Q_MATRIX);
 
@@ -149,10 +151,10 @@ public class KalmanTracker {
                                   double w_rr,
                                   double wz_imu) {
         // Compute the robot velocity from the wheel velocities
-        double rover4 = radius_wheel/4.0d;
+        double rover4 = mKalmanParameters.WHEEL_RADIUS/4.0d;
         double vx = rover4*(w_lf+w_rf-w_lr-w_rr);
         double vy = rover4*(w_lf+w_rf+w_lr+w_rr);
-        double wzw = rover4*(w_lf+w_rf+w_lr+w_rr)/(lx+ly);
+        double wzw = rover4*(-w_lf+w_rf-w_lr+w_rr)/(mKalmanParameters.LX+mKalmanParameters.LY);
 
         // Have to negate the wzw and wz_imu because we want to use left-handed orientation angles
         // instead of the right-handed angles produced by the measurements
@@ -202,7 +204,7 @@ public class KalmanTracker {
         xhat.set(XHAT_PX_INDEX,0,px);
         // And reset the px variance to the default
         DMatrixRMaj p = new DMatrixRMaj(mFilter.getCovariance());
-        p.set(XHAT_PX_INDEX,XHAT_PX_INDEX, VAR_POSITION);
+        p.set(XHAT_PX_INDEX,XHAT_PX_INDEX, mKalmanParameters.VAR_POSITION);
         mFilter.setState(xhat,p);
     }
     /**
@@ -214,7 +216,7 @@ public class KalmanTracker {
         xhat.set(XHAT_PY_INDEX,0,py);
         // And reset the px variance to the default
         DMatrixRMaj p = new DMatrixRMaj(mFilter.getCovariance());
-        p.set(XHAT_PY_INDEX,XHAT_PY_INDEX, VAR_POSITION);
+        p.set(XHAT_PY_INDEX,XHAT_PY_INDEX, mKalmanParameters.VAR_POSITION);
         mFilter.setState(xhat,p);
     }
     /**
@@ -226,7 +228,7 @@ public class KalmanTracker {
         xhat.set(XHAT_THETA_INDEX,0,theta);
         // And reset the px variance to the default
         DMatrixRMaj p = new DMatrixRMaj(mFilter.getCovariance());
-        p.set(XHAT_THETA_INDEX,XHAT_THETA_INDEX, VAR_THETA);
+        p.set(XHAT_THETA_INDEX,XHAT_THETA_INDEX, mKalmanParameters.VAR_THETA);
         mFilter.setState(xhat,p);
     }
 

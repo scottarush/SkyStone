@@ -52,7 +52,7 @@ public class GuidanceController {
          * Minimum distance in meters for steering mode operation.  Below this distance
          * steering mode will automatically transition to forward approach mode.
          */
-        public double steeringModeMinimumDistance = 2.0d;
+        public double steeringModeMinimumDistance = 0.4d;
 
         /**
          * Minimum angle threshold for transition from rotation to steering mode.

@@ -22,10 +22,7 @@ public class FilterDevelopmentOpMode extends OpMode{
             "mode","rot_cmd", "steerpwr_cmd", "steer_cmd", "strght_cmd"};
     private LogFile mLogFile;
 
-    public static final double INIT_PX = 0D;
-    public static final double INIT_PY = 0D;
-    public static final double INIT_HEADING = 0;
-    public static final double T = 0.050d;
+     public static final double T = 0.050d;
     private static final int T_NS = Math.round((float)(T * 1e9d));
 
     private int mReadWheelSpeedCount = 0;
@@ -67,10 +64,9 @@ public class FilterDevelopmentOpMode extends OpMode{
         // Initialize the KalmanTracker
         mKalmanTracker = new KalmanTracker();
         KalmanTracker.KalmanParameters params = new KalmanTracker.KalmanParameters();
-        params.T = 0.050;
-        params.PX0 = INIT_PX;
-        params.PY0 = INIT_PY;
-        params.THETA0 = INIT_HEADING;
+        params.PX0 = 0d;
+        params.PY0 = 0d;
+        params.THETA0 = Math.PI;
         params.LX = BaseSpeedBot.LX;
         params.LY = BaseSpeedBot.LY;
         params.WHEEL_RADIUS = BaseSpeedBot.WHEEL_RADIUS;
@@ -88,7 +84,7 @@ public class FilterDevelopmentOpMode extends OpMode{
 
         // Set the target and current position
  //       mGuidanceController.setTargetPosition(0d   , 1.22d);
-        mGuidanceController.setTargetPosition(0d   , 1.22d/2d);
+        mGuidanceController.setTargetPosition(0d   , 1.22d);
     }
 
     @Override
