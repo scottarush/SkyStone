@@ -197,11 +197,7 @@ public class GuidanceController {
                 // Otherwise, drop through to continue in rotation mode
                 break;
             case STRAIGHT_MODE:
-                distance = getStraightModeDistanceToTarget();
-                 if (distance <= mGCParameters.straightModeProjectionStopDistance){
-                    mMode = STOPPED;
-                }
-                break;
+                 break;
             case STOPPED:
                 break;
         }
@@ -310,9 +306,15 @@ public class GuidanceController {
     private void updateStraightMode(){
         // Look for the distance to target and straight mode delta to determine when to stop
         double straightModeDistance = getStraightModeDistanceToTarget();
+        double slowDownDistance = mGCParameters.straightModeProjectionStopDistance *5;
         if (straightModeDistance <= mGCParameters.straightModeProjectionStopDistance){
             mStraightCommand = 0d;
             mMode = STOPPED;
+        }
+        else if (straightModeDistance <= slowDownDistance){
+            mStraightModePID.setMaxIOutput(0.001d);
+            // Invert the command to go forward
+            mStraightCommand *= -1d;
         }
         else{
             mStraightCommand = mStraightModePID.getOutput(straightModeDistance,0d);
