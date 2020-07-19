@@ -67,7 +67,7 @@ public class FilterDevelopmentOpMode extends OpMode{
         mKalmanParameters = new KalmanTracker.KalmanParameters();
         mKalmanParameters.PX0 = 0d;
         mKalmanParameters.PY0 = 0d;
-        mKalmanParameters.THETA0 = 0;
+        mKalmanParameters.THETA0 = 0d;
         mKalmanParameters.LX = BaseSpeedBot.LX;
         mKalmanParameters.LY = BaseSpeedBot.LY;
         mKalmanParameters.WHEEL_RADIUS = BaseSpeedBot.WHEEL_RADIUS;
@@ -84,7 +84,7 @@ public class FilterDevelopmentOpMode extends OpMode{
         mLogFile.openFile();
 
         // Set the target and current position
-        mGuidanceController.setTargetPosition(29d/39.37d , 31d/39.37d);
+        mGuidanceController.setTargetPosition(0d,1.21d);
     }
 
     @Override
@@ -125,14 +125,6 @@ public class FilterDevelopmentOpMode extends OpMode{
             updateTracker();
             mLastSystemTimeNS = systemTime;   // save for next loop
 
-//            double xleft = gamepad1.left_stick_x;
-//            double yleft = -gamepad1.left_stick_y;
-//            double xright = gamepad1.right_stick_x;
-//            double yright = -gamepad1.right_stick_y;
-//
-//            // the speeds with the new gamepad inputs
-//            mSpeedBot.getDrivetrain().setTankDriveJoystickInput(xleft,yleft,xright,yright);
-//            logData();
 
             if (mSpeedBot.isIMUInitialized()) {
                 // And update the guidance controller commnd
