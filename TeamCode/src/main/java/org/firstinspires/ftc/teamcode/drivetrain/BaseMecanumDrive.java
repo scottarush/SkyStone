@@ -371,5 +371,8 @@ public abstract class BaseMecanumDrive extends Drivetrain implements IGuidanceCo
             mRRMotor.setMode(mode);
     }
 
-
+    @Override
+    public void rotationComplete() {
+        stop();
+    }
 }

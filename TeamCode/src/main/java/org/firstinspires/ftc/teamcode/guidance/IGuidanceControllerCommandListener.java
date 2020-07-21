@@ -20,4 +20,8 @@ public interface IGuidanceControllerCommandListener {
      */
     void setRotationCommand(double rotation);
 
+    /**
+     * called when a setTargetHeading triggered rotation is complete.
+     */
+    void rotationComplete();
 }

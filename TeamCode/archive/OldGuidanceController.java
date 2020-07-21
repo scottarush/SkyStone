@@ -67,7 +67,7 @@ public class GuidanceController {
         /**
          * Minimum angle threshold for rotation mode to complete
          */
-        public double rotationModeStopThreshold = Math.PI/128;
+        public double rotationModeStopThreshold = Math.PI/64;
         public double rotationModePropGain = 0.3d;
         public double rotationModeIntegGain = 0.005d;
         public double rotationModeDerivGain = 0.5d;
@@ -151,9 +151,12 @@ public class GuidanceController {
         mTargetHeading = heading;
         mRotationModePID.reset();
     }
+    /**
+     *
+     */
 
     /**
-     * adds  listener for guidance controller command output and maneuver notifications.
+     * adds  listener for guidance controller command output.
      */
     public void addGuidanceControllerCommandListener(IGuidanceControllerCommandListener listener){
         if (mCommandListeners.contains(listener)){
@@ -180,21 +183,36 @@ public class GuidanceController {
                 }
                 break;
             case ROTATION_MODE:
-                // Compute current heading to target error threshold to decide if we need to stop
-                double error = mKalmanTracker.getEstimatedHeading()-mTargetHeading;
-                if (Math.abs(error) <= mGCParameters.rotationModeStopThreshold){
-                    mMode = STOPPED;
-                    // Notify listeners that rotation is complete.
-                    for (Iterator<IGuidanceControllerCommandListener> iter = mCommandListeners.iterator(); iter.hasNext(); ) {
-                        IGuidanceControllerCommandListener listener = iter.next();
-                        listener.rotationComplete();
-                        listener.setStraightCommand(0d);
-                        listener.setRotationCommand(0d);
+                // Compute delta angle to the target
+                double angle = getHeadingToTargetDeltaAngle();
+                if (Math.abs(angle) <= mGCParameters.rotationModeStopThreshold){
+                    // Transition to either steering or straight depending upon distance to target
+                    distance = getDistanceToTarget();
+                    if (distance <= mGCParameters.steeringModeMinimumDistance){
+                        if (distance <= getStraightModeDistanceToTarget()){
+                            // As close as we can get so stop
+                            mMode = STOPPED;
+                        }
+                        else{
+                            // steer the rest of the way
+                            mMode = STEERING_MODE;
+                            mSteeringModePowerPID.reset();
+                            mSteeringModeSteeringPID.reset();
+                        }
+                    }
+                    else{
+                        // Otherwise, too close for steer mode so go straight the
+                        // rest of the way.
+                        mMode = STRAIGHT_MODE;
+                        mStraightModePID.reset();
                     }
                 }
+                // Otherwise, drop through to continue in rotation mode
+                break;
+            case HEADING_MODE:'
 
                 break;
-             case STRAIGHT_MODE:
+            case STRAIGHT_MODE:
                 break;
             case STOPPED:
                 break;
@@ -214,7 +232,6 @@ public class GuidanceController {
                 for(Iterator<IGuidanceControllerCommandListener> iter=mCommandListeners.iterator();iter.hasNext();){
                     IGuidanceControllerCommandListener listener = iter.next();
                     listener.setStraightCommand(0d);
-                    listener.setRotationCommand(0d);
                 }
                 break;
         }
@@ -288,10 +305,11 @@ public class GuidanceController {
         return projection;
     }
     /**
-     * update function used to rotate toward the current target heading.
+     * update function used to rotate toward the current target position. This mode will only rotate
+     * the robot, not move it forward or backward.
      */
     private void updateRotationMode(){
-        mRotationCommand = mRotationModePID.getOutput(mKalmanTracker.getEstimatedHeading(),mTargetHeading);
+        mRotationCommand = mRotationModePID.getOutput(mKalmanTracker.getEstimatedHeading(),getAngleToTarget());
         for(Iterator<IGuidanceControllerCommandListener> iter=mCommandListeners.iterator();iter.hasNext();){
             IGuidanceControllerCommandListener listener = iter.next();
             listener.setRotationCommand(mRotationCommand);

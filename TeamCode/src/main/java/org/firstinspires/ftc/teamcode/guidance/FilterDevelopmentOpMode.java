@@ -32,7 +32,6 @@ public class FilterDevelopmentOpMode extends OpMode{
 
     private KalmanTracker mKalmanTracker = null;
     private KalmanTracker.KalmanParameters mKalmanParameters = null;
-    private Acceleration mIMUAcceleration;
     private Orientation mIMUOrientation;
     private long mLastSystemTimeNS = 0;
     private long mElapsedTimeNS = 0;
@@ -84,8 +83,8 @@ public class FilterDevelopmentOpMode extends OpMode{
         mLogFile.openFile();
 
         // Set the target and current position
-        mGuidanceController.setTargetPosition(0d,1.21d);
-        
+ //       mGuidanceController.setTargetPosition(0d,1.21d);
+        mGuidanceController.setTargetHeading(Math.PI/2);
     }
 
     @Override
