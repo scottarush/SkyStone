@@ -85,6 +85,7 @@ public class FilterDevelopmentOpMode extends OpMode{
 
         // Set the target and current position
         mGuidanceController.setTargetPosition(0d,1.21d);
+        
     }
 
     @Override

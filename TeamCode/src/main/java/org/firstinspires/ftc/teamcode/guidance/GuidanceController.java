@@ -137,7 +137,9 @@ public class GuidanceController {
             mMode = ROTATION_MODE;
         }
     }
-
+    public void rotateToHeading(double heading){
+        mMode = ROTATION_MODE;
+    }
     /**
      *
      */
