@@ -1,7 +1,5 @@
 package org.firstinspires.ftc.teamcode.guidance;
 
-import android.util.Log;
-
 import org.firstinspires.ftc.teamcode.util.LogFile;
 import org.firstinspires.ftc.teamcode.util.MiniPID;
 
@@ -67,7 +65,11 @@ public class GuidanceController {
         /**
          * Minimum angle threshold for rotation mode to complete
          */
-        public double rotationModeStopThreshold = Math.PI/128;
+        public double rotationModeStopAngleError = 3d*Math.PI/180;
+        /**
+         * Angular velocity threshold to stop in radians per sec.
+         */
+        public double rotationModeStopAngularVelocityThreshold = 0.5d*Math.PI/180;
         public double rotationModePropGain = 0.3d;
         public double rotationModeIntegGain = 0.005d;
         public double rotationModeDerivGain = 0.5d;
@@ -182,14 +184,17 @@ public class GuidanceController {
             case ROTATION_MODE:
                 // Compute current heading to target error threshold to decide if we need to stop
                 double error = mKalmanTracker.getEstimatedHeading()-mTargetHeading;
-                if (Math.abs(error) <= mGCParameters.rotationModeStopThreshold){
-                    mMode = STOPPED;
-                    // Notify listeners that rotation is complete.
-                    for (Iterator<IGuidanceControllerCommandListener> iter = mCommandListeners.iterator(); iter.hasNext(); ) {
-                        IGuidanceControllerCommandListener listener = iter.next();
-                        listener.rotationComplete();
-                        listener.setStraightCommand(0d);
-                        listener.setRotationCommand(0d);
+                if (Math.abs(error) <= mGCParameters.rotationModeStopAngleError){
+                    // Now check if the angular velocity has slowed enough to stop
+                    if (Math.abs(mKalmanTracker.getEstimatedAngularVelocity()) <= mGCParameters.rotationModeStopAngularVelocityThreshold) {
+                        mMode = STOPPED;
+                        // Notify listeners that rotation is complete.
+                        for (Iterator<IGuidanceControllerCommandListener> iter = mCommandListeners.iterator(); iter.hasNext(); ) {
+                            IGuidanceControllerCommandListener listener = iter.next();
+                            listener.rotationComplete();
+                            listener.setStraightCommand(0d);
+                            listener.setRotationCommand(0d);
+                        }
                     }
                 }
 
