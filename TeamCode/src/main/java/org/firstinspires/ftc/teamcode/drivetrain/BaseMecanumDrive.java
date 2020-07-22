@@ -32,7 +32,7 @@ package org.firstinspires.ftc.teamcode.drivetrain;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
-import org.firstinspires.ftc.teamcode.guidance.IGuidanceControllerCommandListener;
+import org.firstinspires.ftc.teamcode.guidance.IGuidanceControllerListener;
 import org.firstinspires.ftc.teamcode.util.LogFile;
 
 import java.util.ArrayList;
@@ -54,7 +54,7 @@ import java.util.ArrayList;
  * Motor channel:  Right rear drive motor:   "r"
  *
  */
-public abstract class BaseMecanumDrive extends Drivetrain implements IGuidanceControllerCommandListener {
+public abstract class BaseMecanumDrive extends Drivetrain implements IGuidanceControllerListener {
 
     protected DcMotor mLFMotor = null;
     protected DcMotor mRFMotor = null;

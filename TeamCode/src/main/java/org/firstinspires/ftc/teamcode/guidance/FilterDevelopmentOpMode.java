@@ -159,7 +159,7 @@ public class FilterDevelopmentOpMode extends OpMode{
         // Kalman outputs
         logRecord[logIndex++] = String.format("%4.2f",mKalmanTracker.getEstimatedXPosition());
         logRecord[logIndex++] = String.format("%4.2f",mKalmanTracker.getEstimatedYPosition());
-        logRecord[logIndex++] = String.format("%4.2f",mKalmanTracker.getEstimatedAngularVelocity());
+        logRecord[logIndex++] = String.format("%4.2f",mKalmanTracker.getEstimatedAngularVelocity()*180d/Math.PI);
         logRecord[logIndex++] = String.format("%5.2f",mKalmanTracker.getEstimatedHeading()*180d/Math.PI);
         logRecord[logIndex++] = mGuidanceController.getModeString();
         logRecord[logIndex++] = String.format("%4.2f",mGuidanceController.getRotationCommand());

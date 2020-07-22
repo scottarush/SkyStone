@@ -38,7 +38,7 @@ public class GuidanceController {
     private static boolean ENABLE_LOGGING = false;
     public static final String[] LOG_COLUMNS = {"px","py","theta","distance","projection","angle"};
 
-    private ArrayList<IGuidanceControllerCommandListener> mCommandListeners = new ArrayList<>();
+    private ArrayList<IGuidanceControllerListener> mCommandListeners = new ArrayList<>();
 
     private GuidanceControllerParameters mGCParameters = new GuidanceControllerParameters();
 
@@ -69,10 +69,10 @@ public class GuidanceController {
         /**
          * Angular velocity threshold to stop in radians per sec.
          */
-        public double rotationModeStopAngularVelocityThreshold = 0.5d*Math.PI/180;
-        public double rotationModePropGain = 0.3d;
-        public double rotationModeIntegGain = 0.005d;
-        public double rotationModeDerivGain = 0.5d;
+        public double rotationModeStopAngularVelocityThreshold = 10.0d*Math.PI/180;
+        public double rotationModePropGain = 0.05d;
+        public double rotationModeIntegGain = 0.1d;
+        public double rotationModeDerivGain = 2d;
 
         /**
          * Minimum delta between distance to target and straight mode distance
@@ -157,7 +157,7 @@ public class GuidanceController {
     /**
      * adds  listener for guidance controller command output and maneuver notifications.
      */
-    public void addGuidanceControllerCommandListener(IGuidanceControllerCommandListener listener){
+    public void addGuidanceControllerCommandListener(IGuidanceControllerListener listener){
         if (mCommandListeners.contains(listener)){
             return;
         }
@@ -189,8 +189,8 @@ public class GuidanceController {
                     if (Math.abs(mKalmanTracker.getEstimatedAngularVelocity()) <= mGCParameters.rotationModeStopAngularVelocityThreshold) {
                         mMode = STOPPED;
                         // Notify listeners that rotation is complete.
-                        for (Iterator<IGuidanceControllerCommandListener> iter = mCommandListeners.iterator(); iter.hasNext(); ) {
-                            IGuidanceControllerCommandListener listener = iter.next();
+                        for (Iterator<IGuidanceControllerListener> iter = mCommandListeners.iterator(); iter.hasNext(); ) {
+                            IGuidanceControllerListener listener = iter.next();
                             listener.rotationComplete();
                             listener.setStraightCommand(0d);
                             listener.setRotationCommand(0d);
@@ -216,8 +216,8 @@ public class GuidanceController {
                 updateStraightMode();
                 break;
             case STOPPED:
-                for(Iterator<IGuidanceControllerCommandListener> iter=mCommandListeners.iterator();iter.hasNext();){
-                    IGuidanceControllerCommandListener listener = iter.next();
+                for(Iterator<IGuidanceControllerListener> iter = mCommandListeners.iterator(); iter.hasNext();){
+                    IGuidanceControllerListener listener = iter.next();
                     listener.setStraightCommand(0d);
                     listener.setRotationCommand(0d);
                 }
@@ -246,8 +246,8 @@ public class GuidanceController {
         // Steering  command is computed using angleToTarget as the new setpoint and
         // the current heading
         mSteeringCommand = mSteeringModeSteeringPID.getOutput(mKalmanTracker.getEstimatedHeading(),angleToTarget);
-        for(Iterator<IGuidanceControllerCommandListener> iter=mCommandListeners.iterator();iter.hasNext();){
-            IGuidanceControllerCommandListener listener = iter.next();
+        for(Iterator<IGuidanceControllerListener> iter = mCommandListeners.iterator(); iter.hasNext();){
+            IGuidanceControllerListener listener = iter.next();
             listener.setSteeringCommand(mSteeringCommand, mSteeringPowerCommand);
         }
     }
@@ -297,8 +297,8 @@ public class GuidanceController {
      */
     private void updateRotationMode(){
         mRotationCommand = mRotationModePID.getOutput(mKalmanTracker.getEstimatedHeading(),mTargetHeading);
-        for(Iterator<IGuidanceControllerCommandListener> iter=mCommandListeners.iterator();iter.hasNext();){
-            IGuidanceControllerCommandListener listener = iter.next();
+        for(Iterator<IGuidanceControllerListener> iter = mCommandListeners.iterator(); iter.hasNext();){
+            IGuidanceControllerListener listener = iter.next();
             listener.setRotationCommand(mRotationCommand);
         }
     }
@@ -324,8 +324,8 @@ public class GuidanceController {
             // Invert the command to go forward
             mStraightCommand *= -1d;
         }
-        for(Iterator<IGuidanceControllerCommandListener> iter=mCommandListeners.iterator();iter.hasNext();){
-            IGuidanceControllerCommandListener listener = iter.next();
+        for(Iterator<IGuidanceControllerListener> iter = mCommandListeners.iterator(); iter.hasNext();){
+            IGuidanceControllerListener listener = iter.next();
             listener.setStraightCommand(mStraightCommand);
         }
 

@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode.guidance;
 
-public interface IGuidanceControllerCommandListener {
+public interface IGuidanceControllerListener {
     /**
      * Sets a straight line command to the motors either forward or backward
      * @param power -1.0..1.0 backward to forward
