@@ -70,9 +70,9 @@ public class GuidanceController {
          * Angular velocity threshold to stop in radians per sec.
          */
         public double rotationModeStopAngularVelocityThreshold = 10.0d*Math.PI/180;
-        public double rotationModePropGain = 0.05d;
-        public double rotationModeIntegGain = 0.1d;
-        public double rotationModeDerivGain = 2d;
+        public double rotationModePropGain = 0.5d;
+        public double rotationModeIntegGain = 0d;
+        public double rotationModeDerivGain = 0d;
 
         /**
          * Minimum delta between distance to target and straight mode distance
