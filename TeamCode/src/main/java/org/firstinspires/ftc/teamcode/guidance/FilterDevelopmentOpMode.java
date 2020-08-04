@@ -19,10 +19,10 @@ public class FilterDevelopmentOpMode extends OpMode{
     public static final String LOG_FILENAME = "kflog.csv";
     public static final String[] LOG_COLUMNS = {"time", "w_lf", "w_rf", "w_lr", "w_rr", "theta_imu",
             "tgt_ang", "trgt_dist", "kf_px", "kf_py", "kf_wz", "kf_heading",
-            "mode","rot_cmd", "steerpwr_cmd", "steer_cmd", "strght_cmd"};
+            "mode","rot_cmd", "steering_cmd","cmd_pwr"};
     private LogFile mLogFile;
 
-     public static final double T = 0.050d;
+    public static final double T = 0.050d;
     private static final int T_NS = Math.round((float)(T * 1e9d));
 
     private int mReadWheelSpeedCount = 0;
@@ -82,9 +82,10 @@ public class FilterDevelopmentOpMode extends OpMode{
         mLogFile = new LogFile(LOG_PATHNAME, LOG_FILENAME, LOG_COLUMNS);
         mLogFile.openFile();
 
-        // Set the target and current position
- //       mGuidanceController.setTargetPosition(0d,1.21d);
-        mGuidanceController.setTargetHeading(Math.PI/2);
+        // Set the command to the bot
+        //mGuidanceController.setTargetHeading(Math.PI/2);
+
+        mGuidanceController.doPathFollow(0,1.0d,1.0d);
     }
 
     @Override
@@ -153,8 +154,6 @@ public class FilterDevelopmentOpMode extends OpMode{
         // IMU data
         double theta_imu = mIMUOrientation.firstAngle + mKalmanParameters.THETA0;
         logRecord[logIndex++] = String.format("%4.2f",theta_imu*180d/Math.PI);
-        logRecord[logIndex++] = String.format("%5.2f",mGuidanceController.getHeadingToTargetDeltaAngle()*180d/Math.PI);
-        logRecord[logIndex++] = String.format("%4.3f",mGuidanceController.getDistanceToTarget());
 
         // Kalman outputs
         logRecord[logIndex++] = String.format("%4.2f",mKalmanTracker.getEstimatedXPosition());
@@ -163,10 +162,8 @@ public class FilterDevelopmentOpMode extends OpMode{
         logRecord[logIndex++] = String.format("%5.2f",mKalmanTracker.getEstimatedHeading()*180d/Math.PI);
         logRecord[logIndex++] = mGuidanceController.getModeString();
         logRecord[logIndex++] = String.format("%4.2f",mGuidanceController.getRotationCommand());
-        logRecord[logIndex++] = String.format("%4.2f",mGuidanceController.getSteeringPowerCommand());
         logRecord[logIndex++] = String.format("%4.2f",mGuidanceController.getSteeringCommand());
-        logRecord[logIndex++] = String.format("%4.2f",mGuidanceController.getStraightCommand());
-
+        logRecord[logIndex++] = String.format("%4.2f",mGuidanceController.getCommandPower());
         mLogFile.writeLogRow(logRecord);
 
     }
