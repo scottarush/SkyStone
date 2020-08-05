@@ -1,7 +1,5 @@
 package org.firstinspires.ftc.teamcode.guidance;
 
-import android.graphics.PointF;
-
 import org.firstinspires.ftc.teamcode.util.LogFile;
 import org.firstinspires.ftc.teamcode.util.MiniPID;
 
@@ -30,12 +28,12 @@ public class GuidanceController {
     }
 
     private MiniPID mRotationModePID = null;
-    private MiniPID mPathModePID = null;
-
+    private MiniPID mPathSteeringPID = null;
+    private MiniPID mPathPowerPID = null;
     private double mRotationCommand = 0d;
-    private double mPathCommand = 0d;
+    private double mPathSteeringCommand = 0d;
 
-    private double mCommandPower = 0d;
+    private double mPathPowerCommand = 0d;
 
     public static final int STOPPED = 0;
     public static final int ROTATION_MODE = 1;
@@ -74,10 +72,14 @@ public class GuidanceController {
          */
         public double pathModeMaxEntryAngle = 20.0d*Math.PI/180;
 
-        public double pathModePropGain = 0.05d;
-        public double pathModeIntegGain = 0.1d;
-        public double pathModeDerivGain = 2d;
+        public double pathModeSteeringPropGain = 0.1d;
+        public double pathModeSteeringIntegGain = 0d;
+        public double pathModeSteeringDerivGain = 0d;
 
+        public double pathModePowerPropGain = 0.7d;
+        public double pathModePowerIntegGain = 0.01d;
+        public double pathModePowerMaxIntegOutput = 0.2d;
+        public double pathModePowerDerivGain = 0d;
     }
 
     public GuidanceController(GuidanceControllerParameters gcParameters, KalmanTracker kalmanTracker){
@@ -88,9 +90,12 @@ public class GuidanceController {
         mRotationModePID = new MiniPID(mGCParameters.rotationModePropGain,mGCParameters.rotationModeIntegGain,mGCParameters.rotationModeDerivGain);
         mRotationModePID.setOutputLimits(-1.0,1.0d);
 
-        // Straight controller limited to -1.0 to 1.0
-        mPathModePID = new MiniPID(mGCParameters.pathModePropGain,mGCParameters.pathModeIntegGain,mGCParameters.pathModeDerivGain);
-        mPathModePID.setOutputLimits(-1.0,1.0d);
+        mPathSteeringPID = new MiniPID(mGCParameters.pathModeSteeringPropGain,mGCParameters.pathModeSteeringIntegGain,mGCParameters.pathModeSteeringDerivGain);
+        mPathSteeringPID.setOutputLimits(-1.0,1.0d);
+
+        mPathPowerPID = new MiniPID(mGCParameters.pathModePowerPropGain,mGCParameters.pathModePowerIntegGain,mGCParameters.pathModePowerDerivGain);
+        mPathPowerPID.setMaxIOutput(mGCParameters.pathModePowerMaxIntegOutput);
+        mPathPowerPID.setOutputLimits(0d,1.0d);
 
         if (ENABLE_LOGGING){
             mLogFile = new LogFile("/sdcard","gclog.csv",LOG_COLUMNS);
@@ -108,18 +113,16 @@ public class GuidanceController {
      * Starting point of the line is the current center of the robot.
      * @param px x coordinate of line terminus
      * @param py y coordinate of line terminus
-     * @param power power value to use duing path follow
      * @return true if successful, false if the current robot heading is beyond the maximum allowed entry angle (and must be rotated first)
      */
-    public boolean doPathFollow(double px,double py,double power){
+    public boolean doPathFollow(double px,double py){
         // Compute the heading angle of the robot relative to the point
         // TODO finish this
 
-        mCommandPower = power;
-
         mPathLineStart = new Point(mKalmanTracker.getEstimatedXPosition(),mKalmanTracker.getEstimatedYPosition());
         mPathLineEnd = new Point(px,py);
-        mPathModePID.reset();
+        mPathSteeringPID.reset();
+        mPathPowerPID.reset();
 
         // Stop the robot in case it was moving
         clearAllCommands();
@@ -237,23 +240,30 @@ public class GuidanceController {
         }
         if (stop){
             // Set path and power to 0 and drop through to send command
-            mPathCommand = 0d;
-            mCommandPower = 0d;
+            mPathSteeringCommand = 0d;
+            mPathPowerCommand = 0d;
+            mMode = STOPPED;
         }
         else {
-            // Not yet at the target so find rotated xintercept with rotated line
+            // Not yet at the target so control steering using the angle between the rotated
+            // heading (which is now = 0) and the angle of the line (which is the arctan
+            // of the slope.
             // Line formula:  y = mx + b where m = (endy-starty)/(endx-startx) and b = starty
-            // Solve for x:  x=(y-b)m
             double m = (rotatedEnd.y - rotatedStart.y) / (rotatedEnd.x - rotatedStart.x);
-            double b = rotatedStart.y;
-            double xintercept = (robotPos.y - b) / m;
-            // And compute command to drive robot toward the rotated xintercept
-            mPathCommand = mPathModePID.getOutput(rotRobotPos.x, xintercept);
+            // Angle is negative because our steering command is + to the right.
+            double angle = -Math.atan(m);
+            mPathSteeringCommand = mPathSteeringPID.getOutput(angle, 0);
+            // And control the power based on the distance to the target's y coordinate
+            mPathPowerCommand = mPathPowerPID.getOutput(rotRobotPos.y,rotatedEnd.y);
         }
 
         for(Iterator<IGuidanceControllerListener> iter = mCommandListeners.iterator(); iter.hasNext();){
             IGuidanceControllerListener listener = iter.next();
-            listener.setSteeringCommand(mPathCommand,mCommandPower);
+            listener.setSteeringCommand(mPathSteeringCommand, mPathPowerCommand);
+            if (mMode == STOPPED){
+                // notify that the path follow was complete
+                listener.pathFollowComplete();
+            }
         }
     }
 
@@ -267,13 +277,13 @@ public class GuidanceController {
      * returns the steering command for logging
      */
     public double getSteeringCommand(){
-        return mPathCommand;
+        return mPathSteeringCommand;
     }
     /**
      * returns the power command for logging
      */
     public double getCommandPower(){
-        return mCommandPower;
+        return mPathPowerCommand;
     }
     /**
      * returns the current mode as a string for logging.

@@ -18,7 +18,7 @@ public class FilterDevelopmentOpMode extends OpMode{
 
     public static final String LOG_FILENAME = "kflog.csv";
     public static final String[] LOG_COLUMNS = {"time", "w_lf", "w_rf", "w_lr", "w_rr", "theta_imu",
-            "tgt_ang", "trgt_dist", "kf_px", "kf_py", "kf_wz", "kf_heading",
+            "kf_px", "kf_py", "kf_wz", "kf_heading",
             "mode","rot_cmd", "steering_cmd","cmd_pwr"};
     private LogFile mLogFile;
 
@@ -85,7 +85,33 @@ public class FilterDevelopmentOpMode extends OpMode{
         // Set the command to the bot
         //mGuidanceController.setTargetHeading(Math.PI/2);
 
-        mGuidanceController.doPathFollow(0,1.0d,1.0d);
+        mGuidanceController.setTargetHeading(Math.PI/2);
+        mGuidanceController.addGuidanceControllerCommandListener(new IGuidanceControllerListener() {
+            @Override
+            public void setStraightCommand(double power) {
+
+            }
+
+            @Override
+            public void setSteeringCommand(double steering, double power) {
+
+            }
+
+            @Override
+            public void setRotationCommand(double rotation) {
+
+            }
+
+            @Override
+            public void rotationComplete() {
+                mGuidanceController.doPathFollow(0d,1.22d);
+            }
+
+            @Override
+            public void pathFollowComplete() {
+
+            }
+        });
     }
 
     @Override

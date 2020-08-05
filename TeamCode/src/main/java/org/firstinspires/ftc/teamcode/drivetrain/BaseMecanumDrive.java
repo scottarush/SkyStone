@@ -204,7 +204,7 @@ public abstract class BaseMecanumDrive extends Drivetrain implements IGuidanceCo
 
     /**
      * Sets a composite steering command to the motors with both steering and power input
-     * @param steering 0 = straight ahead, +1.0 max left, -1.0 max right
+     * @param steering 0 = straight ahead, -1.0 max left, +1.0 max right
      * @param power -1.0..1.0 backward to forward
      */
     public void setSteeringCommand(double steering,double power){
@@ -216,10 +216,10 @@ public abstract class BaseMecanumDrive extends Drivetrain implements IGuidanceCo
         }
         double powerAbs = Math.abs(power);
         double steering_gain = 2.0d;
-        motorPower[0] = powerAbs* limitUnity(1.0d - steering_gain*steering);
-        motorPower[1] = powerAbs* limitUnity(1.0d + steering_gain*steering);
-        motorPower[2] = powerAbs* limitUnity(1.0d - steering_gain*steering);
-        motorPower[3] = powerAbs* limitUnity(1.0d + steering_gain*steering);
+        motorPower[0] = powerAbs* limitUnity(1.0d + steering_gain*steering);
+        motorPower[1] = powerAbs* limitUnity(1.0d - steering_gain*steering);
+        motorPower[2] = powerAbs* limitUnity(1.0d + steering_gain*steering);
+        motorPower[3] = powerAbs* limitUnity(1.0d - steering_gain*steering);
         for(int i=0;i < mMotorList.size();i++){
             mMotorList.get(i).setPower(motorPower[i]);
         }
@@ -373,6 +373,10 @@ public abstract class BaseMecanumDrive extends Drivetrain implements IGuidanceCo
 
     @Override
     public void rotationComplete() {
-        stop();
+    }
+
+    @Override
+    public void pathFollowComplete() {
+
     }
 }
