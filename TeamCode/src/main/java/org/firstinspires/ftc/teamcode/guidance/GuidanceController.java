@@ -66,6 +66,7 @@ public class GuidanceController {
         public double rotationModeStopAngularVelocityThreshold = 10.0d*Math.PI/180;
         public double rotationModePropGain = 0.5d;
         public double rotationModeIntegGain = 0d;
+        public double rotationModeMaxIntegGain = 0.2d;
         public double rotationModeDerivGain = 0d;
 
         /**
@@ -75,6 +76,7 @@ public class GuidanceController {
 
         public double pathModeSteeringPropGain = 0.1d;
         public double pathModeSteeringIntegGain = 0d;
+        public double pathModeSteeringMaxIntegOutput = 0.2d;
         public double pathModeSteeringDerivGain = 0d;
 
         public double pathModePowerPropGain = 0.7d;
@@ -89,9 +91,11 @@ public class GuidanceController {
 
         // Rotation controller limited to -1.0 to 1.0
         mRotationModePID = new MiniPID(mGCParameters.rotationModePropGain,mGCParameters.rotationModeIntegGain,mGCParameters.rotationModeDerivGain);
+        mRotationModePID.setMaxIOutput(mGCParameters.rotationModeMaxIntegGain);
         mRotationModePID.setOutputLimits(-1.0,1.0d);
 
         mPathSteeringPID = new MiniPID(mGCParameters.pathModeSteeringPropGain,mGCParameters.pathModeSteeringIntegGain,mGCParameters.pathModeSteeringDerivGain);
+        mPathSteeringPID.setMaxIOutput(mGCParameters.pathModeSteeringMaxIntegOutput);
         mPathSteeringPID.setOutputLimits(-1.0,1.0d);
 
         mPathPowerPID = new MiniPID(mGCParameters.pathModePowerPropGain,mGCParameters.pathModePowerIntegGain,mGCParameters.pathModePowerDerivGain);
@@ -117,11 +121,22 @@ public class GuidanceController {
      * @return true if successful, false if the current robot heading is beyond the maximum allowed entry angle (and must be rotated first)
      */
     public boolean doPathFollow(double px,double py){
-        // Compute the heading angle of the robot relative to the point
-        // TODO finish this
-
         mPathLineStart = new Point(mKalmanTracker.getEstimatedXPosition(),mKalmanTracker.getEstimatedYPosition());
         mPathLineEnd = new Point(px,py);
+
+        // Compute the heading angle of the robot relative to the end point and determine
+        // if we are within the maximum entry angle for stability
+        double theta = mKalmanTracker.getEstimatedHeading();
+        Point rotatedEnd = mPathLineEnd.rotate(theta);
+        Point rotatedStart = mPathLineStart.rotate(theta);
+        Point robotPos = new Point(mKalmanTracker.getEstimatedXPosition(),mKalmanTracker.getEstimatedYPosition());
+        double m = (rotatedEnd.y - rotatedStart.y) / (rotatedEnd.x - rotatedStart.x);
+        double angle = -Math.atan(m);
+        if (Math.abs(angle) >= mGCParameters.pathModeMaxEntryAngle){
+            // Robot heading is too far for stability so return flase
+            return false;
+        }
+        // Start the path follow
         mPathSteeringPID.reset();
         mPathPowerPID.reset();
 
@@ -139,6 +154,8 @@ public class GuidanceController {
     public void doRotation(double heading){
         mMode = ROTATION_MODE;
         mTargetHeading = heading;
+        // Clear all commands in case robot was moving
+        clearAllCommands();
         mRotationModePID.reset();
     }
 
@@ -219,6 +236,7 @@ public class GuidanceController {
             IGuidanceControllerCommandListener listener = iter.next();
             listener.setStraightCommand(0d);
             listener.setRotationCommand(0d);
+            listener.setSteeringCommand(0d,0d);
         }
     }
     /**
@@ -294,13 +312,13 @@ public class GuidanceController {
     /**
      * returns the steering command for logging
      */
-    public double getSteeringCommand(){
+    public double getPathSteeringCommand(){
         return mPathSteeringCommand;
     }
     /**
      * returns the power command for logging
      */
-    public double getCommandPower(){
+    public double getPathPowerCommand(){
         return mPathPowerCommand;
     }
     /**
