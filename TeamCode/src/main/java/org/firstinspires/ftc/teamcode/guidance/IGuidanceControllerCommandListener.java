@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode.guidance;
 
-public interface IGuidanceControllerListener {
+public interface IGuidanceControllerCommandListener {
     /**
      * Sets a straight line command to the motors either forward or backward
      * @param power -1.0..1.0 backward to forward
@@ -20,13 +20,4 @@ public interface IGuidanceControllerListener {
      */
     void setRotationCommand(double rotation);
 
-    /**
-     * called when a setTargetHeading triggered rotation is complete.
-     */
-    void rotationComplete();
-
-    /**
-     * Called when a path follow is complete.
-     */
-    void pathFollowComplete();
 }

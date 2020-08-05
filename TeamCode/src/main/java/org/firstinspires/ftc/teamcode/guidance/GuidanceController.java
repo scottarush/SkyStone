@@ -50,7 +50,8 @@ public class GuidanceController {
     private Point mPathLineStart = null;
     private Point mPathLineEnd = null;
 
-    private ArrayList<IGuidanceControllerListener> mCommandListeners = new ArrayList<>();
+    private ArrayList<IGuidanceControllerCommandListener> mCommandListeners = new ArrayList<>();
+    private ArrayList<IGuidanceControllerStatusListener> mStatusListeners = new ArrayList<>();
 
     private GuidanceControllerParameters mGCParameters = new GuidanceControllerParameters();
 
@@ -143,13 +144,23 @@ public class GuidanceController {
     }
 
     /**
-     * adds  listener for guidance controller command output and maneuver notifications.
+     * adds  listener for guidance controller command output notifications.
      */
-    public void addGuidanceControllerCommandListener(IGuidanceControllerListener listener){
+    public void addGuidanceControllerCommandListener(IGuidanceControllerCommandListener listener){
         if (mCommandListeners.contains(listener)){
             return;
         }
         mCommandListeners.add(listener);
+    }
+
+    /**
+     * adds  listener for guidance controller status notifications.
+     */
+    public void addGuidanceControllerStatusListener(IGuidanceControllerStatusListener listener){
+        if (mStatusListeners.contains(listener)){
+            return;
+        }
+        mStatusListeners.add(listener);
     }
 
     /**
@@ -180,19 +191,23 @@ public class GuidanceController {
             // Now check if the angular velocity has slowed enough to stop
             if (Math.abs(mKalmanTracker.getEstimatedAngularVelocity()) <= mGCParameters.rotationModeStopAngularVelocityThreshold) {
                 mMode = STOPPED;
-                // Notify listeners that rotation is complete.
-                for (Iterator<IGuidanceControllerListener> iter = mCommandListeners.iterator(); iter.hasNext(); ) {
-                    IGuidanceControllerListener listener = iter.next();
-                    listener.rotationComplete();
+                // Notify command listeners to stop the rotation command
+                for (Iterator<IGuidanceControllerCommandListener> iter = mCommandListeners.iterator(); iter.hasNext(); ) {
+                    IGuidanceControllerCommandListener listener = iter.next();
                     listener.setRotationCommand(0d);
+                }
+                // And status listeners that the maneuver is complete
+                for (Iterator<IGuidanceControllerStatusListener> iter = mStatusListeners.iterator(); iter.hasNext(); ) {
+                    IGuidanceControllerStatusListener listener = iter.next();
+                    listener.rotationComplete();
                 }
             }
             return;
         }
         // Otherwise, drop through to compute regular rotation command
         mRotationCommand = mRotationModePID.getOutput(mKalmanTracker.getEstimatedHeading(),mTargetHeading);
-        for(Iterator<IGuidanceControllerListener> iter = mCommandListeners.iterator(); iter.hasNext();){
-            IGuidanceControllerListener listener = iter.next();
+        for(Iterator<IGuidanceControllerCommandListener> iter = mCommandListeners.iterator(); iter.hasNext();){
+            IGuidanceControllerCommandListener listener = iter.next();
             listener.setRotationCommand(mRotationCommand);
         }
     }
@@ -201,8 +216,8 @@ public class GuidanceController {
      * utility sends a zero to null all commands to zero
      */
     private void clearAllCommands(){
-        for(Iterator<IGuidanceControllerListener> iter = mCommandListeners.iterator(); iter.hasNext();){
-            IGuidanceControllerListener listener = iter.next();
+        for(Iterator<IGuidanceControllerCommandListener> iter = mCommandListeners.iterator(); iter.hasNext();){
+            IGuidanceControllerCommandListener listener = iter.next();
             listener.setStraightCommand(0d);
             listener.setRotationCommand(0d);
         }
@@ -257,14 +272,18 @@ public class GuidanceController {
             mPathPowerCommand = mPathPowerPID.getOutput(rotRobotPos.y,rotatedEnd.y);
         }
 
-        for(Iterator<IGuidanceControllerListener> iter = mCommandListeners.iterator(); iter.hasNext();){
-            IGuidanceControllerListener listener = iter.next();
+        for(Iterator<IGuidanceControllerCommandListener> iter = mCommandListeners.iterator(); iter.hasNext();){
+            IGuidanceControllerCommandListener listener = iter.next();
             listener.setSteeringCommand(mPathSteeringCommand, mPathPowerCommand);
-            if (mMode == STOPPED){
-                // notify that the path follow was complete
+        }
+        if (mMode == STOPPED){
+            // notify that the path follow was complete
+            for(Iterator<IGuidanceControllerStatusListener> iter = mStatusListeners.iterator(); iter.hasNext();){
+                IGuidanceControllerStatusListener listener = iter.next();
                 listener.pathFollowComplete();
             }
         }
+
     }
 
      /**

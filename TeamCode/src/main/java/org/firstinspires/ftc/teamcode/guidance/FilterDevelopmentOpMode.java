@@ -3,7 +3,6 @@ package org.firstinspires.ftc.teamcode.guidance;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.firstinspires.ftc.robotcore.external.navigation.Acceleration;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
@@ -86,21 +85,7 @@ public class FilterDevelopmentOpMode extends OpMode{
         //mGuidanceController.setTargetHeading(Math.PI/2);
 
         mGuidanceController.setTargetHeading(Math.PI/2);
-        mGuidanceController.addGuidanceControllerCommandListener(new IGuidanceControllerListener() {
-            @Override
-            public void setStraightCommand(double power) {
-
-            }
-
-            @Override
-            public void setSteeringCommand(double steering, double power) {
-
-            }
-
-            @Override
-            public void setRotationCommand(double rotation) {
-
-            }
+        mGuidanceController.addGuidanceControllerStatusListener(new IGuidanceControllerStatusListener() {
 
             @Override
             public void rotationComplete() {
