@@ -84,7 +84,7 @@ public class FilterDevelopmentOpMode extends OpMode{
         // Set the command to the bot
         //mGuidanceController.setTargetHeading(Math.PI/2);
 
-        mGuidanceController.setTargetHeading(Math.PI/2);
+        mGuidanceController.doRotation(Math.PI/2);
         mGuidanceController.addGuidanceControllerStatusListener(new IGuidanceControllerStatusListener() {
 
             @Override

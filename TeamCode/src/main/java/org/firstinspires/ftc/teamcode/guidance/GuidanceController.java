@@ -133,11 +133,10 @@ public class GuidanceController {
     }
 
     /**
-     * Sets a target heading which cancels any other pending maneuver and transitions to
-     * ROTATION_MODE.  The rotation will be completed and notified to listeners via the
-     * IGuidanceControllerCommandListener interface.
+     * Does a rotation maneuver The rotation will be completed and notified to listeners via the
+     * IGuidanceControllerStatusListener interface.
      **/
-    public void setTargetHeading(double heading){
+    public void doRotation(double heading){
         mMode = ROTATION_MODE;
         mTargetHeading = heading;
         mRotationModePID.reset();
