@@ -1,20 +1,23 @@
 package org.firstinspires.ftc.teamcode.guidance;
 
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
+import org.firstinspires.ftc.teamcode.autonomous.AutonomousController;
 import org.firstinspires.ftc.teamcode.drivetrain.BaseMecanumDrive;
+
 import org.firstinspires.ftc.teamcode.speedbot.BaseSpeedBot;
 import org.firstinspires.ftc.teamcode.util.LogFile;
 
-@TeleOp(name="FilterDevelopment", group="Robot")
+@Autonomous(name="FilterDevelopment", group="Robot")
 public class FilterDevelopmentOpMode extends OpMode{
     public static final String LOG_PATHNAME = "/sdcard";
 
+    public static final boolean LOGGING_ENABLED = false;
     public static final String LOG_FILENAME = "kflog.csv";
     public static final String[] LOG_COLUMNS = {"time", "w_lf", "w_rf", "w_lr", "w_rr", "theta_imu",
             "kf_px", "kf_py", "kf_wz", "kf_heading",
@@ -37,6 +40,9 @@ public class FilterDevelopmentOpMode extends OpMode{
     private long mStartTimeNS = 0;
 
     private GuidanceController mGuidanceController = null;
+
+    private AutonomousController mAutonomousController;
+
     @Override
     public void init() {
         msStuckDetectInit = 1000000;
@@ -74,34 +80,25 @@ public class FilterDevelopmentOpMode extends OpMode{
         // Initialize the guidance controller
         mGuidanceController = new GuidanceController(new GuidanceController.GuidanceControllerParameters(),mKalmanTracker);
 
-        // And add the drivetrain as a listener for guidance controller commands
+        // add the drivetrain as a listener for guidance controller commands
         mGuidanceController.addGuidanceControllerCommandListener(mSpeedBot.getDrivetrain());
 
-        // And the wheel speed log file
-        mLogFile = new LogFile(LOG_PATHNAME, LOG_FILENAME, LOG_COLUMNS);
-        mLogFile.openFile();
+        // Create the state machine controller
+        mAutonomousController = new AutonomousController(this,mGuidanceController,mSpeedBot);
 
-        // Set the command to the bot
-        //mGuidanceController.setTargetHeading(Math.PI/2);
+        // open the log file if enabled
+        if (LOGGING_ENABLED) {
+            mLogFile = new LogFile(LOG_PATHNAME, LOG_FILENAME, LOG_COLUMNS);
+            mLogFile.openFile();
+        }
 
-        mGuidanceController.doRotation(Math.PI/2);
-        mGuidanceController.addGuidanceControllerStatusListener(new IGuidanceControllerStatusListener() {
-
-            @Override
-            public void rotationComplete() {
-                mGuidanceController.doPathFollow(0d,1.22d);
-            }
-
-            @Override
-            public void pathFollowComplete() {
-
-            }
-        });
     }
 
     @Override
     public void stop() {
-        mLogFile.closeFile();
+        if (LOGGING_ENABLED) {
+            mLogFile.closeFile();
+        }
         super.stop();
 
         mSpeedBot.getDrivetrain().stop();
@@ -121,7 +118,7 @@ public class FilterDevelopmentOpMode extends OpMode{
         // Compute the delta time and update the Tracker if we are at the sample period T
         long systemTime = System.nanoTime();
 
-
+        // Compute the delta T and quantize to the sample period
         int deltat_ns = (int)(systemTime-mLastSystemTimeNS);
         if (deltat_ns >= T_NS){
             if (mReadWheelSpeedCount >= WHEEL_SPEED_SKIP_COUNT) {
@@ -137,16 +134,19 @@ public class FilterDevelopmentOpMode extends OpMode{
             updateTracker();
             mLastSystemTimeNS = systemTime;   // save for next loop
 
-
             if (mSpeedBot.isIMUInitialized()) {
-                // And update the guidance controller commnd
+                // update the guidance controller commnd
                 mGuidanceController.updateCommand();
              }
+            // Service the autononomous controller
+            mAutonomousController.loop();
+
             telemetry.addData("KF Data","heading=%5.2f px=%4.1f py=%4.1f",mKalmanTracker.getEstimatedHeading()*180d/Math.PI,mKalmanTracker.getEstimatedXPosition(),mKalmanTracker.getEstimatedYPosition());
             telemetry.update();
-            // Log a record of data
-            logData();
-            if (gamepad1.a) {mSpeedBot.getDrivetrain().stop();};
+            // Log a record of data if enabled
+            if (LOGGING_ENABLED) {
+                logData();
+            }
         }
      }
 

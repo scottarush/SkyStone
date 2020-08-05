@@ -5,7 +5,7 @@
  * from file : FilterDevStateMachine.sm
  */
 
-package org.firstinspires.ftc.teamcode.guidance.devstatemachines;
+package org.firstinspires.ftc.teamcode.autonomous;
 
 
 public class FilterDevStateMachineContext
@@ -15,12 +15,12 @@ public class FilterDevStateMachineContext
 // Member methods.
 //
 
-    public FilterDevStateMachineContext(FilterDevController owner)
+    public FilterDevStateMachineContext(AutonomousController owner)
     {
         this (owner, FilterDevStateMachine.Idle);
     }
 
-    public FilterDevStateMachineContext(FilterDevController owner, FilterDevControllerState initState)
+    public FilterDevStateMachineContext(AutonomousController owner, AutonomousControllerState initState)
     {
         super (initState);
 
@@ -50,7 +50,7 @@ public class FilterDevStateMachineContext
         return;
     }
 
-    public FilterDevControllerState getState()
+    public AutonomousControllerState getState()
         throws statemap.StateUndefinedException
     {
         if (_state == null)
@@ -59,15 +59,15 @@ public class FilterDevStateMachineContext
                 new statemap.StateUndefinedException());
         }
 
-        return ((FilterDevControllerState) _state);
+        return ((AutonomousControllerState) _state);
     }
 
-    protected FilterDevController getOwner()
+    protected AutonomousController getOwner()
     {
         return (_owner);
     }
 
-    public void setOwner(FilterDevController owner)
+    public void setOwner(AutonomousController owner)
     {
         if (owner == null)
         {
@@ -87,7 +87,7 @@ public class FilterDevStateMachineContext
 // Member data.
 //
 
-    transient private FilterDevController _owner;
+    transient private AutonomousController _owner;
 
     //-----------------------------------------------------------
     // Constants.
@@ -99,14 +99,14 @@ public class FilterDevStateMachineContext
 // Inner classes.
 //
 
-    public static abstract class FilterDevControllerState
+    public static abstract class AutonomousControllerState
         extends statemap.State
     {
     //-----------------------------------------------------------
     // Member methods.
     //
 
-        protected FilterDevControllerState(String name, int id)
+        protected AutonomousControllerState(String name, int id)
         {
             super (name, id);
         }
@@ -164,7 +164,7 @@ public class FilterDevStateMachineContext
     }
 
     protected static class FilterDevStateMachine_Default
-        extends FilterDevControllerState
+        extends AutonomousControllerState
     {
     //-----------------------------------------------------------
     // Member methods.
@@ -244,7 +244,7 @@ public class FilterDevStateMachineContext
     }
 
     protected static class DoSquare_Default
-        extends FilterDevControllerState
+        extends AutonomousControllerState
     {
     //-----------------------------------------------------------
     // Member methods.
@@ -276,15 +276,6 @@ public class FilterDevStateMachineContext
         private DoSquare_Start(String name, int id)
         {
             super (name, id);
-        }
-
-        @Override
-        protected void entry(FilterDevStateMachineContext context)
-            {
-                FilterDevController ctxt = context.getOwner();
-
- //           ctxt.linearDriveSlow(28d);
-            return;
         }
 
         @Override
@@ -354,15 +345,6 @@ public class FilterDevStateMachineContext
         }
 
         @Override
-        protected void entry(FilterDevStateMachineContext context)
-            {
-                FilterDevController ctxt = context.getOwner();
-
-  //          ctxt.linearDriveSlow(8d);
-            return;
-        }
-
-        @Override
         protected void evDriveComplete(FilterDevStateMachineContext context)
         {
 
@@ -395,7 +377,7 @@ public class FilterDevStateMachineContext
         @Override
         protected void entry(FilterDevStateMachineContext context)
             {
-                FilterDevController ctxt = context.getOwner();
+                AutonomousController ctxt = context.getOwner();
 
             ctxt.stop();
             return;

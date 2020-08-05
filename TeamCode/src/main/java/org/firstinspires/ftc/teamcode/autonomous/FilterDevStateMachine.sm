@@ -1,5 +1,5 @@
-%class FilterDevController
-%package org.firstinspires.ftc.teamcode.filter.devstatemachines
+%class AutonomousController
+%package org.firstinspires.ftc.teamcode.guidance.devstatemachines
 // http://smc.sourceforge.net/
 %start FilterDevStateMachine::Idle
 
@@ -20,7 +20,7 @@
     Start
         Entry {
              // will automatically trigger evNoStoneFound
-            linearDriveSlow(28d);
+ //           linearDriveSlow(28d);
         }
     {
         evDriveComplete FirstTurn { }
@@ -36,7 +36,7 @@
 
     SecondSideDrive
         Entry{
-            linearDriveSlow(8d);
+ //           linearDriveSlow(8d);
         }
     {
         evDriveComplete nil {}

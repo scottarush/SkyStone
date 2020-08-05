@@ -114,21 +114,17 @@ public class GuidanceController {
     }
 
     /**
-     * Engages path mode to a line
-     * Starting point of the line is the current center of the robot.
-     * @param px x coordinate of line terminus
-     * @param py y coordinate of line terminus
+     * Utility returns true if current heading is acceptable to do a path follow
      * @return true if successful, false if the current robot heading is beyond the maximum allowed entry angle (and must be rotated first)
      */
-    public boolean doPathFollow(double px,double py){
-        mPathLineStart = new Point(mKalmanTracker.getEstimatedXPosition(),mKalmanTracker.getEstimatedYPosition());
-        mPathLineEnd = new Point(px,py);
-
+    public boolean isPathFollowValid(double px,double py) {
         // Compute the heading angle of the robot relative to the end point and determine
         // if we are within the maximum entry angle for stability
         double theta = mKalmanTracker.getEstimatedHeading();
-        Point rotatedEnd = mPathLineEnd.rotate(theta);
-        Point rotatedStart = mPathLineStart.rotate(theta);
+        Point pathLineStart = new Point(mKalmanTracker.getEstimatedXPosition(),mKalmanTracker.getEstimatedYPosition());
+        Point pathLineEnd = new Point(px,py);
+        Point rotatedEnd = pathLineStart.rotate(theta);
+        Point rotatedStart = pathLineEnd.rotate(theta);
         Point robotPos = new Point(mKalmanTracker.getEstimatedXPosition(),mKalmanTracker.getEstimatedYPosition());
         double m = (rotatedEnd.y - rotatedStart.y) / (rotatedEnd.x - rotatedStart.x);
         double angle = -Math.atan(m);
@@ -136,6 +132,24 @@ public class GuidanceController {
             // Robot heading is too far for stability so return flase
             return false;
         }
+        else{
+            return true;
+        }
+    }
+
+        /**
+         * Engages path mode to a line
+         * Starting point of the line is the current center of the robot.
+         * @param px x coordinate of line terminus
+         * @param py y coordinate of line terminus
+         * @return true if successful, false if the current robot heading is beyond the maximum allowed entry angle (and must be rotated first)
+         */
+    public boolean doPathFollow(double px,double py){
+        if (!isPathFollowValid(px,py)){
+            return false;
+        }
+        mPathLineStart = new Point(mKalmanTracker.getEstimatedXPosition(),mKalmanTracker.getEstimatedYPosition());
+        mPathLineEnd = new Point(px,py);
         // Start the path follow
         mPathSteeringPID.reset();
         mPathPowerPID.reset();
@@ -157,6 +171,69 @@ public class GuidanceController {
         // Clear all commands in case robot was moving
         clearAllCommands();
         mRotationModePID.reset();
+    }
+    /**
+     * Does a rotation maneuver to point the robot at the provided point.
+     * If the heading is already within the minimum a rotation complete
+     * will be triggered without an actual rotation
+     * @param targetx x coordinate of target point
+     * @param targety y coordinate of target point
+     **/
+    public void rotateToTarget(double targetx,double targety){
+        double deltaAngle = mKalmanTracker.getEstimatedHeading()-getAngleToTarget(targetx,targety);
+        if (Math.abs(deltaAngle) <= mGCParameters.rotationModeStopAngleError){
+            mMode = STOPPED;
+            notifyRotationComplete();
+            return;
+        }
+        // Otherwise, do the rotation by the angle
+        doRotation(deltaAngle);
+    }
+    /**
+     * utility computes the angle between the current robot position and the
+     * provided position from 0..PI = N->E->S and -PI..0 = N->W->S
+     */
+    private double getAngleToTarget(double targetx,double targety){
+        double xrel = targetx-mKalmanTracker.getEstimatedXPosition();
+        double yrel = targety-mKalmanTracker.getEstimatedYPosition();
+        // Compute the angle assuming the robot is pointed straight north and add
+        // the current heading afterward
+        double angleToTarget = 0d;
+        double invtan = 0d;
+        // Handle straight line case with yrel = 0 as inverse tan will blow up at 0 and PI
+        if (yrel == 0d){
+            if (xrel >= 0d){
+                return Math.PI/2d;
+            }
+            else{
+                return -Math.PI/2d;
+            }
+        }
+        // Otherwise compute angle from the inverse tangent
+        invtan = Math.abs(Math.atan(Math.abs(xrel)/Math.abs(yrel)));
+        if (xrel >= 0d){
+            if (yrel >= 0d){
+                // northeast quadrant
+                angleToTarget = invtan;
+            }
+            else{
+                // southeast quadrant
+                angleToTarget = Math.PI-invtan;
+            }
+        }
+        else{
+            // xrel is negative
+            if (yrel >= 0d){
+                // northwest quadrant
+                angleToTarget = -invtan;
+            }
+            else{
+                // southwest quadrant
+                angleToTarget = -(Math.PI-invtan);
+            }
+
+        }
+        return angleToTarget;
     }
 
     /**
@@ -213,11 +290,8 @@ public class GuidanceController {
                     listener.setRotationCommand(0d);
                 }
                 // And status listeners that the maneuver is complete
-                for (Iterator<IGuidanceControllerStatusListener> iter = mStatusListeners.iterator(); iter.hasNext(); ) {
-                    IGuidanceControllerStatusListener listener = iter.next();
-                    listener.rotationComplete();
-                }
-            }
+                notifyRotationComplete();
+             }
             return;
         }
         // Otherwise, drop through to compute regular rotation command
@@ -228,6 +302,13 @@ public class GuidanceController {
         }
     }
 
+    private void notifyRotationComplete(){
+        for (Iterator<IGuidanceControllerStatusListener> iter = mStatusListeners.iterator(); iter.hasNext(); ) {
+            IGuidanceControllerStatusListener listener = iter.next();
+            listener.rotationComplete();
+        }
+
+    }
     /**
      * utility sends a zero to null all commands to zero
      */

@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.guidance.devstatemachines;
+package org.firstinspires.ftc.teamcode.autonomous;
 
 import android.util.Log;
 
@@ -6,6 +6,8 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.firstinspires.ftc.teamcode.drivetrain.BaseMecanumDrive;
 
+import org.firstinspires.ftc.teamcode.guidance.GuidanceController;
+import org.firstinspires.ftc.teamcode.guidance.IGuidanceControllerStatusListener;
 import org.firstinspires.ftc.teamcode.speedbot.BaseSpeedBot;
 import org.firstinspires.ftc.teamcode.speedbot.CraneSpeedBot;
 import org.firstinspires.ftc.teamcode.util.OneShotTimer;
@@ -21,7 +23,7 @@ import java.util.LinkedList;
 import statemap.FSMContext;
 import statemap.State;
 
-public class FilterDevController {
+public class AutonomousController implements IGuidanceControllerStatusListener {
     private static boolean TELEMETRY_STATE_LOGGING_ENABLED = true;
 
     private FilterDevStateMachineContext mStateMachineContext = null;
@@ -44,6 +46,7 @@ public class FilterDevController {
      * Common reference used for the MecanumDrive on either bot
      */
     private BaseMecanumDrive mMecanumDrive = null;
+    private GuidanceController mGuidanceController;
 
     private ArrayList<OneShotTimer> mStateTimers = new ArrayList<>();
 
@@ -57,29 +60,32 @@ public class FilterDevController {
         }
     });
 
-
+    private OneShotTimer mRotationTimeoutTimer = new OneShotTimer(ROTATION_TIMEOUTMS, new OneShotTimer.IOneShotTimerCallback() {
+        @Override
+        public void timeoutComplete() {
+            transition("evRotationTimeoutError");
+        }
+    });
     /***
      * Needed to queue events into the state machine
      */
     private static HashMap<String, Method> mTransition_map;
     private LinkedList<String> mTransition_queue;
-
-    private int mLastRotationAngle = 0;
-    private double mLastDriveDistance = 0d;
-
-    /**
+     /**
      * Constructor
      * @param opMode
      * @param speedBot
      */
-    public FilterDevController(final OpMode opMode,
-                               BaseSpeedBot speedBot) {
+    public AutonomousController(final OpMode opMode,
+                                GuidanceController guidanceController,
+                                BaseSpeedBot speedBot) {
         mStateMachineContext = new FilterDevStateMachineContext(this);
         this.opMode = opMode;
+        mGuidanceController = guidanceController;
         mSpeedBot = speedBot;
 
         mMecanumDrive = speedBot.getDrivetrain();
-
+        mGuidanceController.addGuidanceControllerStatusListener(this);
         // Add timers to be checked
         mStateTimers.add(mTimer);
 
@@ -111,6 +117,58 @@ public class FilterDevController {
         });
     }
 
+    @Override
+    public void rotationComplete() {
+        // Cancel the timeout error timer
+        mRotationTimeoutTimer.cancel();
+        // And notify the state machine
+        transition("evRotationComplete");
+    }
+
+    @Override
+    public void pathFollowComplete() {
+        transition("evPathFollowComplete");
+    }
+
+    /**
+     * called from state machine to start a rotation using the guidance controller.
+     * If the rotation fails to complete in the default rotation timeout an evRotationTimeoutError
+     * will be triggered
+     * @param angle rotation in degrees with positive angles to the right
+     */
+    public void doRotation(int angle){
+        // Convert angle to floating point radians
+        double radianAngle = (double)angle * Math.PI/180d;
+        mGuidanceController.doRotation(radianAngle);
+        mRotationTimeoutTimer.start();
+    }
+    /**
+     * called from state machine to do a rotation to point to a target point using the
+     * guidance controller.
+     * @param targetx x coordinate of target point
+     * @param targety y coordinate of target point
+     **/
+    public void rotateToTarget(double targetx,double targety){
+        mGuidanceController.rotateToTarget(targetx,targety);
+        mRotationTimeoutTimer.start();
+    }
+    /**
+     * called from state machine to determine if heading is OK for path follow
+     * @param px x coordinate of target point
+     * @param py y coordinate of target point
+     */
+    public boolean isPathFollowValid(double px,double py){
+        return mGuidanceController.isPathFollowValid(px,py);
+    }
+    /**
+     * called from state machine to start a path follow using the guidance controller.
+     * This function assumes that isPathFollowValid has first been called to make
+     * @param targetx x coordinate of target point
+     * @param targety y coordinate of target point
+     */
+    public void doPathFollow(double targetx,double targety){
+        mGuidanceController.doPathFollow(targetx,targety);
+    }
 
     /**
      * helper method to build the transition table so that we can trigger events from
