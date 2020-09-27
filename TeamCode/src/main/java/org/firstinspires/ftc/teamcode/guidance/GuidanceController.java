@@ -30,14 +30,17 @@ public class GuidanceController {
     private MiniPID mRotationModePID = null;
     private MiniPID mPathSteeringPID = null;
     private MiniPID mPathPowerPID = null;
+    private MiniPID mStraightPowerPID = null;
+
     private double mRotationCommand = 0d;
     private double mPathSteeringCommand = 0d;
 
-    private double mPathPowerCommand = 0d;
+    private double mPowerCommand = 0d;
 
     public static final int STOPPED = 0;
     public static final int ROTATION_MODE = 1;
     public static final int PATH_MODE = 2;
+    public static final int STRAIGHT_MODE = 3;
     private int mMode = STOPPED;
 
     private double mTargetHeading = 0d;
@@ -49,6 +52,14 @@ public class GuidanceController {
 
     private Point mPathLineStart = null;
     private Point mPathLineEnd = null;
+
+    private Point mTargetPoint = null;
+    /** Direction for straight mode.  true = forward, false = backward. **/
+    private boolean mStraightModeDirection = false;
+    /**
+     * maximum power for current straight mode maneuver.
+     */
+    private double mMaxStraightModePower = 1.0d;
 
     private ArrayList<IGuidanceControllerCommandListener> mCommandListeners = new ArrayList<>();
     private ArrayList<IGuidanceControllerStatusListener> mStatusListeners = new ArrayList<>();
@@ -83,6 +94,11 @@ public class GuidanceController {
         public double pathModePowerIntegGain = 0.01d;
         public double pathModePowerMaxIntegOutput = 0.2d;
         public double pathModePowerDerivGain = 0d;
+
+        public double straightModePowerPropGain = 0.7d;
+        public double straightModePowerIntegGain = 0.01d;
+        public double straightModePowerMaxIntegOutput = 0.2d;
+        public double straightModePowerDerivGain = 0d;
     }
 
     public GuidanceController(GuidanceControllerParameters gcParameters, KalmanTracker kalmanTracker){
@@ -100,6 +116,10 @@ public class GuidanceController {
 
         mPathPowerPID = new MiniPID(mGCParameters.pathModePowerPropGain,mGCParameters.pathModePowerIntegGain,mGCParameters.pathModePowerDerivGain);
         mPathPowerPID.setMaxIOutput(mGCParameters.pathModePowerMaxIntegOutput);
+        mPathPowerPID.setOutputLimits(0d,1.0d);
+
+        mPathPowerPID = new MiniPID(mGCParameters.straightModePowerPropGain,mGCParameters.straightModePowerIntegGain,mGCParameters.straightModePowerDerivGain);
+        mPathPowerPID.setMaxIOutput(mGCParameters.straightModePowerMaxIntegOutput);
         mPathPowerPID.setOutputLimits(0d,1.0d);
 
         if (ENABLE_LOGGING){
@@ -144,7 +164,7 @@ public class GuidanceController {
          * @param py y coordinate of line terminus
          * @return true if successful, false if the current robot heading is beyond the maximum allowed entry angle (and must be rotated first)
          */
-    public boolean doPathFollow(double px,double py){
+    public boolean followPath(double px, double py){
         if (!isPathFollowValid(px,py)){
             return false;
         }
@@ -160,12 +180,39 @@ public class GuidanceController {
         mMode = PATH_MODE;
         return true;
     }
+    /**
+     * Moves the robot straight forward (+) or backward (-) at the current heading.
+     * Listeners are notified on completion via the IGuidanceControllerStatusListener interface.
+     * @param distance distance to move in meters + for forward, - for backward
+     * @param maxPower maximum power from 0d to 1.0d
+     **/
+    public void moveStraight(double distance,double maxPower){
+        mMode = STRAIGHT_MODE;
+        mMaxStraightModePower = maxPower;
+        if (distance >= 0d){
+            // forward
+            mStraightModeDirection = true;
+        }
+        else{
+            // backward
+            mStraightModeDirection = false;
+        }
+        // Compute the target point
+        double px = mKalmanTracker.getEstimatedXPosition() + Math.sin(mKalmanTracker.getEstimatedHeading())*distance;
+        double py = mKalmanTracker.getEstimatedYPosition() + Math.cos(mKalmanTracker.getEstimatedHeading())*distance;
+        mTargetPoint = new Point(px,py);
+        // Clear all commands in case robot was moving
+        clearAllCommands();
+        mStraightPowerPID.reset();
+        mStraightPowerPID.setOutputLimits(-maxPower,maxPower);
+        
+    }
 
     /**
      * Does a rotation maneuver The rotation will be completed and notified to listeners via the
      * IGuidanceControllerStatusListener interface.
      **/
-    public void doRotation(double heading){
+    public void rotateToHeading(double heading){
         mMode = ROTATION_MODE;
         mTargetHeading = heading;
         // Clear all commands in case robot was moving
@@ -187,7 +234,7 @@ public class GuidanceController {
             return;
         }
         // Otherwise, do the rotation by the angle
-        doRotation(deltaAngle);
+        rotateToHeading(deltaAngle);
     }
     /**
      * utility computes the angle between the current robot position and the
@@ -270,6 +317,7 @@ public class GuidanceController {
              case PATH_MODE:
                  updatePathMode();
                 break;
+
             case STOPPED:
                 break;
         }
@@ -354,7 +402,7 @@ public class GuidanceController {
         if (stop){
             // Set path and power to 0 and drop through to send command
             mPathSteeringCommand = 0d;
-            mPathPowerCommand = 0d;
+            mPowerCommand = 0d;
             mMode = STOPPED;
         }
         else {
@@ -367,12 +415,61 @@ public class GuidanceController {
             double angle = -Math.atan(m);
             mPathSteeringCommand = mPathSteeringPID.getOutput(angle, 0);
             // And control the power based on the distance to the target's y coordinate
-            mPathPowerCommand = mPathPowerPID.getOutput(rotRobotPos.y,rotatedEnd.y);
+            mPowerCommand = mPathPowerPID.getOutput(rotRobotPos.y,rotatedEnd.y);
         }
 
         for(Iterator<IGuidanceControllerCommandListener> iter = mCommandListeners.iterator(); iter.hasNext();){
             IGuidanceControllerCommandListener listener = iter.next();
-            listener.setSteeringCommand(mPathSteeringCommand, mPathPowerCommand);
+            listener.setSteeringCommand(mPathSteeringCommand, mPowerCommand);
+        }
+        if (mMode == STOPPED){
+            // notify that the path follow was complete
+            for(Iterator<IGuidanceControllerStatusListener> iter = mStatusListeners.iterator(); iter.hasNext();){
+                IGuidanceControllerStatusListener listener = iter.next();
+                listener.pathFollowComplete();
+            }
+        }
+
+    }
+    /**
+     * updates the straight mode PID
+     */
+    private void updateStraightMode(){
+        double theta = mKalmanTracker.getEstimatedHeading();
+        // rotate the coordinates of the robot and the target point
+        Point robotPos = new Point(mKalmanTracker.getEstimatedXPosition(),mKalmanTracker.getEstimatedYPosition());
+        Point rotRobotPos = robotPos.rotate(theta);
+        Point rotatedTarget = mTargetPoint.rotate(theta);
+
+        //  check if we have pass the y end of the line and stop
+        boolean stop = false;
+        if (rotatedTarget.y < 0){
+            if (rotRobotPos.y <= rotatedTarget.y){
+                stop = true;
+            }
+        }
+        else{
+            if (rotRobotPos.y >= rotatedTarget.y){
+                stop = true;
+            }
+        }
+        if (stop){
+            // Set power to 0 and drop through to send command
+            mPowerCommand = 0d;
+            mMode = STOPPED;
+        }
+        else {
+            // Not yet at the target control the power based on the distance to the target's y coordinate
+            mPowerCommand = mStraightPowerPID.getOutput(rotRobotPos.y,rotatedTarget.y);
+            // Reverse the sign of the command if going backward
+            if (!mStraightModeDirection){
+                mPowerCommand = Math.signum(mPowerCommand) * mPowerCommand;
+            }
+        }
+
+        for(Iterator<IGuidanceControllerCommandListener> iter = mCommandListeners.iterator(); iter.hasNext();){
+            IGuidanceControllerCommandListener listener = iter.next();
+            listener.setStraightCommand(mPowerCommand);
         }
         if (mMode == STOPPED){
             // notify that the path follow was complete
@@ -397,10 +494,10 @@ public class GuidanceController {
         return mPathSteeringCommand;
     }
     /**
-     * returns the power command for logging
+     * returns the power command in Straight and Path modes for logging
      */
-    public double getPathPowerCommand(){
-        return mPathPowerCommand;
+    public double getPowerCommand(){
+        return mPowerCommand;
     }
     /**
      * returns the current mode as a string for logging.

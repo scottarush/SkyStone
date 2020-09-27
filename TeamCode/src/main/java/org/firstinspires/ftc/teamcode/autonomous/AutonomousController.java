@@ -130,6 +130,11 @@ public class AutonomousController implements IGuidanceControllerStatusListener {
         transition("evPathFollowComplete");
     }
 
+    @Override
+    public void moveStraightComplete() {
+        transition("evMoveStraightComplete");
+    }
+
     /**
      * called from state machine to start a rotation using the guidance controller.
      * If the rotation fails to complete in the default rotation timeout an evRotationTimeoutError
@@ -139,7 +144,7 @@ public class AutonomousController implements IGuidanceControllerStatusListener {
     public void doRotation(int angle){
         // Convert angle to floating point radians
         double radianAngle = (double)angle * Math.PI/180d;
-        mGuidanceController.doRotation(radianAngle);
+        mGuidanceController.rotateToHeading(radianAngle);
         mRotationTimeoutTimer.start();
     }
     /**
@@ -167,7 +172,7 @@ public class AutonomousController implements IGuidanceControllerStatusListener {
      * @param targety y coordinate of target point
      */
     public void doPathFollow(double targetx,double targety){
-        mGuidanceController.doPathFollow(targetx,targety);
+        mGuidanceController.followPath(targetx,targety);
     }
 
     /**

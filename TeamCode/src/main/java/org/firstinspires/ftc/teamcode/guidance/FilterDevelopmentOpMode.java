@@ -174,7 +174,7 @@ public class FilterDevelopmentOpMode extends OpMode{
         logRecord[logIndex++] = mGuidanceController.getModeString();
         logRecord[logIndex++] = String.format("%4.2f",mGuidanceController.getRotationCommand());
         logRecord[logIndex++] = String.format("%4.2f",mGuidanceController.getPathSteeringCommand());
-        logRecord[logIndex++] = String.format("%4.2f",mGuidanceController.getPathPowerCommand());
+        logRecord[logIndex++] = String.format("%4.2f",mGuidanceController.getPowerCommand());
         mLogFile.writeLogRow(logRecord);
 
     }

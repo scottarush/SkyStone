@@ -12,5 +12,9 @@ public interface IGuidanceControllerStatusListener {
      */
     void pathFollowComplete();
 
+    /**
+     * Called when a straight mode maneuver is complete
+     */
+    void moveStraightComplete();
 
 }
